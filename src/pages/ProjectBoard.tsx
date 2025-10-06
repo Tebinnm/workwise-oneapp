@@ -5,7 +5,17 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { LayoutGrid, Calendar, Plus } from "lucide-react";
+import {
+  LayoutGrid,
+  Calendar,
+  Plus,
+  MoreVertical,
+  CheckCircle2,
+  Star,
+  MessageSquare,
+  Paperclip,
+  Link2,
+} from "lucide-react";
 import { toast } from "sonner";
 
 interface Task {
@@ -14,6 +24,7 @@ interface Task {
   description: string | null;
   status: string;
   type: string;
+  created_at: string;
   task_assignments: Array<{
     profiles: {
       full_name: string | null;
@@ -134,52 +145,99 @@ export default function ProjectBoard() {
 
       {/* Kanban Board */}
       {view === "kanban" && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {statusColumns.map((column) => (
             <div key={column.id} className="space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between px-1">
                 <div className="flex items-center gap-2">
-                  <div className={`w-3 h-3 rounded-full ${column.color}`} />
-                  <h3 className="font-semibold">{column.label}</h3>
-                  <Badge variant="secondary" className="ml-2">
-                    {getTasksByStatus(column.id).length}
+                  <h3 className="font-semibold text-lg">{column.label}</h3>
+                  <Badge variant="secondary">
+                    {getTasksByStatus(column.id).length}/4
                   </Badge>
                 </div>
+                <Button variant="ghost" size="icon" className="h-6 w-6">
+                  <Plus className="h-4 w-4" />
+                </Button>
               </div>
-              <div className="space-y-3">
+              <div className="space-y-3 min-h-[400px]">
                 {getTasksByStatus(column.id).map((task) => (
                   <Card
                     key={task.id}
-                    className="hover:shadow-elevated transition-all cursor-pointer"
+                    className="hover:shadow-elevated transition-all cursor-pointer group"
                   >
                     <CardContent className="p-4 space-y-3">
-                      <div className="space-y-2">
-                        <h4 className="font-medium">{task.title}</h4>
-                        {task.description && (
-                          <p className="text-sm text-muted-foreground line-clamp-2">
-                            {task.description}
+                      <div className="flex items-start justify-between">
+                        <div className="space-y-1 flex-1">
+                          <h4 className="font-medium">{task.title}</h4>
+                          <p className="text-xs text-muted-foreground">
+                            {task.created_at.substring(0, 10)}
                           </p>
-                        )}
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
                       </div>
-                      <div className="flex items-center justify-between">
-                        <Badge variant="outline" className="text-xs">
-                          {task.type}
+                      {task.description && (
+                        <p className="text-sm text-muted-foreground line-clamp-2">
+                          {task.description}
+                        </p>
+                      )}
+                      <div className="flex items-center justify-between pt-2 border-t">
+                        <Badge
+                          variant={task.status === "done" ? "default" : "secondary"}
+                          className="rounded-full"
+                        >
+                          <CheckCircle2 className="h-3 w-3 mr-1" />
+                          {task.status?.replace("_", " ")}
                         </Badge>
-                        {task.task_assignments?.length > 0 && (
-                          <div className="flex -space-x-2">
-                            {task.task_assignments.map((assignment, idx) => (
-                              <Avatar key={idx} className="h-6 w-6 border-2 border-background">
-                                <AvatarFallback className="text-xs bg-primary text-primary-foreground">
-                                  {assignment.profiles?.full_name?.[0] || "U"}
-                                </AvatarFallback>
-                              </Avatar>
-                            ))}
+                        {task.task_assignments && task.task_assignments.length > 0 && (
+                          <div className="flex items-center gap-2">
+                            <div className="flex -space-x-2">
+                              {task.task_assignments.slice(0, 3).map((assignment, idx) => (
+                                <Avatar
+                                  key={idx}
+                                  className="h-6 w-6 border-2 border-background"
+                                >
+                                  <AvatarFallback className="text-xs bg-primary text-primary-foreground">
+                                    {assignment.profiles?.full_name?.[0] || "U"}
+                                  </AvatarFallback>
+                                </Avatar>
+                              ))}
+                            </div>
+                            {task.task_assignments.length > 3 && (
+                              <span className="text-xs text-muted-foreground">
+                                +{task.task_assignments.length - 3}
+                              </span>
+                            )}
                           </div>
                         )}
+                      </div>
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <button className="hover:text-foreground transition-colors">
+                          <Star className="h-4 w-4" />
+                        </button>
+                        <button className="hover:text-foreground transition-colors">
+                          <MessageSquare className="h-4 w-4" />
+                        </button>
+                        <button className="hover:text-foreground transition-colors">
+                          <Paperclip className="h-4 w-4" />
+                        </button>
+                        <button className="hover:text-foreground transition-colors ml-auto">
+                          <Link2 className="h-4 w-4" />
+                        </button>
                       </div>
                     </CardContent>
                   </Card>
                 ))}
+                {getTasksByStatus(column.id).length === 0 && (
+                  <div className="flex items-center justify-center h-32 border-2 border-dashed rounded-lg">
+                    <p className="text-sm text-muted-foreground">No tasks</p>
+                  </div>
+                )}
               </div>
             </div>
           ))}

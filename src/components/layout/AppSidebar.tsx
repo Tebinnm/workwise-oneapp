@@ -4,7 +4,8 @@ import {
   LayoutDashboard,
   Folder,
   Plus,
-  ChevronRight,
+  Search,
+  Star,
 } from "lucide-react";
 import {
   Sidebar,
@@ -19,8 +20,10 @@ import {
 } from "@/components/ui/sidebar";
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { CreateProjectDialog } from "@/components/dialogs/CreateProjectDialog";
 
 interface Project {
   id: string;
@@ -29,6 +32,7 @@ interface Project {
 
 export function AppSidebar() {
   const [projects, setProjects] = useState<Project[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     fetchProjects();
@@ -67,6 +71,10 @@ export function AppSidebar() {
     setProjects(data || []);
   };
 
+  const filteredProjects = projects.filter((project) =>
+    project.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
     <Sidebar>
       <SidebarHeader className="border-b border-sidebar-border px-4 py-4">
@@ -97,37 +105,71 @@ export function AppSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <div className="flex items-center justify-between px-2">
-            <SidebarGroupLabel>Projects</SidebarGroupLabel>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-6 w-6 p-0 hover:bg-sidebar-accent"
-              onClick={() => toast.info("Create project feature coming soon")}
-            >
-              <Plus className="h-4 w-4" />
-            </Button>
+          <div className="flex items-center justify-between px-2 mb-3">
+            <SidebarGroupLabel>Active projects</SidebarGroupLabel>
+            <CreateProjectDialog onSuccess={fetchProjects}>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 w-6 p-0 hover:bg-sidebar-accent hover:text-sidebar-primary"
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+            </CreateProjectDialog>
           </div>
+
+          <div className="px-2 mb-3">
+            <div className="relative">
+              <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-8 h-8 bg-sidebar-accent border-sidebar-border text-sidebar-foreground placeholder:text-muted-foreground"
+              />
+            </div>
+          </div>
+
           <SidebarGroupContent>
             <SidebarMenu>
-              {projects.map((project) => (
-                <SidebarMenuItem key={project.id}>
-                  <SidebarMenuButton asChild>
-                    <NavLink
-                      to={`/projects/${project.id}`}
-                      className={({ isActive }) =>
-                        isActive
-                          ? "bg-sidebar-accent text-sidebar-primary font-medium"
-                          : ""
-                      }
-                    >
-                      <Folder className="h-4 w-4" />
-                      <span>{project.name}</span>
-                      <ChevronRight className="ml-auto h-4 w-4" />
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              <SidebarMenuItem>
+                <SidebarMenuButton>
+                  <Star className="h-4 w-4" />
+                  <span>Favorites</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {filteredProjects.length === 0 ? (
+                <div className="px-4 py-8 text-center text-sm text-muted-foreground">
+                  {searchQuery
+                    ? "No projects found"
+                    : "No projects yet. Create one!"}
+                </div>
+              ) : (
+                filteredProjects.map((project) => (
+                  <SidebarMenuItem key={project.id}>
+                    <SidebarMenuButton asChild>
+                      <NavLink
+                        to={`/projects/${project.id}`}
+                        className={({ isActive }) =>
+                          isActive
+                            ? "bg-sidebar-accent text-sidebar-primary font-medium"
+                            : ""
+                        }
+                      >
+                        <Folder className="h-4 w-4" />
+                        <span className="truncate">{project.name}</span>
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))
+              )}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
