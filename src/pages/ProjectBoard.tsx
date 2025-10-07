@@ -22,6 +22,7 @@ import {
 import { toast } from "sonner";
 import { TaskDialog } from "@/components/dialogs/TaskDialog";
 import { NotificationSystem } from "@/components/NotificationSystem";
+import { GanttChart } from "@/components/GanttChart";
 
 interface Task {
   id: string;
@@ -30,6 +31,8 @@ interface Task {
   status: string;
   type: string;
   created_at: string;
+  start_datetime: string | null;
+  end_datetime: string | null;
   task_assignments: Array<{
     profiles: {
       full_name: string | null;
@@ -128,42 +131,49 @@ export default function ProjectBoard() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">{project?.name || "Project"}</h1>
-          <p className="text-muted-foreground">{project?.description}</p>
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex-1 min-w-0">
+          <h1 className="text-2xl sm:text-3xl font-bold truncate">
+            {project?.name || "Project"}
+          </h1>
+          <p className="text-sm md:text-base text-muted-foreground line-clamp-2">
+            {project?.description}
+          </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2 w-full sm:w-auto">
           <Button
             variant={view === "kanban" ? "default" : "outline"}
             size="sm"
             onClick={() => setView("kanban")}
+            className="flex-1 sm:flex-none"
           >
-            <LayoutGrid className="h-4 w-4 mr-2" />
-            Kanban
+            <LayoutGrid className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Kanban</span>
           </Button>
           <Button
             variant={view === "gantt" ? "default" : "outline"}
             size="sm"
             onClick={() => setView("gantt")}
+            className="flex-1 sm:flex-none"
           >
-            <Calendar className="h-4 w-4 mr-2" />
-            Gantt
+            <Calendar className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Gantt</span>
           </Button>
           {/* <Button
             variant={view === "notifications" ? "default" : "outline"}
             size="sm"
             onClick={() => setView("notifications")}
+            className="flex-1 sm:flex-none"
           >
-            <Bell className="h-4 w-4 mr-2" />
-            Notifications
+            <Bell className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Notifications</span>
           </Button> */}
           <TaskDialog projectId={id!} onSuccess={handleTaskUpdate}>
-            <Button size="sm" className="shadow-glow">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Task
+            <Button size="sm" className="shadow-glow flex-1 sm:flex-none">
+              <Plus className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Add Task</span>
             </Button>
           </TaskDialog>
         </div>
@@ -171,13 +181,15 @@ export default function ProjectBoard() {
 
       {/* Kanban Board */}
       {view === "kanban" && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4 lg:gap-6">
           {statusColumns.map((column) => (
-            <div key={column.id} className="space-y-4">
+            <div key={column.id} className="space-y-3 md:space-y-4">
               <div className="flex items-center justify-between px-1">
                 <div className="flex items-center gap-2">
-                  <h3 className="font-semibold text-lg">{column.label}</h3>
-                  <Badge variant="secondary">
+                  <h3 className="font-semibold text-base md:text-lg">
+                    {column.label}
+                  </h3>
+                  <Badge variant="secondary" className="text-xs">
                     {getTasksByStatus(column.id).length}/4
                   </Badge>
                 </div>
@@ -185,21 +197,23 @@ export default function ProjectBoard() {
                   <Plus className="h-4 w-4" />
                 </Button>
               </div>
-              <div className="space-y-3 min-h-[400px]">
+              <div className="space-y-3 min-h-[300px] md:min-h-[400px]">
                 {getTasksByStatus(column.id).map((task) => (
                   <Card
                     key={task.id}
                     className="hover:shadow-elevated transition-all cursor-pointer group"
                   >
-                    <CardContent className="p-4 space-y-3">
-                      <div className="flex items-start justify-between">
-                        <div className="space-y-1 flex-1">
-                          <h4 className="font-medium">{task.title}</h4>
+                    <CardContent className="p-3 md:p-4 space-y-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="space-y-1 flex-1 min-w-0">
+                          <h4 className="font-medium text-sm md:text-base line-clamp-2">
+                            {task.title}
+                          </h4>
                           <p className="text-xs text-muted-foreground">
                             {task.created_at.substring(0, 10)}
                           </p>
                         </div>
-                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity flex-shrink-0">
                           <TaskDialog
                             projectId={id!}
                             task={task}
@@ -211,7 +225,7 @@ export default function ProjectBoard() {
                               size="icon"
                               className="h-6 w-6"
                             >
-                              <Edit className="h-4 w-4" />
+                              <Edit className="h-3 w-3 md:h-4 md:w-4" />
                             </Button>
                           </TaskDialog>
                           <Button
@@ -219,24 +233,26 @@ export default function ProjectBoard() {
                             size="icon"
                             className="h-6 w-6"
                           >
-                            <MoreVertical className="h-4 w-4" />
+                            <MoreVertical className="h-3 w-3 md:h-4 md:w-4" />
                           </Button>
                         </div>
                       </div>
                       {task.description && (
-                        <p className="text-sm text-muted-foreground line-clamp-2">
+                        <p className="text-xs md:text-sm text-muted-foreground line-clamp-2">
                           {task.description}
                         </p>
                       )}
-                      <div className="flex items-center justify-between pt-2 border-t">
+                      <div className="flex items-center justify-between pt-2 border-t gap-2">
                         <Badge
                           variant={
                             task.status === "done" ? "default" : "secondary"
                           }
-                          className="rounded-full"
+                          className="rounded-full text-xs flex-shrink-0"
                         >
                           <CheckCircle2 className="h-3 w-3 mr-1" />
-                          {task.status?.replace("_", " ")}
+                          <span className="hidden sm:inline">
+                            {task.status?.replace("_", " ")}
+                          </span>
                         </Badge>
                         {task.task_assignments &&
                           task.task_assignments.length > 0 && (
@@ -247,9 +263,9 @@ export default function ProjectBoard() {
                                   .map((assignment, idx) => (
                                     <Avatar
                                       key={idx}
-                                      className="h-6 w-6 border-2 border-background"
+                                      className="h-5 w-5 md:h-6 md:w-6 border-2 border-background"
                                     >
-                                      <AvatarFallback className="text-xs bg-primary text-primary-foreground">
+                                      <AvatarFallback className="text-[10px] md:text-xs bg-primary text-primary-foreground">
                                         {assignment.profiles?.full_name?.[0] ||
                                           "U"}
                                       </AvatarFallback>
@@ -266,16 +282,16 @@ export default function ProjectBoard() {
                       </div>
                       <div className="flex items-center gap-2 text-muted-foreground">
                         <button className="hover:text-foreground transition-colors">
-                          <Star className="h-4 w-4" />
+                          <Star className="h-3 w-3 md:h-4 md:w-4" />
                         </button>
                         <button className="hover:text-foreground transition-colors">
-                          <MessageSquare className="h-4 w-4" />
+                          <MessageSquare className="h-3 w-3 md:h-4 md:w-4" />
                         </button>
                         <button className="hover:text-foreground transition-colors">
-                          <Paperclip className="h-4 w-4" />
+                          <Paperclip className="h-3 w-3 md:h-4 md:w-4" />
                         </button>
                         <button className="hover:text-foreground transition-colors ml-auto">
-                          <Link2 className="h-4 w-4" />
+                          <Link2 className="h-3 w-3 md:h-4 md:w-4" />
                         </button>
                       </div>
                     </CardContent>
@@ -292,20 +308,8 @@ export default function ProjectBoard() {
         </div>
       )}
 
-      {/* Gantt View Placeholder */}
-      {view === "gantt" && (
-        <Card className="p-8">
-          <div className="text-center space-y-4">
-            <Calendar className="h-16 w-16 mx-auto text-muted-foreground" />
-            <div>
-              <h3 className="text-lg font-semibold">Gantt Chart View</h3>
-              <p className="text-muted-foreground">
-                Timeline visualization coming soon
-              </p>
-            </div>
-          </div>
-        </Card>
-      )}
+      {/* Gantt View */}
+      {view === "gantt" && <GanttChart tasks={tasks} />}
 
       {/* Notifications View */}
       {view === "notifications" && <NotificationSystem />}

@@ -191,6 +191,44 @@ export type Database = {
         };
         Relationships: [];
       };
+      project_groups: {
+        Row: {
+          color: string;
+          created_at: string | null;
+          created_by: string | null;
+          description: string | null;
+          icon: string;
+          id: string;
+          name: string;
+        };
+        Insert: {
+          color: string;
+          created_at?: string | null;
+          created_by?: string | null;
+          description?: string | null;
+          icon: string;
+          id?: string;
+          name: string;
+        };
+        Update: {
+          color?: string;
+          created_at?: string | null;
+          created_by?: string | null;
+          description?: string | null;
+          icon?: string;
+          id?: string;
+          name?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "project_groups_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
       project_members: {
         Row: {
           created_at: string | null;
@@ -239,6 +277,7 @@ export type Database = {
           end_date: string | null;
           id: string;
           name: string;
+          project_group_id: string | null;
           start_date: string | null;
           status: string | null;
         };
@@ -250,6 +289,7 @@ export type Database = {
           end_date?: string | null;
           id?: string;
           name: string;
+          project_group_id?: string | null;
           start_date?: string | null;
           status?: string | null;
         };
@@ -261,6 +301,7 @@ export type Database = {
           end_date?: string | null;
           id?: string;
           name?: string;
+          project_group_id?: string | null;
           start_date?: string | null;
           status?: string | null;
         };
@@ -270,6 +311,13 @@ export type Database = {
             columns: ["created_by"];
             isOneToOne: false;
             referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "projects_project_group_id_fkey";
+            columns: ["project_group_id"];
+            isOneToOne: false;
+            referencedRelation: "project_groups";
             referencedColumns: ["id"];
           }
         ];
@@ -422,13 +470,13 @@ export type Database = {
     Views: {
       [_ in never]: never;
     };
-    Functions: {
-      [_ in never]: never;
-    };
     Enums: {
       app_role: "admin" | "supervisor" | "worker";
       task_status: "todo" | "in_progress" | "blocked" | "done" | "cancelled";
       task_type: "attendance" | "general";
+    };
+    Functions: {
+      [_ in never]: never;
     };
     CompositeTypes: {
       [_ in never]: never;

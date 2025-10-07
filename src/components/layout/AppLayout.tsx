@@ -86,18 +86,22 @@ export function AppLayout() {
     <SidebarProvider>
       <div className="flex min-h-screen w-full">
         <AppSidebar />
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col min-w-0">
           <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-            <div className="flex h-14 items-center gap-4 px-4">
+            <div className="flex h-14 md:h-16 items-center gap-2 md:gap-4 px-3 md:px-6">
               <SidebarTrigger />
               <div className="flex-1" />
-              <Button variant="ghost" size="icon" className="relative">
-                <Bell className="h-5 w-5" />
+              <Button variant="ghost" size="icon" className="relative h-9 w-9">
+                <Bell className="h-4 w-4 md:h-5 md:w-5" />
                 <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-destructive" />
               </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="rounded-full">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="rounded-full h-9 w-9"
+                  >
                     <Avatar className="h-8 w-8">
                       <AvatarFallback className="bg-primary text-primary-foreground">
                         {getInitials()}
@@ -111,7 +115,7 @@ export function AppLayout() {
                       <p className="text-sm font-medium">
                         {profile?.full_name || "User"}
                       </p>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs text-muted-foreground truncate">
                         {user.email}
                       </p>
                       <p className="text-xs text-muted-foreground capitalize">
@@ -144,7 +148,7 @@ export function AppLayout() {
               </DropdownMenu>
             </div>
           </header>
-          <main className="flex-1 p-6">
+          <main className="flex-1 p-3 md:p-6 lg:p-8 overflow-auto">
             <Outlet />
           </main>
         </div>

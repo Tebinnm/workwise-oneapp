@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   Folder,
@@ -9,6 +9,7 @@ import {
   ChevronDown,
   ChevronRight,
   FolderOpen,
+  Trash2,
 } from "lucide-react";
 import {
   Sidebar,
@@ -24,6 +25,16 @@ import {
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { CreateProjectDialog } from "@/components/dialogs/CreateProjectDialog";
@@ -49,6 +60,9 @@ export function AppSidebar() {
   const [projectGroups, setProjectGroups] = useState<ProjectGroup[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  const [hoveredProject, setHoveredProject] = useState<string | null>(null);
+  const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchProjects();
@@ -149,6 +163,31 @@ export function AppSidebar() {
 
     const IconComponent = iconMap[iconName] || Folder;
     return <IconComponent size={size} />;
+  };
+
+  const handleDeleteProject = async () => {
+    if (!projectToDelete) return;
+
+    try {
+      const { error } = await supabase
+        .from("projects")
+        .delete()
+        .eq("id", projectToDelete.id);
+
+      if (error) throw error;
+
+      toast.success("Milestone deleted successfully");
+      setProjectToDelete(null);
+      fetchProjects();
+      fetchProjectGroups();
+
+      // Navigate to dashboard if we're on the deleted project's page
+      if (window.location.pathname.includes(projectToDelete.id)) {
+        navigate("/dashboard");
+      }
+    } catch (error: any) {
+      toast.error(error.message || "Failed to delete milestone");
+    }
   };
 
   return (
@@ -252,20 +291,40 @@ export function AppSidebar() {
                   </div>
                 ) : (
                   filteredProjects.map((project) => (
-                    <SidebarMenuItem key={project.id}>
-                      <SidebarMenuButton asChild>
-                        <NavLink
-                          to={`/projects/${project.id}`}
-                          className={({ isActive }) =>
-                            isActive
-                              ? "bg-sidebar-accent text-sidebar-primary font-medium"
-                              : ""
-                          }
-                        >
-                          <Folder className="h-4 w-4" />
-                          <span className="truncate">{project.name}</span>
-                        </NavLink>
-                      </SidebarMenuButton>
+                    <SidebarMenuItem
+                      key={project.id}
+                      onMouseEnter={() => setHoveredProject(project.id)}
+                      onMouseLeave={() => setHoveredProject(null)}
+                    >
+                      <div className="flex items-center w-full group">
+                        <SidebarMenuButton asChild className="flex-1">
+                          <NavLink
+                            to={`/projects/${project.id}`}
+                            className={({ isActive }) =>
+                              isActive
+                                ? "bg-sidebar-accent text-sidebar-primary font-medium"
+                                : ""
+                            }
+                          >
+                            <Folder className="h-4 w-4" />
+                            <span className="truncate">{project.name}</span>
+                          </NavLink>
+                        </SidebarMenuButton>
+                        {hoveredProject === project.id && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setProjectToDelete(project);
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        )}
+                      </div>
                     </SidebarMenuItem>
                   ))
                 )
@@ -312,22 +371,42 @@ export function AppSidebar() {
                           </div>
                         ) : (
                           group.projects?.map((project) => (
-                            <SidebarMenuItem key={project.id}>
-                              <SidebarMenuButton asChild>
-                                <NavLink
-                                  to={`/projects/${project.id}`}
-                                  className={({ isActive }) =>
-                                    isActive
-                                      ? "bg-sidebar-accent text-sidebar-primary font-medium"
-                                      : ""
-                                  }
-                                >
-                                  <Folder className="h-4 w-4" />
-                                  <span className="truncate">
-                                    {project.name}
-                                  </span>
-                                </NavLink>
-                              </SidebarMenuButton>
+                            <SidebarMenuItem
+                              key={project.id}
+                              onMouseEnter={() => setHoveredProject(project.id)}
+                              onMouseLeave={() => setHoveredProject(null)}
+                            >
+                              <div className="flex items-center w-full group">
+                                <SidebarMenuButton asChild className="flex-1">
+                                  <NavLink
+                                    to={`/projects/${project.id}`}
+                                    className={({ isActive }) =>
+                                      isActive
+                                        ? "bg-sidebar-accent text-sidebar-primary font-medium"
+                                        : ""
+                                    }
+                                  >
+                                    <Folder className="h-4 w-4" />
+                                    <span className="truncate">
+                                      {project.name}
+                                    </span>
+                                  </NavLink>
+                                </SidebarMenuButton>
+                                {hoveredProject === project.id && (
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      setProjectToDelete(project);
+                                    }}
+                                  >
+                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                  </Button>
+                                )}
+                              </div>
                             </SidebarMenuItem>
                           ))
                         )}
@@ -340,6 +419,31 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+
+      <AlertDialog
+        open={!!projectToDelete}
+        onOpenChange={(open) => !open && setProjectToDelete(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Milestone</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{projectToDelete?.name}"? This
+              action cannot be undone and will also delete all tasks associated
+              with this milestone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteProject}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Sidebar>
   );
 }
