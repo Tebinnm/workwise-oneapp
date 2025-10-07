@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -117,8 +116,6 @@ export function TaskDialog({
   });
   const [showRecurrence, setShowRecurrence] = useState(false);
 
-  const navigate = useNavigate();
-
   useEffect(() => {
     if (open) {
       fetchProfiles();
@@ -186,17 +183,42 @@ export function TaskDialog({
       });
     }
 
-    // Fetch and set task assignments
+    // Fetch and set task assignments with attendance types
     const { data: assignments, error } = await supabase
       .from("task_assignments")
       .select("user_id")
       .eq("task_id", task.id);
 
     if (!error && assignments) {
-      const teamAssignmentsData = assignments.map((a) => ({
-        userId: a.user_id,
-        attendanceType: "full_day" as const,
-      }));
+      // Fetch attendance records to get the attendance types
+      const { data: attendanceRecords, error: attendanceError } = await supabase
+        .from("attendance")
+        .select("user_id, attendance_type")
+        .eq("task_id", task.id);
+
+      console.log(
+        "🔍 DEBUG: Loading existing attendance records:",
+        attendanceRecords
+      );
+
+      const teamAssignmentsData = assignments.map((a) => {
+        // Find the attendance record for this user
+        const attendanceRecord = attendanceRecords?.find(
+          (record) => record.user_id === a.user_id
+        );
+
+        return {
+          userId: a.user_id,
+          attendanceType:
+            (attendanceRecord?.attendance_type as
+              | "full_day"
+              | "half_day"
+              | "hour_based"
+              | "leave") || "full_day",
+        };
+      });
+
+      console.log("🔍 DEBUG: Populated team assignments:", teamAssignmentsData);
       setTeamAssignments(teamAssignmentsData);
     }
   };
@@ -307,8 +329,15 @@ export function TaskDialog({
         if (assignmentError) throw assignmentError;
       }
 
-      // Handle attendance integration for each team member (only for new tasks)
-      if (!isEditMode && teamAssignments.length > 0) {
+      // Handle attendance integration for each team member
+      if (teamAssignments.length > 0) {
+        // For edit mode, delete existing attendance records first
+        if (isEditMode) {
+          await supabase
+            .from("attendance")
+            .delete()
+            .eq("task_id", resultTask.id);
+        }
         await handleAttendanceIntegration(resultTask.id, teamAssignments);
       }
 
@@ -379,8 +408,7 @@ export function TaskDialog({
         clock_in: clockIn,
         clock_out: clockOut,
         duration_minutes: durationMinutes,
-        leave_type:
-          assignment.attendanceType === "leave" ? assignment.leaveType : null,
+        attendance_type: assignment.attendanceType,
         approved: false, // Requires supervisor approval
       };
     });
@@ -467,14 +495,16 @@ export function TaskDialog({
   };
 
   const toggleAssignee = (userId: string) => {
-    setTeamAssignments((prev) => {
-      const existing = prev.find((assignment) => assignment.userId === userId);
-      if (existing) {
-        return prev.filter((assignment) => assignment.userId !== userId);
-      } else {
-        return [...prev, { userId, attendanceType: "full_day" as const }];
-      }
-    });
+    if (teamAssignments.find((assignment) => assignment.userId === userId)) {
+      setTeamAssignments((prev) =>
+        prev.filter((assignment) => assignment.userId !== userId)
+      );
+    } else {
+      setTeamAssignments((prev) => [
+        ...prev,
+        { userId, attendanceType: "full_day" as const },
+      ]);
+    }
   };
 
   const updateAssignmentAttendance = (
@@ -911,12 +941,11 @@ export function TaskDialog({
                             ? "border-primary bg-primary/5"
                             : "border-muted hover:bg-muted/50"
                         }`}
-                        onClick={() => toggleAssignee(profile.id)}
                       >
                         <div className="flex items-center space-x-3">
                           <Checkbox
                             checked={isAssigned}
-                            onCheckedChange={() => {}} // Prevent direct checkbox interaction
+                            onCheckedChange={() => toggleAssignee(profile.id)}
                           />
                           <Avatar className="h-10 w-10">
                             <AvatarFallback className="text-sm">
@@ -1055,7 +1084,6 @@ export function TaskDialog({
                         hour_based: `${assignment.hours || 1}h`,
                         leave: assignment.leaveType || "Leave",
                       }[assignment.attendanceType];
-
                       return (
                         <Badge
                           key={assignment.userId}

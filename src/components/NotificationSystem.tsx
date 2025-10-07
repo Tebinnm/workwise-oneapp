@@ -44,6 +44,7 @@ interface PendingAttendance {
   task_title: string;
   clock_in: string;
   duration_minutes: number;
+  attendance_type?: string;
   needs_approval: boolean;
 }
 
@@ -62,6 +63,29 @@ export function NotificationSystem() {
     fetchPendingTasks();
     fetchMissedTasks();
     fetchPendingAttendance();
+
+    // Set up real-time subscription for attendance changes
+    const channel = supabase
+      .channel("attendance-changes")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "attendance",
+        },
+        () => {
+          console.log(
+            "🔄 Real-time: Attendance records changed, refreshing..."
+          );
+          fetchPendingAttendance();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const fetchNotifications = async () => {
@@ -174,6 +198,7 @@ export function NotificationSystem() {
         task_id,
         clock_in,
         duration_minutes,
+        attendance_type,
         approved,
         profiles(full_name),
         tasks(title)
@@ -188,12 +213,19 @@ export function NotificationSystem() {
       return;
     }
 
+    console.log("🔍 DEBUG: Raw attendance data from database:", data);
+    console.log(
+      "🔍 DEBUG: First record attendance_type:",
+      data?.[0]?.attendance_type
+    );
+
     const attendanceData = (data || []).map((record) => ({
       user_id: record.user_id,
       user_name: record.profiles?.full_name || "Unknown User",
       task_title: record.tasks?.title || "Unknown Task",
       clock_in: record.clock_in,
       duration_minutes: record.duration_minutes || 0,
+      attendance_type: record.attendance_type,
       needs_approval: !record.approved,
     }));
 
@@ -519,6 +551,18 @@ export function NotificationSystem() {
                             {formatDuration(attendance.duration_minutes)}
                           </span>
                         </div>
+                        {attendance.attendance_type && (
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <span>
+                              Type:{" "}
+                              <Badge variant="secondary" className="ml-1">
+                                {attendance.attendance_type
+                                  .replace("_", " ")
+                                  .toUpperCase()}
+                              </Badge>
+                            </span>
+                          </div>
+                        )}
                         <div className="flex gap-2 mt-3">
                           <Button
                             size="sm"

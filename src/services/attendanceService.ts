@@ -7,6 +7,7 @@ interface AttendanceRecord {
   clock_in: string;
   clock_out?: string;
   duration_minutes?: number;
+  attendance_type?: string;
   approved: boolean;
   geo_lat?: number;
   geo_lng?: number;
@@ -42,6 +43,7 @@ export class AttendanceService {
           clock_in: startTime.toISOString(),
           clock_out: endTime.toISOString(),
           duration_minutes: durationMinutes,
+          attendance_type: "half_day",
           approved: false, // Requires supervisor approval
         })
         .select()
@@ -79,6 +81,7 @@ export class AttendanceService {
           clock_in: null,
           clock_out: null,
           duration_minutes: 0,
+          attendance_type: "leave",
           approved: false, // Requires supervisor approval
         })
         .select()
