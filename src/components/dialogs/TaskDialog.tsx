@@ -128,7 +128,7 @@ export function TaskDialog({
         resetForm();
       }
     }
-  }, [open, isEditMode, task]);
+  }, [open, isEditMode, task?.id]);
 
   const fetchProfiles = async () => {
     const { data, error } = await supabase
