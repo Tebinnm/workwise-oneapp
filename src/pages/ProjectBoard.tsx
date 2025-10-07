@@ -20,8 +20,7 @@ import {
   Bell,
 } from "lucide-react";
 import { toast } from "sonner";
-import { CreateTaskDialog } from "@/components/dialogs/CreateTaskDialog";
-import { EditTaskDialog } from "@/components/dialogs/EditTaskDialog";
+import { TaskDialog } from "@/components/dialogs/TaskDialog";
 import { NotificationSystem } from "@/components/NotificationSystem";
 
 interface Task {
@@ -161,12 +160,12 @@ export default function ProjectBoard() {
             <Bell className="h-4 w-4 mr-2" />
             Notifications
           </Button> */}
-          <CreateTaskDialog projectId={id!} onSuccess={handleTaskUpdate}>
+          <TaskDialog projectId={id!} onSuccess={handleTaskUpdate}>
             <Button size="sm" className="shadow-glow">
               <Plus className="h-4 w-4 mr-2" />
               Add Task
             </Button>
-          </CreateTaskDialog>
+          </TaskDialog>
         </div>
       </div>
 
@@ -201,7 +200,8 @@ export default function ProjectBoard() {
                           </p>
                         </div>
                         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <EditTaskDialog
+                          <TaskDialog
+                            projectId={id!}
                             task={task}
                             onSuccess={handleTaskUpdate}
                             onDelete={handleTaskDelete}
@@ -213,7 +213,7 @@ export default function ProjectBoard() {
                             >
                               <Edit className="h-4 w-4" />
                             </Button>
-                          </EditTaskDialog>
+                          </TaskDialog>
                           <Button
                             variant="ghost"
                             size="icon"
