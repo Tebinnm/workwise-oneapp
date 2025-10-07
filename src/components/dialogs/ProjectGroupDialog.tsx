@@ -151,8 +151,8 @@ export function ProjectGroupDialog({
       resetForm();
       onGroupCreated?.();
     } catch (error) {
-      console.error("Error creating project group:", error);
-      toast.error("Failed to create project group");
+      console.error("Error creating project :", error);
+      toast.error("Failed to create project ");
     } finally {
       setLoading(false);
     }
@@ -286,7 +286,7 @@ export function ProjectGroupDialog({
         {trigger || (
           <Button variant="outline" size="sm">
             <Plus className="h-4 w-4 mr-2" />
-            Manage Groups
+            Manage projects
           </Button>
         )}
       </DialogTrigger>
@@ -475,4 +475,3 @@ export function ProjectGroupDialog({
     </Dialog>
   );
 }
-

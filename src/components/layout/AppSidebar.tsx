@@ -181,35 +181,40 @@ export function AppSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <div className="flex items-center justify-between px-2 mb-3">
+          <div className="flex flex-col px-2 mb-3 gap-2">
             <SidebarGroupLabel>Projects</SidebarGroupLabel>
-            <div className="flex space-x-1">
-              <ProjectGroupDialog onGroupCreated={fetchProjectGroups}>
+
+            <ProjectGroupDialog
+              onGroupCreated={fetchProjectGroups}
+              trigger={
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-6 w-6 p-0 bg-slate-600"
-                  title="Manage Groups"
+                  className="w-full justify-start h-8"
+                  title="Manage projects"
                 >
-                  <Folder className="h-4 w-4" />
+                  <Folder className="h-4 w-4 mr-2" />
+                  Manage Projects
                 </Button>
-              </ProjectGroupDialog>
-              <CreateProjectDialog
-                onSuccess={() => {
-                  fetchProjects();
-                  fetchProjectGroups();
-                }}
+              }
+            />
+
+            <CreateProjectDialog
+              onSuccess={() => {
+                fetchProjects();
+                fetchProjectGroups();
+              }}
+            >
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full justify-start h-8"
+                title="Create milestone"
               >
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-6 w-6 p-0 hover:bg-sidebar-accent hover:text-sidebar-primary"
-                  title="Create Project"
-                >
-                  <Plus className="h-4 w-4" />
-                </Button>
-              </CreateProjectDialog>
-            </div>
+                <Plus className="h-4 w-4 mr-2" />
+                Create Milestone
+              </Button>
+            </CreateProjectDialog>
           </div>
 
           <div className="px-2 mb-3">

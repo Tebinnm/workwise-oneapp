@@ -128,7 +128,7 @@ export function CreateProjectDialog({
       onSuccess?.();
       navigate(`/projects/${data.id}`);
     } catch (error: any) {
-      toast.error(error.message || "Failed to create project");
+      toast.error(error.message || "Failed to create milestone");
     } finally {
       setLoading(false);
     }
@@ -152,17 +152,17 @@ export function CreateProjectDialog({
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Create New Project</DialogTitle>
+          <DialogTitle>Create New Milestone</DialogTitle>
           <DialogDescription>
-            Add a new project to start managing tasks and team members.
+            Add a new Milestone to start managing tasks and team members.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="name">Project Name *</Label>
+            <Label htmlFor="name">Milestone Name *</Label>
             <Input
               id="name"
-              placeholder="Enter project name"
+              placeholder="Enter Milestone name"
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
@@ -173,7 +173,7 @@ export function CreateProjectDialog({
             <Label htmlFor="description">Description</Label>
             <Textarea
               id="description"
-              placeholder="Brief description of the project"
+              placeholder="Brief description of the Milestone"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
@@ -182,20 +182,20 @@ export function CreateProjectDialog({
 
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label htmlFor="projectGroup">Project Group</Label>
+              <Label htmlFor="projectGroup">Project</Label>
               <ProjectGroupDialog onGroupCreated={handleGroupCreated}>
                 <Button variant="outline" size="sm" type="button">
                   <Plus className="h-4 w-4 mr-1" />
-                  New Group
+                  New Project
                 </Button>
               </ProjectGroupDialog>
             </div>
             <Select value={projectGroupId} onValueChange={setProjectGroupId}>
               <SelectTrigger>
-                <SelectValue placeholder="Select a project group (optional)" />
+                <SelectValue placeholder="Select a Project (optional)" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="none">No Group</SelectItem>
+                <SelectItem value="none">No Project</SelectItem>
                 {loadingGroups ? (
                   <SelectItem value="loading" disabled>
                     Loading groups...
@@ -294,7 +294,7 @@ export function CreateProjectDialog({
             </Button>
             <Button type="submit" disabled={loading}>
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Create Project
+              Create milestone
             </Button>
           </div>
         </form>
