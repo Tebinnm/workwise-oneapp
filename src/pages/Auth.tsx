@@ -30,6 +30,9 @@ export default function Auth() {
 
         if (error) throw error;
 
+        // Ensure profile exists after login
+        await ensureUserProfile();
+
         toast.success("Welcome back!");
         navigate("/dashboard");
       } else {
@@ -46,12 +49,51 @@ export default function Auth() {
 
         if (error) throw error;
 
+        // Create profile manually after signup
+        await createUserProfile(fullName);
+
         toast.success("Account created! Please check your email to verify.");
       }
     } catch (error: any) {
       toast.error(error.message || "An error occurred");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const ensureUserProfile = async () => {
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (user) {
+        // Direct insert without any RLS or functions
+        await supabase.from("profiles").upsert({
+          id: user.id,
+          full_name: user.user_metadata?.full_name || "",
+          role: "worker",
+        });
+      }
+    } catch (error) {
+      console.error("Error ensuring user profile:", error);
+    }
+  };
+
+  const createUserProfile = async (fullName: string) => {
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (user) {
+        // Direct insert without any RLS or functions
+        await supabase.from("profiles").upsert({
+          id: user.id,
+          full_name: fullName,
+          role: "worker",
+        });
+      }
+    } catch (error) {
+      console.error("Error creating user profile:", error);
     }
   };
 
@@ -128,7 +170,9 @@ export default function Auth() {
             </Button>
 
             <div className="text-center text-sm">
-              {isLogin ? "Don't have an account? " : "Already have an account? "}
+              {isLogin
+                ? "Don't have an account? "
+                : "Already have an account? "}
               <button
                 type="button"
                 onClick={() => setIsLogin(!isLogin)}

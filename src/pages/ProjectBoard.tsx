@@ -15,8 +15,14 @@ import {
   MessageSquare,
   Paperclip,
   Link2,
+  Edit,
+  Trash2,
+  Bell,
 } from "lucide-react";
 import { toast } from "sonner";
+import { CreateTaskDialog } from "@/components/dialogs/CreateTaskDialog";
+import { EditTaskDialog } from "@/components/dialogs/EditTaskDialog";
+import { NotificationSystem } from "@/components/NotificationSystem";
 
 interface Task {
   id: string;
@@ -42,7 +48,10 @@ export default function ProjectBoard() {
   const { id } = useParams();
   const [project, setProject] = useState<any>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [view, setView] = useState<"kanban" | "gantt">("kanban");
+  const [view, setView] = useState<"kanban" | "gantt" | "notifications">(
+    "kanban"
+  );
+  const [showNotifications, setShowNotifications] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -111,6 +120,14 @@ export default function ProjectBoard() {
     return tasks.filter((task) => task.status === status);
   };
 
+  const handleTaskUpdate = () => {
+    fetchTasks();
+  };
+
+  const handleTaskDelete = () => {
+    fetchTasks();
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -136,10 +153,20 @@ export default function ProjectBoard() {
             <Calendar className="h-4 w-4 mr-2" />
             Gantt
           </Button>
-          <Button size="sm" className="shadow-glow">
-            <Plus className="h-4 w-4 mr-2" />
-            Add Task
-          </Button>
+          {/* <Button
+            variant={view === "notifications" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setView("notifications")}
+          >
+            <Bell className="h-4 w-4 mr-2" />
+            Notifications
+          </Button> */}
+          <CreateTaskDialog projectId={id!} onSuccess={handleTaskUpdate}>
+            <Button size="sm" className="shadow-glow">
+              <Plus className="h-4 w-4 mr-2" />
+              Add Task
+            </Button>
+          </CreateTaskDialog>
         </div>
       </div>
 
@@ -173,13 +200,28 @@ export default function ProjectBoard() {
                             {task.created_at.substring(0, 10)}
                           </p>
                         </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <EditTaskDialog
+                            task={task}
+                            onSuccess={handleTaskUpdate}
+                            onDelete={handleTaskDelete}
+                          >
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                          </EditTaskDialog>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6"
+                          >
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
                       {task.description && (
                         <p className="text-sm text-muted-foreground line-clamp-2">
@@ -188,33 +230,39 @@ export default function ProjectBoard() {
                       )}
                       <div className="flex items-center justify-between pt-2 border-t">
                         <Badge
-                          variant={task.status === "done" ? "default" : "secondary"}
+                          variant={
+                            task.status === "done" ? "default" : "secondary"
+                          }
                           className="rounded-full"
                         >
                           <CheckCircle2 className="h-3 w-3 mr-1" />
                           {task.status?.replace("_", " ")}
                         </Badge>
-                        {task.task_assignments && task.task_assignments.length > 0 && (
-                          <div className="flex items-center gap-2">
-                            <div className="flex -space-x-2">
-                              {task.task_assignments.slice(0, 3).map((assignment, idx) => (
-                                <Avatar
-                                  key={idx}
-                                  className="h-6 w-6 border-2 border-background"
-                                >
-                                  <AvatarFallback className="text-xs bg-primary text-primary-foreground">
-                                    {assignment.profiles?.full_name?.[0] || "U"}
-                                  </AvatarFallback>
-                                </Avatar>
-                              ))}
+                        {task.task_assignments &&
+                          task.task_assignments.length > 0 && (
+                            <div className="flex items-center gap-2">
+                              <div className="flex -space-x-2">
+                                {task.task_assignments
+                                  .slice(0, 3)
+                                  .map((assignment, idx) => (
+                                    <Avatar
+                                      key={idx}
+                                      className="h-6 w-6 border-2 border-background"
+                                    >
+                                      <AvatarFallback className="text-xs bg-primary text-primary-foreground">
+                                        {assignment.profiles?.full_name?.[0] ||
+                                          "U"}
+                                      </AvatarFallback>
+                                    </Avatar>
+                                  ))}
+                              </div>
+                              {task.task_assignments.length > 3 && (
+                                <span className="text-xs text-muted-foreground">
+                                  +{task.task_assignments.length - 3}
+                                </span>
+                              )}
                             </div>
-                            {task.task_assignments.length > 3 && (
-                              <span className="text-xs text-muted-foreground">
-                                +{task.task_assignments.length - 3}
-                              </span>
-                            )}
-                          </div>
-                        )}
+                          )}
                       </div>
                       <div className="flex items-center gap-2 text-muted-foreground">
                         <button className="hover:text-foreground transition-colors">
@@ -258,6 +306,9 @@ export default function ProjectBoard() {
           </div>
         </Card>
       )}
+
+      {/* Notifications View */}
+      {view === "notifications" && <NotificationSystem />}
     </div>
   );
 }

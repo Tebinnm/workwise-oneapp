@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Dialog,
@@ -18,11 +18,27 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { CalendarIcon, Loader2 } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { CalendarIcon, Loader2, Folder, Plus } from "lucide-react";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { ProjectGroupDialog } from "./ProjectGroupDialog";
+
+interface ProjectGroup {
+  id: string;
+  name: string;
+  description: string | null;
+  color: string;
+  icon: string;
+}
 
 interface CreateProjectDialogProps {
   children: React.ReactNode;
@@ -40,7 +56,40 @@ export function CreateProjectDialog({
   const [startDate, setStartDate] = useState<Date>();
   const [endDate, setEndDate] = useState<Date>();
   const [budget, setBudget] = useState("");
+  const [projectGroupId, setProjectGroupId] = useState<string>("none");
+  const [projectGroups, setProjectGroups] = useState<ProjectGroup[]>([]);
+  const [loadingGroups, setLoadingGroups] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (open) {
+      fetchProjectGroups();
+    }
+  }, [open]);
+
+  const fetchProjectGroups = async () => {
+    try {
+      setLoadingGroups(true);
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from("project_groups")
+        .select("*")
+        .eq("created_by", user.id)
+        .order("name");
+
+      if (error) throw error;
+      setProjectGroups(data || []);
+    } catch (error) {
+      console.error("Error fetching project groups:", error);
+      toast.error("Failed to fetch project groups");
+    } finally {
+      setLoadingGroups(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -64,6 +113,8 @@ export function CreateProjectDialog({
           start_date: startDate ? format(startDate, "yyyy-MM-dd") : null,
           end_date: endDate ? format(endDate, "yyyy-MM-dd") : null,
           budget: budget ? parseFloat(budget) : null,
+          project_group_id:
+            projectGroupId && projectGroupId !== "none" ? projectGroupId : null,
           created_by: user.id,
         })
         .select()
@@ -89,6 +140,11 @@ export function CreateProjectDialog({
     setStartDate(undefined);
     setEndDate(undefined);
     setBudget("");
+    setProjectGroupId("none");
+  };
+
+  const handleGroupCreated = () => {
+    fetchProjectGroups();
   };
 
   return (
@@ -122,6 +178,43 @@ export function CreateProjectDialog({
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
             />
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="projectGroup">Project Group</Label>
+              <ProjectGroupDialog onGroupCreated={handleGroupCreated}>
+                <Button variant="outline" size="sm" type="button">
+                  <Plus className="h-4 w-4 mr-1" />
+                  New Group
+                </Button>
+              </ProjectGroupDialog>
+            </div>
+            <Select value={projectGroupId} onValueChange={setProjectGroupId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select a project group (optional)" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">No Group</SelectItem>
+                {loadingGroups ? (
+                  <SelectItem value="loading" disabled>
+                    Loading groups...
+                  </SelectItem>
+                ) : (
+                  projectGroups.map((group) => (
+                    <SelectItem key={group.id} value={group.id}>
+                      <div className="flex items-center space-x-2">
+                        <div
+                          className="w-3 h-3 rounded-full"
+                          style={{ backgroundColor: group.color }}
+                        />
+                        <span>{group.name}</span>
+                      </div>
+                    </SelectItem>
+                  ))
+                )}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
