@@ -51,7 +51,7 @@ export class RecurringTaskService {
       const newTasks = [];
 
       for (const task of recurringTasks) {
-        const recurrence = task.recurrence as RecurrenceConfig;
+        const recurrence = task.recurrence as unknown as RecurrenceConfig;
         const shouldCreateInstance = await this.shouldCreateRecurringInstance(
           task,
           recurrence,
@@ -414,7 +414,7 @@ export class RecurringTaskService {
 
       // Count by recurrence type
       recurringTasks.forEach((task) => {
-        const recurrence = task.recurrence as RecurrenceConfig;
+        const recurrence = task.recurrence as unknown as RecurrenceConfig;
         const type = recurrence.type;
         stats.byType[type] = (stats.byType[type] || 0) + 1;
       });

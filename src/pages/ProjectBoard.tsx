@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { TaskDialog } from "@/components/dialogs/TaskDialog";
-import { NotificationSystem } from "@/components/NotificationSystem";
+
 
 interface Task {
   id: string;
@@ -47,10 +47,7 @@ export default function ProjectBoard() {
   const { id } = useParams();
   const [project, setProject] = useState<any>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [view, setView] = useState<"kanban" | "gantt" | "notifications">(
-    "kanban"
-  );
-  const [showNotifications, setShowNotifications] = useState(false);
+  const [view, setView] = useState<"kanban" | "gantt">("kanban");
 
   useEffect(() => {
     if (id) {
@@ -152,14 +149,6 @@ export default function ProjectBoard() {
             <Calendar className="h-4 w-4 mr-2" />
             Gantt
           </Button>
-          {/* <Button
-            variant={view === "notifications" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setView("notifications")}
-          >
-            <Bell className="h-4 w-4 mr-2" />
-            Notifications
-          </Button> */}
           <TaskDialog projectId={id!} onSuccess={handleTaskUpdate}>
             <Button size="sm" className="shadow-glow">
               <Plus className="h-4 w-4 mr-2" />
@@ -306,9 +295,6 @@ export default function ProjectBoard() {
           </div>
         </Card>
       )}
-
-      {/* Notifications View */}
-      {view === "notifications" && <NotificationSystem />}
     </div>
   );
 }
