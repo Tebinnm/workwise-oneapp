@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { BudgetService, AttendanceStatus } from "@/services/budgetService";
 import {
   Dialog,
   DialogContent,
@@ -70,6 +71,7 @@ interface TeamMemberAssignment {
   attendanceType: "full_day" | "half_day" | "hour_based" | "leave";
   hours?: number; // For hour_based attendance
   leaveType?: "sick" | "vacation" | "personal"; // For leave attendance
+  calculatedBudget?: number; // Real-time budget calculation
 }
 
 export function TaskDialog({
@@ -374,17 +376,20 @@ export function TaskDialog({
       let clockIn = null;
       let clockOut = null;
       let durationMinutes = null;
+      let attendanceStatus = null;
 
       switch (assignment.attendanceType) {
         case "full_day":
           clockIn = now.toISOString();
           clockOut = new Date(now.getTime() + 8 * 60 * 60 * 1000).toISOString(); // 8 hours
           durationMinutes = 480; // 8 hours in minutes
+          attendanceStatus = "full_day";
           break;
         case "half_day":
           clockIn = now.toISOString();
           clockOut = new Date(now.getTime() + 4 * 60 * 60 * 1000).toISOString(); // 4 hours
           durationMinutes = 240; // 4 hours in minutes
+          attendanceStatus = "half_day";
           break;
         case "hour_based":
           clockIn = now.toISOString();
@@ -393,12 +398,15 @@ export function TaskDialog({
             now.getTime() + hours * 60 * 60 * 1000
           ).toISOString();
           durationMinutes = hours * 60;
+          // Map hour-based to full_day or half_day based on hours
+          attendanceStatus = hours >= 6 ? "full_day" : "half_day";
           break;
         case "leave":
           // Leave records don't have clock in/out times
           clockIn = null;
           clockOut = null;
           durationMinutes = 0;
+          attendanceStatus = "absent";
           break;
       }
 
@@ -409,6 +417,7 @@ export function TaskDialog({
         clock_out: clockOut,
         duration_minutes: durationMinutes,
         attendance_type: assignment.attendanceType,
+        attendance_status: attendanceStatus,
         approved: false, // Requires supervisor approval
       };
     });
@@ -494,32 +503,104 @@ export function TaskDialog({
     setTeamAssignments([]);
   };
 
-  const toggleAssignee = (userId: string) => {
+  const toggleAssignee = async (userId: string) => {
     if (teamAssignments.find((assignment) => assignment.userId === userId)) {
       setTeamAssignments((prev) =>
         prev.filter((assignment) => assignment.userId !== userId)
       );
     } else {
+      // Calculate budget for new assignment
+      const budget = await calculateMemberBudget(userId, "full_day");
       setTeamAssignments((prev) => [
         ...prev,
-        { userId, attendanceType: "full_day" as const },
+        {
+          userId,
+          attendanceType: "full_day" as const,
+          calculatedBudget: budget,
+        },
       ]);
     }
   };
 
-  const updateAssignmentAttendance = (
+  const updateAssignmentAttendance = async (
     userId: string,
     attendanceType: "full_day" | "half_day" | "hour_based" | "leave",
     hours?: number,
     leaveType?: "sick" | "vacation" | "personal"
   ) => {
+    // Calculate budget when attendance changes
+    const budget = await calculateMemberBudget(userId, attendanceType, hours);
+
     setTeamAssignments((prev) =>
       prev.map((assignment) =>
         assignment.userId === userId
-          ? { ...assignment, attendanceType, hours, leaveType }
+          ? {
+              ...assignment,
+              attendanceType,
+              hours,
+              leaveType,
+              calculatedBudget: budget,
+            }
           : assignment
       )
     );
+  };
+
+  const calculateMemberBudget = async (
+    userId: string,
+    attendanceType: string,
+    hours?: number
+  ): Promise<number> => {
+    try {
+      // Get member wage config
+      const wageConfig = await BudgetService.getMemberWageConfig(
+        userId,
+        projectId
+      );
+      if (!wageConfig) return 0;
+
+      // Calculate daily rate
+      const dailyRate =
+        wageConfig.wage_type === "daily"
+          ? wageConfig.daily_rate || 0
+          : wageConfig.monthly_salary
+          ? wageConfig.monthly_salary /
+            (wageConfig.default_working_days_per_month || 26)
+          : 0;
+
+      // Map attendance type to budget calculation
+      let attendanceStatus: AttendanceStatus = null;
+      if (attendanceType === "full_day") {
+        attendanceStatus = "full_day";
+      } else if (attendanceType === "half_day") {
+        attendanceStatus = "half_day";
+      } else if (attendanceType === "hour_based") {
+        // Calculate based on hours
+        const hoursValue = hours || 1;
+        return (dailyRate / 8) * hoursValue; // Assuming 8-hour workday
+      } else if (attendanceType === "leave") {
+        attendanceStatus = "absent";
+      }
+
+      return BudgetService.calculateTaskBudget(dailyRate, attendanceStatus);
+    } catch (error) {
+      console.error("Error calculating member budget:", error);
+      return 0;
+    }
+  };
+
+  const getTotalTaskBudget = (): number => {
+    return teamAssignments.reduce(
+      (total, assignment) => total + (assignment.calculatedBudget || 0),
+      0
+    );
+  };
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+    }).format(amount);
   };
 
   const getAssignmentForUser = (
@@ -1029,6 +1110,22 @@ export function TaskDialog({
                               </div>
                             )}
 
+                            {/* Budget Calculation Display */}
+                            {assignment.calculatedBudget !== undefined && (
+                              <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-sm font-medium text-green-800">
+                                    Calculated Budget:
+                                  </span>
+                                  <span className="text-sm font-bold text-green-900">
+                                    {formatCurrency(
+                                      assignment.calculatedBudget
+                                    )}
+                                  </span>
+                                </div>
+                              </div>
+                            )}
+
                             {assignment.attendanceType === "leave" && (
                               <div className="space-y-2">
                                 <Label className="text-sm">Leave Type</Label>
@@ -1071,39 +1168,56 @@ export function TaskDialog({
               </div>
 
               {teamAssignments.length > 0 && (
-                <div className="space-y-2">
-                  <Label>Selected Assignees ({teamAssignments.length})</Label>
-                  <div className="flex flex-wrap gap-2">
-                    {teamAssignments.map((assignment) => {
-                      const profile = profiles.find(
-                        (p) => p.id === assignment.userId
-                      );
-                      const attendanceLabel = {
-                        full_day: "Full Day",
-                        half_day: "Half Day",
-                        hour_based: `${assignment.hours || 1}h`,
-                        leave: assignment.leaveType || "Leave",
-                      }[assignment.attendanceType];
-                      return (
-                        <Badge
-                          key={assignment.userId}
-                          variant="secondary"
-                          className="flex items-center gap-1"
-                        >
-                          <Avatar className="h-4 w-4">
-                            <AvatarFallback className="text-xs">
-                              {profile?.full_name?.[0] || "U"}
-                            </AvatarFallback>
-                          </Avatar>
-                          <span className="text-xs">
-                            {profile?.full_name || "Unknown"} -{" "}
-                            {attendanceLabel}
-                          </span>
-                        </Badge>
-                      );
-                    })}
+                <>
+                  <div className="space-y-2">
+                    <Label>Selected Assignees ({teamAssignments.length})</Label>
+                    <div className="flex flex-wrap gap-2">
+                      {teamAssignments.map((assignment) => {
+                        const profile = profiles.find(
+                          (p) => p.id === assignment.userId
+                        );
+                        const attendanceLabel = {
+                          full_day: "Full Day",
+                          half_day: "Half Day",
+                          hour_based: `${assignment.hours || 1}h`,
+                          leave: assignment.leaveType || "Leave",
+                        }[assignment.attendanceType];
+                        return (
+                          <Badge
+                            key={assignment.userId}
+                            variant="secondary"
+                            className="flex items-center gap-1"
+                          >
+                            <Avatar className="h-4 w-4">
+                              <AvatarFallback className="text-xs">
+                                {profile?.full_name?.[0] || "U"}
+                              </AvatarFallback>
+                            </Avatar>
+                            <span className="text-xs">
+                              {profile?.full_name || "Unknown"} -{" "}
+                              {attendanceLabel}
+                            </span>
+                          </Badge>
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
+
+                  {/* Total Task Budget */}
+                  <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium">Total Task Budget</p>
+                        <p className="text-lg text-muted-foreground">
+                          Sum of all member budgets for this task
+                        </p>
+                      </div>
+                      <p className="text-2xl font-bold text-primary">
+                        {formatCurrency(getTotalTaskBudget())}
+                      </p>
+                    </div>
+                  </div>
+                </>
               )}
             </CardContent>
           </Card>

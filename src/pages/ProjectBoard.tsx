@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -18,11 +18,14 @@ import {
   Edit,
   Trash2,
   Bell,
+  DollarSign,
+  TrendingUp,
 } from "lucide-react";
 import { toast } from "sonner";
 import { TaskDialog } from "@/components/dialogs/TaskDialog";
 import { NotificationSystem } from "@/components/NotificationSystem";
 import { GanttChart } from "@/components/GanttChart";
+import { BudgetService } from "@/services/budgetService";
 
 interface Task {
   id: string;
@@ -48,17 +51,20 @@ const statusColumns = [
 
 export default function ProjectBoard() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [project, setProject] = useState<any>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [view, setView] = useState<"kanban" | "gantt" | "notifications">(
     "kanban"
   );
   const [showNotifications, setShowNotifications] = useState(false);
+  const [budgetSummary, setBudgetSummary] = useState<any>(null);
 
   useEffect(() => {
     if (id) {
       fetchProject();
       fetchTasks();
+      fetchBudgetSummary();
 
       const channel = supabase
         .channel(`project-${id}-tasks`)
@@ -72,6 +78,7 @@ export default function ProjectBoard() {
           },
           () => {
             fetchTasks();
+            fetchBudgetSummary();
           }
         )
         .subscribe();
@@ -118,6 +125,22 @@ export default function ProjectBoard() {
     setTasks(data as Task[]);
   };
 
+  const fetchBudgetSummary = async () => {
+    try {
+      const report = await BudgetService.generateProjectBudgetReport(id!);
+      setBudgetSummary(report);
+    } catch (error) {
+      console.error("Error fetching budget summary:", error);
+    }
+  };
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+    }).format(amount);
+  };
+
   const getTasksByStatus = (status: string) => {
     return tasks.filter((task) => task.status === status);
   };
@@ -161,15 +184,15 @@ export default function ProjectBoard() {
             <Calendar className="h-4 w-4 sm:mr-2" />
             <span className="hidden sm:inline">Gantt</span>
           </Button>
-          {/* <Button
-            variant={view === "notifications" ? "default" : "outline"}
+          <Button
+            variant="outline"
             size="sm"
-            onClick={() => setView("notifications")}
+            onClick={() => navigate(`/budget-report/${id}`)}
             className="flex-1 sm:flex-none"
           >
-            <Bell className="h-4 w-4 sm:mr-2" />
-            <span className="hidden sm:inline">Notifications</span>
-          </Button> */}
+            <DollarSign className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Budget</span>
+          </Button>
           <TaskDialog projectId={id!} onSuccess={handleTaskUpdate}>
             <Button size="sm" className="shadow-glow flex-1 sm:flex-none">
               <Plus className="h-4 w-4 sm:mr-2" />
@@ -178,6 +201,60 @@ export default function ProjectBoard() {
           </TaskDialog>
         </div>
       </div>
+
+      {/* Budget Summary Card */}
+      {budgetSummary && (
+        <Card className="border-primary/20 bg-gradient-to-r from-primary/5 to-primary/10">
+          <CardContent className="p-4 md:p-6">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+              <div className="space-y-1">
+                <h3 className="text-lg font-semibold flex items-center gap-2">
+                  <DollarSign className="h-5 w-5 text-primary" />
+                  Project Budget Overview
+                </h3>
+                <p className="text-lg text-muted-foreground">
+                  Real-time budget tracking based on attendance
+                </p>
+              </div>
+              <div className="grid grid-cols-3 gap-4 md:gap-6 w-full md:w-auto">
+                <div className="text-center">
+                  <p className="text-xs text-muted-foreground mb-1">
+                    Allocated
+                  </p>
+                  <p className="text-lg font-bold">
+                    {formatCurrency(budgetSummary.total_budget_allocated)}
+                  </p>
+                </div>
+                <div className="text-center">
+                  <p className="text-xs text-muted-foreground mb-1">Spent</p>
+                  <p className="text-lg font-bold text-primary">
+                    {formatCurrency(budgetSummary.total_budget_spent)}
+                  </p>
+                </div>
+                <div className="text-center">
+                  <p className="text-xs text-muted-foreground mb-1">
+                    Remaining
+                  </p>
+                  <p className="text-lg font-bold text-success">
+                    {formatCurrency(
+                      budgetSummary.total_budget_allocated -
+                        budgetSummary.total_budget_spent
+                    )}
+                  </p>
+                </div>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate(`/budget-report/${id}`)}
+              >
+                View Details
+                <TrendingUp className="h-4 w-4 ml-2" />
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Kanban Board */}
       {view === "kanban" && (

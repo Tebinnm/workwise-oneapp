@@ -10,6 +10,7 @@ import {
   ChevronRight,
   FolderOpen,
   Trash2,
+  Users,
 } from "lucide-react";
 import {
   Sidebar,
@@ -195,7 +196,17 @@ export function AppSidebar() {
       <SidebarHeader className="border-b border-sidebar-border px-4 py-4">
         <Logo className="text-sidebar-foreground" />
       </SidebarHeader>
-
+      <div className="px-2 mb-3">
+        <div className="relative">
+          <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-8 h-8 bg-sidebar-accent border-sidebar-border text-sidebar-foreground placeholder:text-muted-foreground"
+          />
+        </div>
+      </div>
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupContent>
@@ -212,6 +223,21 @@ export function AppSidebar() {
                   >
                     <LayoutDashboard className="h-4 w-4" />
                     <span>Dashboard</span>
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <NavLink
+                    to="/users"
+                    className={({ isActive }) =>
+                      isActive
+                        ? "bg-sidebar-accent text-sidebar-primary font-medium"
+                        : ""
+                    }
+                  >
+                    <Users className="h-4 w-4" />
+                    <span>User Management</span>
                   </NavLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -254,18 +280,6 @@ export function AppSidebar() {
                 Create Milestone
               </Button>
             </CreateProjectDialog>
-          </div>
-
-          <div className="px-2 mb-3">
-            <div className="relative">
-              <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-8 h-8 bg-sidebar-accent border-sidebar-border text-sidebar-foreground placeholder:text-muted-foreground"
-              />
-            </div>
           </div>
 
           <SidebarGroupContent>

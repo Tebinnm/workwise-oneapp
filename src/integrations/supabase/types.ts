@@ -17,6 +17,7 @@ export type Database = {
       attendance: {
         Row: {
           approved: boolean | null;
+          attendance_status: string | null;
           attendance_type: string | null;
           clock_in: string | null;
           clock_out: string | null;
@@ -30,6 +31,7 @@ export type Database = {
         };
         Insert: {
           approved?: boolean | null;
+          attendance_status?: string | null;
           attendance_type?: string | null;
           clock_in?: string | null;
           clock_out?: string | null;
@@ -43,6 +45,7 @@ export type Database = {
         };
         Update: {
           approved?: boolean | null;
+          attendance_status?: string | null;
           attendance_type?: string | null;
           clock_in?: string | null;
           clock_out?: string | null;
@@ -164,30 +167,90 @@ export type Database = {
           }
         ];
       };
-      profiles: {
+      member_wage_config: {
         Row: {
           created_at: string | null;
-          full_name: string | null;
-          hourly_rate: number | null;
+          daily_rate: number | null;
+          default_working_days_per_month: number | null;
           id: string;
-          phone: string | null;
-          role: Database["public"]["Enums"]["app_role"];
+          monthly_salary: number | null;
+          project_id: string | null;
+          user_id: string;
+          wage_type: string | null;
         };
         Insert: {
           created_at?: string | null;
-          full_name?: string | null;
-          hourly_rate?: number | null;
-          id: string;
-          phone?: string | null;
-          role?: Database["public"]["Enums"]["app_role"];
+          daily_rate?: number | null;
+          default_working_days_per_month?: number | null;
+          id?: string;
+          monthly_salary?: number | null;
+          project_id?: string | null;
+          user_id: string;
+          wage_type?: string | null;
         };
         Update: {
           created_at?: string | null;
+          daily_rate?: number | null;
+          default_working_days_per_month?: number | null;
+          id?: string;
+          monthly_salary?: number | null;
+          project_id?: string | null;
+          user_id?: string;
+          wage_type?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "member_wage_config_project_id_fkey";
+            columns: ["project_id"];
+            isOneToOne: false;
+            referencedRelation: "projects";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "member_wage_config_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      profiles: {
+        Row: {
+          created_at: string | null;
+          daily_rate: number | null;
+          default_working_days_per_month: number | null;
+          full_name: string | null;
+          hourly_rate: number | null;
+          id: string;
+          monthly_salary: number | null;
+          phone: string | null;
+          role: Database["public"]["Enums"]["app_role"];
+          wage_type: string | null;
+        };
+        Insert: {
+          created_at?: string | null;
+          daily_rate?: number | null;
+          default_working_days_per_month?: number | null;
+          full_name?: string | null;
+          hourly_rate?: number | null;
+          id: string;
+          monthly_salary?: number | null;
+          phone?: string | null;
+          role?: Database["public"]["Enums"]["app_role"];
+          wage_type?: string | null;
+        };
+        Update: {
+          created_at?: string | null;
+          daily_rate?: number | null;
+          default_working_days_per_month?: number | null;
           full_name?: string | null;
           hourly_rate?: number | null;
           id?: string;
+          monthly_salary?: number | null;
           phone?: string | null;
           role?: Database["public"]["Enums"]["app_role"];
+          wage_type?: string | null;
         };
         Relationships: [];
       };
