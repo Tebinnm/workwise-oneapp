@@ -4,6 +4,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Clock,
   CheckCircle2,
@@ -11,9 +20,21 @@ import {
   Play,
   LogOut,
   MoreVertical,
+  Calendar,
+  Filter,
+  ListTodo,
+  PlayCircle,
+  CheckCircle,
 } from "lucide-react";
 import { toast } from "sonner";
-import { format } from "date-fns";
+import {
+  format,
+  startOfDay,
+  endOfDay,
+  subDays,
+  subWeeks,
+  subMonths,
+} from "date-fns";
 
 interface Task {
   id: string;
@@ -45,11 +66,85 @@ export default function Dashboard() {
   const [checkedIn, setCheckedIn] = useState(false);
   const [checkInTime, setCheckInTime] = useState<Date | null>(null);
 
+  // New state for task counts and date filtering
+  const [taskCounts, setTaskCounts] = useState({
+    todo: 0,
+    in_progress: 0,
+    done: 0,
+  });
+  const [dateFilter, setDateFilter] = useState("all");
+  const [customDateRange, setCustomDateRange] = useState({
+    start: "",
+    end: "",
+  });
+  const [allTasks, setAllTasks] = useState<Task[]>([]);
+
   useEffect(() => {
     fetchDashboardData();
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    if (allTasks.length > 0) {
+      calculateTaskCounts();
+    }
+  }, [allTasks, dateFilter, customDateRange]);
+
+  const calculateTaskCounts = () => {
+    let filteredTasks = [...allTasks];
+
+    // Apply date filter
+    if (dateFilter !== "all") {
+      const now = new Date();
+      let startDate: Date;
+      let endDate: Date = now;
+
+      switch (dateFilter) {
+        case "today":
+          startDate = startOfDay(now);
+          endDate = endOfDay(now);
+          break;
+        case "yesterday":
+          startDate = startOfDay(subDays(now, 1));
+          endDate = endOfDay(subDays(now, 1));
+          break;
+        case "week":
+          startDate = startOfDay(subWeeks(now, 1));
+          endDate = endOfDay(now);
+          break;
+        case "month":
+          startDate = startOfDay(subMonths(now, 1));
+          endDate = endOfDay(now);
+          break;
+        case "custom":
+          if (customDateRange.start && customDateRange.end) {
+            startDate = startOfDay(new Date(customDateRange.start));
+            endDate = endOfDay(new Date(customDateRange.end));
+          } else {
+            return; // Don't filter if custom dates are not set
+          }
+          break;
+        default:
+          return;
+      }
+
+      filteredTasks = allTasks.filter((task) => {
+        const taskDate = new Date(task.created_at);
+        return taskDate >= startDate && taskDate <= endDate;
+      });
+    }
+
+    // Calculate counts by status
+    const counts = {
+      todo: filteredTasks.filter((task) => task.status === "todo").length,
+      in_progress: filteredTasks.filter((task) => task.status === "in_progress")
+        .length,
+      done: filteredTasks.filter((task) => task.status === "done").length,
+    };
+
+    setTaskCounts(counts);
+  };
 
   const fetchDashboardData = async () => {
     const {
@@ -65,7 +160,7 @@ export default function Dashboard() {
 
     setProfile(profileData);
 
-    // Fetch tasks assigned to user
+    // Fetch all tasks assigned to user
     const { data: tasks } = await supabase
       .from("tasks")
       .select(
@@ -82,6 +177,8 @@ export default function Dashboard() {
       .order("created_at", { ascending: false });
 
     if (tasks) {
+      setAllTasks(tasks);
+
       // Find active task (in_progress)
       const active = tasks.find((t: Task) => t.status === "in_progress");
       setActiveTask(active || null);
@@ -92,11 +189,12 @@ export default function Dashboard() {
       // Calculate stats
       const now = new Date();
       const overdue = tasks.filter(
-        (t: Task) => t.status !== "done" && t.end_datetime && new Date(t.end_datetime) < now
+        (t: Task) =>
+          t.status !== "done" &&
+          t.end_datetime &&
+          new Date(t.end_datetime) < now
       ).length;
-      const onTime = tasks.filter(
-        (t: Task) => t.status === "done"
-      ).length;
+      const onTime = tasks.filter((t: Task) => t.status === "done").length;
 
       setStats({
         overrun: 0,
@@ -253,26 +351,32 @@ export default function Dashboard() {
             <p className="text-success-foreground/80 text-sm mb-4">
               {activeTask.description || "No description"}
             </p>
-            {activeTask.task_assignments && activeTask.task_assignments.length > 0 && (
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-success-foreground/70">Assigned to:</span>
-                <div className="flex -space-x-2">
-                  {activeTask.task_assignments.map((assignment, idx) => (
-                    <Avatar key={idx} className="h-6 w-6 border-2 border-background">
-                      <AvatarFallback className="text-xs bg-primary text-primary-foreground">
-                        {assignment.profiles?.full_name?.[0] || "U"}
-                      </AvatarFallback>
-                    </Avatar>
-                  ))}
+            {activeTask.task_assignments &&
+              activeTask.task_assignments.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-success-foreground/70">
+                    Assigned to:
+                  </span>
+                  <div className="flex -space-x-2">
+                    {activeTask.task_assignments.map((assignment, idx) => (
+                      <Avatar
+                        key={idx}
+                        className="h-6 w-6 border-2 border-background"
+                      >
+                        <AvatarFallback className="text-xs bg-primary text-primary-foreground">
+                          {assignment.profiles?.full_name?.[0] || "U"}
+                        </AvatarFallback>
+                      </Avatar>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
           </CardContent>
         </Card>
       )}
 
       {/* User Profile Card */}
-      <Card>
+      {/* <Card>
         <CardContent className="p-6">
           <div className="flex items-center gap-4">
             <Avatar className="h-16 w-16">
@@ -281,8 +385,12 @@ export default function Dashboard() {
               </AvatarFallback>
             </Avatar>
             <div className="flex-1">
-              <h3 className="font-semibold text-lg">{profile?.full_name || "User"}</h3>
-              <p className="text-sm text-muted-foreground">{profile?.phone || "No phone"}</p>
+              <h3 className="font-semibold text-lg">
+                {profile?.full_name || "User"}
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                {profile?.phone || "No phone"}
+              </p>
             </div>
             {checkedIn && (
               <div className="flex items-center gap-2 text-muted-foreground">
@@ -292,10 +400,113 @@ export default function Dashboard() {
             )}
           </div>
         </CardContent>
+      </Card> */}
+
+      {/* Task Counts Section */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <ListTodo className="h-5 w-5" />
+              Task Overview
+            </CardTitle>
+            <div className="flex items-center gap-2">
+              <Filter className="h-4 w-4 text-muted-foreground" />
+              <Select value={dateFilter} onValueChange={setDateFilter}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Filter by date" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Time</SelectItem>
+                  <SelectItem value="today">Today</SelectItem>
+                  <SelectItem value="yesterday">Yesterday</SelectItem>
+                  <SelectItem value="week">Last 7 Days</SelectItem>
+                  <SelectItem value="month">Last 30 Days</SelectItem>
+                  <SelectItem value="custom">Custom Range</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          {dateFilter === "custom" && (
+            <div className="flex items-center gap-4 mt-4">
+              <div className="flex items-center gap-2">
+                <Label htmlFor="start-date" className="text-sm">
+                  From:
+                </Label>
+                <Input
+                  id="start-date"
+                  type="date"
+                  value={customDateRange.start}
+                  onChange={(e) =>
+                    setCustomDateRange((prev) => ({
+                      ...prev,
+                      start: e.target.value,
+                    }))
+                  }
+                  className="w-[150px]"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <Label htmlFor="end-date" className="text-sm">
+                  To:
+                </Label>
+                <Input
+                  id="end-date"
+                  type="date"
+                  value={customDateRange.end}
+                  onChange={(e) =>
+                    setCustomDateRange((prev) => ({
+                      ...prev,
+                      end: e.target.value,
+                    }))
+                  }
+                  className="w-[150px]"
+                />
+              </div>
+            </div>
+          )}
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-3 gap-4">
+            <Card className="border-muted/50">
+              <CardContent className="p-6 text-center">
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <ListTodo className="h-5 w-5 text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">To Do</p>
+                </div>
+                <p className="text-4xl font-bold text-muted-foreground">
+                  {taskCounts.todo}
+                </p>
+              </CardContent>
+            </Card>
+            <Card className="border-primary/20">
+              <CardContent className="p-6 text-center">
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <PlayCircle className="h-5 w-5 text-primary" />
+                  <p className="text-sm text-primary">In Progress</p>
+                </div>
+                <p className="text-4xl font-bold text-primary">
+                  {taskCounts.in_progress}
+                </p>
+              </CardContent>
+            </Card>
+            <Card className="border-success/20">
+              <CardContent className="p-6 text-center">
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <CheckCircle className="h-5 w-5 text-success" />
+                  <p className="text-sm text-success">Done</p>
+                </div>
+                <p className="text-4xl font-bold text-success">
+                  {taskCounts.done}
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        </CardContent>
       </Card>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-3 gap-4">
+      {/* Legacy Stats Grid */}
+      {/* <div className="grid grid-cols-3 gap-4">
         <Card className="border-destructive/20">
           <CardContent className="p-6 text-center">
             <p className="text-sm text-muted-foreground mb-2">Over run</p>
@@ -314,7 +525,7 @@ export default function Dashboard() {
             <p className="text-4xl font-bold">{stats.onTime}</p>
           </CardContent>
         </Card>
-      </div>
+      </div> */}
 
       {/* Recent Tasks */}
       {recentTasks.length > 0 && (
