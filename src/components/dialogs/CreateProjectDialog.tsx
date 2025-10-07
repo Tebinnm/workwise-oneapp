@@ -76,19 +76,55 @@ export function CreateProjectDialog({
       if (!user) return;
 
       const { data, error } = await supabase
-        .from("project_groups")
+        .from("project_groups" as any)
         .select("*")
         .eq("created_by", user.id)
         .order("name");
 
       if (error) throw error;
-      setProjectGroups(data || []);
+      setProjectGroups((data || []) as unknown as ProjectGroup[]);
     } catch (error) {
       console.error("Error fetching project groups:", error);
       toast.error("Failed to fetch project groups");
     } finally {
       setLoadingGroups(false);
     }
+  };
+
+  const getOrCreateGeneralGroup = async (userId: string): Promise<string> => {
+    // Check if "General" group exists
+    const { data: existingGroup, error: fetchError } = await supabase
+      .from("project_groups" as any)
+      .select("id")
+      .eq("created_by", userId)
+      .eq("name", "General")
+      .single();
+
+    if (fetchError && fetchError.code !== "PGRST116") {
+      // PGRST116 is "not found" error
+      throw fetchError;
+    }
+
+    if (existingGroup) {
+      return (existingGroup as any).id;
+    }
+
+    // Create "General" group if it doesn't exist
+    const { data: newGroup, error: createError } = await supabase
+      .from("project_groups" as any)
+      .insert({
+        name: "General",
+        description: "Default group for milestones",
+        color: "#6B7280",
+        icon: "folder",
+        created_by: userId,
+      })
+      .select("id")
+      .single();
+
+    if (createError) throw createError;
+
+    return (newGroup as any).id;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -105,6 +141,15 @@ export function CreateProjectDialog({
         return;
       }
 
+      // Determine the project group ID
+      let finalGroupId: string;
+      if (projectGroupId && projectGroupId !== "none") {
+        finalGroupId = projectGroupId;
+      } else {
+        // If no group selected, assign to "General" group
+        finalGroupId = await getOrCreateGeneralGroup(user.id);
+      }
+
       const { data, error } = await supabase
         .from("projects")
         .insert({
@@ -113,8 +158,7 @@ export function CreateProjectDialog({
           start_date: startDate ? format(startDate, "yyyy-MM-dd") : null,
           end_date: endDate ? format(endDate, "yyyy-MM-dd") : null,
           budget: budget ? parseFloat(budget) : null,
-          project_group_id:
-            projectGroupId && projectGroupId !== "none" ? projectGroupId : null,
+          project_group_id: finalGroupId,
           created_by: user.id,
         })
         .select()
@@ -183,12 +227,15 @@ export function CreateProjectDialog({
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label htmlFor="projectGroup">Project</Label>
-              <ProjectGroupDialog onGroupCreated={handleGroupCreated}>
-                <Button variant="outline" size="sm" type="button">
-                  <Plus className="h-4 w-4 mr-1" />
-                  New Project
-                </Button>
-              </ProjectGroupDialog>
+              <ProjectGroupDialog
+                onGroupCreated={handleGroupCreated}
+                trigger={
+                  <Button variant="outline" size="sm" type="button">
+                    <Plus className="h-4 w-4 mr-1" />
+                    New Project
+                  </Button>
+                }
+              />
             </div>
             <Select value={projectGroupId} onValueChange={setProjectGroupId}>
               <SelectTrigger>

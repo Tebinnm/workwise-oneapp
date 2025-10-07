@@ -100,12 +100,12 @@ export default function Auth() {
   return (
     <div className="min-h-screen flex">
       {/* Left side - Form */}
-      <div className="flex-1 flex items-center justify-center p-8 bg-background">
-        <div className="w-full max-w-md space-y-8">
+      <div className="flex-1 flex items-center justify-center p-4 sm:p-6 md:p-8 bg-background">
+        <div className="w-full max-w-md space-y-6 md:space-y-8">
           <div className="space-y-2">
             <Logo />
-            <h1 className="text-3xl font-bold">Welcome back!</h1>
-            <p className="text-muted-foreground">
+            <h1 className="text-2xl sm:text-3xl font-bold">Welcome back!</h1>
+            <p className="text-sm md:text-base text-muted-foreground">
               Please enter {isLogin ? "log in" : "sign up"} details below
             </p>
           </div>
@@ -169,7 +169,7 @@ export default function Auth() {
               {isLogin ? "Log in" : "Sign up"}
             </Button>
 
-            <div className="text-center text-sm">
+            <div className="text-center text-xs sm:text-sm">
               {isLogin
                 ? "Don't have an account? "
                 : "Already have an account? "}
@@ -186,23 +186,23 @@ export default function Auth() {
       </div>
 
       {/* Right side - Illustration */}
-      <div className="hidden lg:flex flex-1 items-center justify-center bg-sidebar p-8">
+      <div className="hidden lg:flex flex-1 items-center justify-center bg-sidebar p-8 xl:p-12">
         <div className="text-center space-y-6 max-w-lg">
-          <div className="relative mx-auto w-64 h-64">
+          <div className="relative mx-auto w-48 h-48 xl:w-64 xl:h-64">
             <div className="absolute inset-0 bg-gradient-primary opacity-20 blur-3xl rounded-full" />
-            <div className="relative bg-card/10 backdrop-blur-sm rounded-3xl p-8 border border-primary/20">
+            <div className="relative bg-card/10 backdrop-blur-sm rounded-3xl p-6 xl:p-8 border border-primary/20">
               <div className="space-y-4">
-                <div className="h-4 bg-primary/30 rounded" />
-                <div className="h-4 bg-primary/20 rounded w-3/4" />
-                <div className="h-4 bg-primary/10 rounded w-1/2" />
+                <div className="h-3 xl:h-4 bg-primary/30 rounded" />
+                <div className="h-3 xl:h-4 bg-primary/20 rounded w-3/4" />
+                <div className="h-3 xl:h-4 bg-primary/10 rounded w-1/2" />
               </div>
             </div>
           </div>
           <div className="space-y-2">
-            <h2 className="text-2xl font-bold text-sidebar-foreground">
+            <h2 className="text-xl xl:text-2xl font-bold text-sidebar-foreground">
               Stay organized. Stay productive!
             </h2>
-            <p className="text-sidebar-foreground/70">
+            <p className="text-sm xl:text-base text-sidebar-foreground/70">
               Simplify task management, boost efficiency, and keep your workflow
               seamless.
             </p>
