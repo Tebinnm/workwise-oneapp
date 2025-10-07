@@ -14,6 +14,11 @@ interface Task {
   start_datetime: string | null;
   end_datetime: string | null;
   recurrence: any;
+  billable: boolean | null;
+  estimated_hours: number | null;
+  geo_lat: number | null;
+  geo_lng: number | null;
+  geo_radius_m: number | null;
   task_assignments: Array<{
     user_id: string;
     profiles: {
@@ -334,8 +339,8 @@ export function useTaskManagement(projectId: string) {
       const duplicateData = {
         title: `${originalTask.title} (Copy)`,
         description: originalTask.description,
-        type: originalTask.type,
-        status: "todo",
+        type: originalTask.type as "attendance" | "general",
+        status: "todo" as const,
         billable: originalTask.billable,
         estimated_hours: originalTask.estimated_hours,
         start_datetime: originalTask.start_datetime,
@@ -348,11 +353,11 @@ export function useTaskManagement(projectId: string) {
 
       const { data, error } = await supabase
         .from("tasks")
-        .insert({
+        .insert([{
           ...duplicateData,
           project_id: projectId,
           created_by: user.id,
-        })
+        }])
         .select()
         .single();
 
