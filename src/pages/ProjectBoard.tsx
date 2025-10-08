@@ -74,7 +74,7 @@ export default function ProjectBoard() {
             event: "*",
             schema: "public",
             table: "tasks",
-            filter: `project_id=eq.${id}`,
+            filter: `milestone_id=eq.${id}`,
           },
           () => {
             fetchTasks();
@@ -91,7 +91,7 @@ export default function ProjectBoard() {
 
   const fetchProject = async () => {
     const { data, error } = await supabase
-      .from("projects")
+      .from("milestones")
       .select("*")
       .eq("id", id)
       .single();
@@ -115,7 +115,7 @@ export default function ProjectBoard() {
         )
       `
       )
-      .eq("project_id", id);
+      .eq("milestone_id", id);
 
     if (error) {
       toast.error("Failed to fetch tasks");

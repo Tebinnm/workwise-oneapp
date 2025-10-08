@@ -124,7 +124,7 @@ export function NotificationSystem() {
         title,
         status,
         end_datetime,
-        projects(name),
+        milestones(name),
         task_assignments(
           user_id,
           profiles(full_name)
@@ -162,7 +162,7 @@ export function NotificationSystem() {
         title,
         status,
         end_datetime,
-        projects(name),
+        milestones(name),
         task_assignments(
           user_id,
           profiles(full_name)

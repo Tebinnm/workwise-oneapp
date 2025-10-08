@@ -127,7 +127,7 @@ export class RecurringTaskService {
     const { data } = await supabase
       .from("tasks")
       .select("id")
-      .eq("project_id", task.project_id)
+      .eq("milestone_id", task.milestone_id)
       .eq("title", task.title)
       .gte("created_at", startOfPeriod.toISOString())
       .lte("created_at", endOfPeriod.toISOString());
@@ -400,7 +400,7 @@ export class RecurringTaskService {
           status
         `
         )
-        .eq("project_id", projectId)
+        .eq("milestone_id", projectId)
         .not("recurrence", "is", null);
 
       if (!recurringTasks) return null;

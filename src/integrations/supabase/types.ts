@@ -80,7 +80,7 @@ export type Database = {
           created_at: string | null;
           hours: number;
           id: string;
-          project_id: string | null;
+          milestone_id: string | null;
           rate: number;
           task_id: string | null;
           user_id: string;
@@ -90,7 +90,7 @@ export type Database = {
           created_at?: string | null;
           hours: number;
           id?: string;
-          project_id?: string | null;
+          milestone_id?: string | null;
           rate: number;
           task_id?: string | null;
           user_id: string;
@@ -100,17 +100,17 @@ export type Database = {
           created_at?: string | null;
           hours?: number;
           id?: string;
-          project_id?: string | null;
+          milestone_id?: string | null;
           rate?: number;
           task_id?: string | null;
           user_id?: string;
         };
         Relationships: [
           {
-            foreignKeyName: "billing_records_project_id_fkey";
-            columns: ["project_id"];
+            foreignKeyName: "billing_records_milestone_id_fkey";
+            columns: ["milestone_id"];
             isOneToOne: false;
-            referencedRelation: "projects";
+            referencedRelation: "milestones";
             referencedColumns: ["id"];
           },
           {
@@ -174,7 +174,7 @@ export type Database = {
           default_working_days_per_month: number | null;
           id: string;
           monthly_salary: number | null;
-          project_id: string | null;
+          milestone_id: string | null;
           user_id: string;
           wage_type: string | null;
         };
@@ -184,7 +184,7 @@ export type Database = {
           default_working_days_per_month?: number | null;
           id?: string;
           monthly_salary?: number | null;
-          project_id?: string | null;
+          milestone_id?: string | null;
           user_id: string;
           wage_type?: string | null;
         };
@@ -194,16 +194,16 @@ export type Database = {
           default_working_days_per_month?: number | null;
           id?: string;
           monthly_salary?: number | null;
-          project_id?: string | null;
+          milestone_id?: string | null;
           user_id?: string;
           wage_type?: string | null;
         };
         Relationships: [
           {
-            foreignKeyName: "member_wage_config_project_id_fkey";
-            columns: ["project_id"];
+            foreignKeyName: "member_wage_config_milestone_id_fkey";
+            columns: ["milestone_id"];
             isOneToOne: false;
-            referencedRelation: "projects";
+            referencedRelation: "milestones";
             referencedColumns: ["id"];
           },
           {
@@ -254,7 +254,7 @@ export type Database = {
         };
         Relationships: [];
       };
-      project_groups: {
+      projects: {
         Row: {
           color: string;
           created_at: string | null;
@@ -284,7 +284,7 @@ export type Database = {
         };
         Relationships: [
           {
-            foreignKeyName: "project_groups_created_by_fkey";
+            foreignKeyName: "projects_created_by_fkey";
             columns: ["created_by"];
             isOneToOne: false;
             referencedRelation: "profiles";
@@ -296,30 +296,30 @@ export type Database = {
         Row: {
           created_at: string | null;
           id: string;
-          project_id: string;
+          milestone_id: string;
           role: string;
           user_id: string;
         };
         Insert: {
           created_at?: string | null;
           id?: string;
-          project_id: string;
+          milestone_id: string;
           role: string;
           user_id: string;
         };
         Update: {
           created_at?: string | null;
           id?: string;
-          project_id?: string;
+          milestone_id?: string;
           role?: string;
           user_id?: string;
         };
         Relationships: [
           {
-            foreignKeyName: "project_members_project_id_fkey";
-            columns: ["project_id"];
+            foreignKeyName: "project_members_milestone_id_fkey";
+            columns: ["milestone_id"];
             isOneToOne: false;
-            referencedRelation: "projects";
+            referencedRelation: "milestones";
             referencedColumns: ["id"];
           },
           {
@@ -331,7 +331,7 @@ export type Database = {
           }
         ];
       };
-      projects: {
+      milestones: {
         Row: {
           budget: number | null;
           created_at: string | null;
@@ -340,7 +340,7 @@ export type Database = {
           end_date: string | null;
           id: string;
           name: string;
-          project_group_id: string | null;
+          project_id: string | null;
           start_date: string | null;
           status: string | null;
         };
@@ -352,7 +352,7 @@ export type Database = {
           end_date?: string | null;
           id?: string;
           name: string;
-          project_group_id?: string | null;
+          project_id?: string | null;
           start_date?: string | null;
           status?: string | null;
         };
@@ -364,23 +364,23 @@ export type Database = {
           end_date?: string | null;
           id?: string;
           name?: string;
-          project_group_id?: string | null;
+          project_id?: string | null;
           start_date?: string | null;
           status?: string | null;
         };
         Relationships: [
           {
-            foreignKeyName: "projects_created_by_fkey";
+            foreignKeyName: "milestones_created_by_fkey";
             columns: ["created_by"];
             isOneToOne: false;
             referencedRelation: "profiles";
             referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "projects_project_group_id_fkey";
-            columns: ["project_group_id"];
+            foreignKeyName: "milestones_project_id_fkey";
+            columns: ["project_id"];
             isOneToOne: false;
-            referencedRelation: "project_groups";
+            referencedRelation: "projects";
             referencedColumns: ["id"];
           }
         ];
@@ -469,7 +469,7 @@ export type Database = {
           geo_lng: number | null;
           geo_radius_m: number | null;
           id: string;
-          project_id: string;
+          milestone_id: string;
           recurrence: Json | null;
           start_datetime: string | null;
           status: Database["public"]["Enums"]["task_status"] | null;
@@ -487,7 +487,7 @@ export type Database = {
           geo_lng?: number | null;
           geo_radius_m?: number | null;
           id?: string;
-          project_id: string;
+          milestone_id: string;
           recurrence?: Json | null;
           start_datetime?: string | null;
           status?: Database["public"]["Enums"]["task_status"] | null;
@@ -505,7 +505,7 @@ export type Database = {
           geo_lng?: number | null;
           geo_radius_m?: number | null;
           id?: string;
-          project_id?: string;
+          milestone_id?: string;
           recurrence?: Json | null;
           start_datetime?: string | null;
           status?: Database["public"]["Enums"]["task_status"] | null;
@@ -521,10 +521,10 @@ export type Database = {
             referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "tasks_project_id_fkey";
-            columns: ["project_id"];
+            foreignKeyName: "tasks_milestone_id_fkey";
+            columns: ["milestone_id"];
             isOneToOne: false;
-            referencedRelation: "projects";
+            referencedRelation: "milestones";
             referencedColumns: ["id"];
           }
         ];

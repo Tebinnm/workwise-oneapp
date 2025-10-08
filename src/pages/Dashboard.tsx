@@ -41,9 +41,10 @@ interface Task {
   title: string;
   description: string | null;
   status: string;
-  project_id: string;
+  milestone_id: string;
   end_datetime: string | null;
-  projects: {
+  created_at: string;
+  milestones: {
     name: string;
   };
   task_assignments: Array<{
@@ -166,7 +167,7 @@ export default function Dashboard() {
       .select(
         `
         *,
-        projects(name),
+        milestones(name),
         task_assignments!inner(
           user_id,
           profiles(full_name)
@@ -340,7 +341,7 @@ export default function Dashboard() {
                 <div>
                   <h3 className="font-semibold text-lg">{activeTask.title}</h3>
                   <p className="text-sm text-success-foreground/80">
-                    {activeTask.projects?.name}
+                    {activeTask.milestones?.name}
                   </p>
                 </div>
               </div>
@@ -541,7 +542,7 @@ export default function Dashboard() {
                     <div className="flex items-center gap-3 mb-2">
                       <h4 className="font-medium">{task.title}</h4>
                       <Badge variant="outline" className="text-xs">
-                        {task.projects?.name}
+                        {task.milestones?.name}
                       </Badge>
                     </div>
                     <p className="text-sm text-muted-foreground line-clamp-1">

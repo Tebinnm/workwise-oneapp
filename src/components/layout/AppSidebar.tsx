@@ -38,39 +38,55 @@ import {
 } from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { CreateProjectDialog } from "@/components/dialogs/CreateProjectDialog";
-import { ProjectGroupDialog } from "@/components/dialogs/ProjectGroupDialog";
+import { CreateMilestoneDialog } from "@/components/dialogs/CreateMilestoneDialog";
+import { ProjectDialog } from "@/components/dialogs/ProjectDialog";
 
-interface Project {
+interface Milestone {
   id: string;
   name: string;
-  project_group_id: string | null;
+  project_id: string | null;
 }
 
-interface ProjectGroup {
+interface Project {
   id: string;
   name: string;
   description: string | null;
   color: string;
   icon: string;
-  projects: Project[];
+  milestones: Milestone[];
 }
 
 export function AppSidebar() {
+  const [milestones, setMilestones] = useState<Milestone[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
-  const [projectGroups, setProjectGroups] = useState<ProjectGroup[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
-  const [hoveredProject, setHoveredProject] = useState<string | null>(null);
-  const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
+  const [expandedProjects, setExpandedProjects] = useState<Set<string>>(
+    new Set()
+  );
+  const [hoveredMilestone, setHoveredMilestone] = useState<string | null>(null);
+  const [milestoneToDelete, setMilestoneToDelete] = useState<Milestone | null>(
+    null
+  );
   const navigate = useNavigate();
 
   useEffect(() => {
+    fetchMilestones();
     fetchProjects();
-    fetchProjectGroups();
 
     const channel = supabase
-      .channel("projects-changes")
+      .channel("milestones-changes")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "milestones",
+        },
+        () => {
+          fetchMilestones();
+          fetchProjects();
+        }
+      )
       .on(
         "postgres_changes",
         {
@@ -80,18 +96,6 @@ export function AppSidebar() {
         },
         () => {
           fetchProjects();
-          fetchProjectGroups();
-        }
-      )
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "project_groups",
-        },
-        () => {
-          fetchProjectGroups();
         }
       )
       .subscribe();
@@ -101,11 +105,30 @@ export function AppSidebar() {
     };
   }, []);
 
+  const fetchMilestones = async () => {
+    const { data, error } = await supabase
+      .from("milestones")
+      .select("id, name, project_id")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      toast.error("Failed to fetch milestones");
+      return;
+    }
+
+    setMilestones(data || []);
+  };
+
   const fetchProjects = async () => {
     const { data, error } = await supabase
       .from("projects")
-      .select("id, name, project_group_id")
-      .order("created_at", { ascending: false });
+      .select(
+        `
+        *,
+        milestones:milestones(id, name, project_id)
+      `
+      )
+      .order("name");
 
     if (error) {
       toast.error("Failed to fetch projects");
@@ -115,37 +138,16 @@ export function AppSidebar() {
     setProjects(data || []);
   };
 
-  const fetchProjectGroups = async () => {
-    const { data, error } = await supabase
-      .from("project_groups")
-      .select(
-        `
-        *,
-        projects:projects(id, name, project_group_id)
-      `
-      )
-      .order("name");
-
-    if (error) {
-      toast.error("Failed to fetch project groups");
-      return;
-    }
-
-    setProjectGroups(data || []);
-  };
-
-  const filteredProjects = projects.filter((project) =>
-    project.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  const toggleGroupExpansion = (groupId: string) => {
-    const newExpanded = new Set(expandedGroups);
-    if (newExpanded.has(groupId)) {
-      newExpanded.delete(groupId);
-    } else {
-      newExpanded.add(groupId);
-    }
-    setExpandedGroups(newExpanded);
+  const toggleProjectExpansion = (projectId: string) => {
+    setExpandedProjects((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(projectId)) {
+        newSet.delete(projectId);
+      } else {
+        newSet.add(projectId);
+      }
+      return newSet;
+    });
   };
 
   const getIconComponent = (iconName: string, size = 16) => {
@@ -166,24 +168,24 @@ export function AppSidebar() {
     return <IconComponent size={size} />;
   };
 
-  const handleDeleteProject = async () => {
-    if (!projectToDelete) return;
+  const handleDeleteMilestone = async () => {
+    if (!milestoneToDelete) return;
 
     try {
       const { error } = await supabase
-        .from("projects")
+        .from("milestones")
         .delete()
-        .eq("id", projectToDelete.id);
+        .eq("id", milestoneToDelete.id);
 
       if (error) throw error;
 
       toast.success("Milestone deleted successfully");
-      setProjectToDelete(null);
+      setMilestoneToDelete(null);
+      fetchMilestones();
       fetchProjects();
-      fetchProjectGroups();
 
-      // Navigate to dashboard if we're on the deleted project's page
-      if (window.location.pathname.includes(projectToDelete.id)) {
+      // Navigate to dashboard if we're on the deleted milestone's page
+      if (window.location.pathname.includes(milestoneToDelete.id)) {
         navigate("/dashboard");
       }
     } catch (error: any) {
@@ -246,11 +248,9 @@ export function AppSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <div className="flex flex-col px-2 mb-3 gap-2">
-            <SidebarGroupLabel>Projects</SidebarGroupLabel>
-
-            <ProjectGroupDialog
-              onGroupCreated={fetchProjectGroups}
+          <div className="flex flex-col px-2  gap-2">
+            <ProjectDialog
+              onProjectCreated={fetchProjects}
               trigger={
                 <Button
                   variant="ghost"
@@ -264,10 +264,10 @@ export function AppSidebar() {
               }
             />
 
-            <CreateProjectDialog
+            <CreateMilestoneDialog
               onSuccess={() => {
+                fetchMilestones();
                 fetchProjects();
-                fetchProjectGroups();
               }}
             >
               <Button
@@ -279,10 +279,10 @@ export function AppSidebar() {
                 <Plus className="h-4 w-4 mr-2" />
                 Create Milestone
               </Button>
-            </CreateProjectDialog>
+            </CreateMilestoneDialog>
           </div>
 
-          <SidebarGroupContent>
+          {/* <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton>
@@ -291,85 +291,96 @@ export function AppSidebar() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
-          </SidebarGroupContent>
+          </SidebarGroupContent> */}
         </SidebarGroup>
 
         <SidebarGroup>
+          <SidebarGroupLabel>Projects</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {searchQuery ? (
-                // Show filtered projects when searching
-                filteredProjects.length === 0 ? (
+                // Show filtered milestones when searching
+                milestones.filter((milestone) =>
+                  milestone.name
+                    .toLowerCase()
+                    .includes(searchQuery.toLowerCase())
+                ).length === 0 ? (
                   <div className="px-4 py-8 text-center text-sm text-muted-foreground">
-                    No projects found
+                    No milestones found
                   </div>
                 ) : (
-                  filteredProjects.map((project) => (
-                    <SidebarMenuItem
-                      key={project.id}
-                      onMouseEnter={() => setHoveredProject(project.id)}
-                      onMouseLeave={() => setHoveredProject(null)}
-                    >
-                      <div className="flex items-center w-full group">
-                        <SidebarMenuButton asChild className="flex-1">
-                          <NavLink
-                            to={`/projects/${project.id}`}
-                            className={({ isActive }) =>
-                              isActive
-                                ? "bg-sidebar-accent text-sidebar-primary font-medium"
-                                : ""
-                            }
-                          >
-                            <Folder className="h-4 w-4" />
-                            <span className="truncate">{project.name}</span>
-                          </NavLink>
-                        </SidebarMenuButton>
-                        {hoveredProject === project.id && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              setProjectToDelete(project);
-                            }}
-                          >
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
-                        )}
-                      </div>
-                    </SidebarMenuItem>
-                  ))
+                  milestones
+                    .filter((milestone) =>
+                      milestone.name
+                        .toLowerCase()
+                        .includes(searchQuery.toLowerCase())
+                    )
+                    .map((milestone) => (
+                      <SidebarMenuItem
+                        key={milestone.id}
+                        onMouseEnter={() => setHoveredMilestone(milestone.id)}
+                        onMouseLeave={() => setHoveredMilestone(null)}
+                      >
+                        <div className="flex items-center w-full group">
+                          <SidebarMenuButton asChild className="flex-1">
+                            <NavLink
+                              to={`/milestones/${milestone.id}`}
+                              className={({ isActive }) =>
+                                isActive
+                                  ? "bg-sidebar-accent text-sidebar-primary font-medium"
+                                  : ""
+                              }
+                            >
+                              <Folder className="h-4 w-4" />
+                              <span className="truncate">{milestone.name}</span>
+                            </NavLink>
+                          </SidebarMenuButton>
+                          {hoveredMilestone === milestone.id && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setMilestoneToDelete(milestone);
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          )}
+                        </div>
+                      </SidebarMenuItem>
+                    ))
                 )
-              ) : // Show grouped projects when not searching
-              projectGroups.length === 0 ? (
+              ) : // Show grouped milestones when not searching
+              projects.length === 0 ? (
                 <div className="px-4 py-8 text-center text-sm text-muted-foreground">
-                  No project groups yet. Create one!
+                  No projects yet. Create one!
                 </div>
               ) : (
-                projectGroups.map((group) => (
-                  <div key={group.id}>
+                projects.map((project) => (
+                  <div key={project.id}>
                     <SidebarMenuItem>
                       <SidebarMenuButton
-                        onClick={() => toggleGroupExpansion(group.id)}
+                        onClick={() => toggleProjectExpansion(project.id)}
                         className="w-full justify-between"
                       >
                         <div className="flex items-center space-x-2">
                           <div
                             className="p-1 rounded"
-                            style={{ backgroundColor: group.color + "20" }}
+                            style={{ backgroundColor: project.color + "20" }}
                           >
-                            <div style={{ color: group.color }}>
-                              {getIconComponent(group.icon, 14)}
+                            <div style={{ color: project.color }}>
+                              {getIconComponent(project.icon, 14)}
                             </div>
                           </div>
-                          <span className="truncate">{group.name}</span>
+                          <span className="truncate">{project.name}</span>
                           <span className="text-xs text-muted-foreground">
-                            ({group.projects?.length || 0})
+                            ({project.milestones?.length || 0})
                           </span>
                         </div>
-                        {expandedGroups.has(group.id) ? (
+                        {expandedProjects.has(project.id) ? (
                           <ChevronDown className="h-4 w-4" />
                         ) : (
                           <ChevronRight className="h-4 w-4" />
@@ -377,23 +388,25 @@ export function AppSidebar() {
                       </SidebarMenuButton>
                     </SidebarMenuItem>
 
-                    {expandedGroups.has(group.id) && (
+                    {expandedProjects.has(project.id) && (
                       <div className="ml-4 space-y-1">
-                        {group.projects?.length === 0 ? (
+                        {project.milestones?.length === 0 ? (
                           <div className="px-4 py-2 text-xs text-muted-foreground">
-                            No projects in this group
+                            No milestones in this project
                           </div>
                         ) : (
-                          group.projects?.map((project) => (
+                          project.milestones?.map((milestone) => (
                             <SidebarMenuItem
-                              key={project.id}
-                              onMouseEnter={() => setHoveredProject(project.id)}
-                              onMouseLeave={() => setHoveredProject(null)}
+                              key={milestone.id}
+                              onMouseEnter={() =>
+                                setHoveredMilestone(milestone.id)
+                              }
+                              onMouseLeave={() => setHoveredMilestone(null)}
                             >
                               <div className="flex items-center w-full group">
                                 <SidebarMenuButton asChild className="flex-1">
                                   <NavLink
-                                    to={`/projects/${project.id}`}
+                                    to={`/milestones/${milestone.id}`}
                                     className={({ isActive }) =>
                                       isActive
                                         ? "bg-sidebar-accent text-sidebar-primary font-medium"
@@ -402,11 +415,11 @@ export function AppSidebar() {
                                   >
                                     <Folder className="h-4 w-4" />
                                     <span className="truncate">
-                                      {project.name}
+                                      {milestone.name}
                                     </span>
                                   </NavLink>
                                 </SidebarMenuButton>
-                                {hoveredProject === project.id && (
+                                {hoveredMilestone === milestone.id && (
                                   <Button
                                     variant="ghost"
                                     size="icon"
@@ -414,7 +427,7 @@ export function AppSidebar() {
                                     onClick={(e) => {
                                       e.preventDefault();
                                       e.stopPropagation();
-                                      setProjectToDelete(project);
+                                      setMilestoneToDelete(milestone);
                                     }}
                                   >
                                     <Trash2 className="h-4 w-4 text-destructive" />
@@ -435,14 +448,14 @@ export function AppSidebar() {
       </SidebarContent>
 
       <AlertDialog
-        open={!!projectToDelete}
-        onOpenChange={(open) => !open && setProjectToDelete(null)}
+        open={!!milestoneToDelete}
+        onOpenChange={(open) => !open && setMilestoneToDelete(null)}
       >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Milestone</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete "{projectToDelete?.name}"? This
+              Are you sure you want to delete "{milestoneToDelete?.name}"? This
               action cannot be undone and will also delete all tasks associated
               with this milestone.
             </AlertDialogDescription>
@@ -450,7 +463,7 @@ export function AppSidebar() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={handleDeleteProject}
+              onClick={handleDeleteMilestone}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Delete

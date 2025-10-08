@@ -33,7 +33,7 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 
 interface ProjectAssignment {
-  project_id: string;
+  milestone_id: string;
   project_name: string;
   role: string;
   start_date: Date | null;
@@ -44,7 +44,7 @@ interface ProjectAssignmentDialogProps {
   userId: string;
   userName: string;
   currentProjects: Array<{
-    project_id: string;
+    milestone_id: string;
     project_name: string;
     role: string;
     start_date: string;
@@ -75,7 +75,7 @@ export function ProjectAssignmentDialog({
     if (open) {
       // Initialize assignments from current projects
       const initialAssignments = currentProjects.map((project) => ({
-        project_id: project.project_id,
+        milestone_id: project.milestone_id,
         project_name: project.project_name,
         role: project.role,
         start_date: project.start_date ? new Date(project.start_date) : null,
@@ -89,7 +89,7 @@ export function ProjectAssignmentDialog({
     setAssignments([
       ...assignments,
       {
-        project_id: "",
+        milestone_id: "",
         project_name: "",
         role: "worker",
         start_date: null,
@@ -111,7 +111,7 @@ export function ProjectAssignmentDialog({
     updated[index] = { ...updated[index], [field]: value };
 
     // If project changes, update project name
-    if (field === "project_id") {
+    if (field === "milestone_id") {
       const project = allProjects.find((p) => p.id === value);
       updated[index].project_name = project?.name || "";
     }
@@ -156,10 +156,10 @@ export function ProjectAssignmentDialog({
       // Add new assignments
       if (assignments.length > 0) {
         const newAssignments = assignments
-          .filter((assignment) => assignment.project_id)
+          .filter((assignment) => assignment.milestone_id)
           .map((assignment) => ({
             user_id: userId,
-            project_id: assignment.project_id,
+            milestone_id: assignment.milestone_id,
             role: assignment.role,
             // Only include date fields if they exist in the table
             ...(assignment.start_date && {
@@ -191,7 +191,7 @@ export function ProjectAssignmentDialog({
 
   const availableProjects = allProjects.filter(
     (project) =>
-      !assignments.some((assignment) => assignment.project_id === project.id)
+      !assignments.some((assignment) => assignment.milestone_id === project.id)
   );
 
   return (
@@ -232,9 +232,9 @@ export function ProjectAssignmentDialog({
                   <div className="space-y-2">
                     <Label>Project</Label>
                     <Select
-                      value={assignment.project_id}
+                      value={assignment.milestone_id}
                       onValueChange={(value) =>
-                        updateAssignment(index, "project_id", value)
+                        updateAssignment(index, "milestone_id", value)
                       }
                     >
                       <SelectTrigger>
@@ -246,8 +246,8 @@ export function ProjectAssignmentDialog({
                             {project.name}
                           </SelectItem>
                         ))}
-                        {assignment.project_id && (
-                          <SelectItem value={assignment.project_id}>
+                        {assignment.milestone_id && (
+                          <SelectItem value={assignment.milestone_id}>
                             {assignment.project_name}
                           </SelectItem>
                         )}

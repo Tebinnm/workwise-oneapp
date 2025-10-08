@@ -15,7 +15,7 @@ interface MemberWageConfig {
   daily_rate?: number;
   monthly_salary?: number;
   default_working_days_per_month?: number;
-  project_id?: string; // For project-specific overrides
+  milestone_id?: string; // For milestone-specific overrides
 }
 
 interface AttendanceRecord {
@@ -55,7 +55,7 @@ interface MemberBudgetSummary {
 }
 
 interface ProjectBudgetReport {
-  project_id: string;
+  milestone_id: string;
   project_name: string;
   project_start_date: string | null;
   project_end_date: string | null;
@@ -94,27 +94,28 @@ export class BudgetService {
    */
   static calculateMonthlyBudget(
     wageType: WageType,
-    projectStartDate: Date,
-    projectEndDate: Date,
+    milestoneStartDate: Date,
+    milestoneEndDate: Date,
     dailyRate?: number,
     monthlySalary?: number,
     defaultWorkingDaysPerMonth: number = 26
   ): number {
-    const projectDays = differenceInDays(projectEndDate, projectStartDate) + 1;
+    const milestoneDays =
+      differenceInDays(milestoneEndDate, milestoneStartDate) + 1;
 
     if (wageType === "monthly" && monthlySalary) {
       // For Monthly Wage: Monthly Salary × (Active Project Days ÷ Total Working Days in Month)
-      const monthStart = startOfMonth(projectStartDate);
-      const monthEnd = endOfMonth(projectStartDate);
+      const monthStart = startOfMonth(milestoneStartDate);
+      const monthEnd = endOfMonth(milestoneStartDate);
       const workingDaysInMonth = Math.min(
         differenceInDays(monthEnd, monthStart) + 1,
         defaultWorkingDaysPerMonth
       );
 
-      return (monthlySalary * projectDays) / workingDaysInMonth;
+      return (monthlySalary * milestoneDays) / workingDaysInMonth;
     } else if (wageType === "daily" && dailyRate) {
       // For Daily Wage: Daily Rate × Total Project Days
-      return dailyRate * projectDays;
+      return dailyRate * milestoneDays;
     }
 
     return 0;
@@ -125,19 +126,20 @@ export class BudgetService {
    */
   static async getMemberWageConfig(
     userId: string,
-    projectId?: string
+    milestoneId?: string
   ): Promise<MemberWageConfig | null> {
     try {
       // First check for project-specific config
-      if (projectId) {
-        const { data: projectConfig } = await supabase
+      if (milestoneId) {
+        const { data: projectConfig, error } = await supabase
           .from("member_wage_config")
           .select("*")
           .eq("user_id", userId)
-          .eq("project_id", projectId)
-          .single();
+          .eq("milestone_id", milestoneId)
+          .maybeSingle();
 
-        if (projectConfig) {
+        // If found, use project-specific config
+        if (projectConfig && !error) {
           return projectConfig as MemberWageConfig;
         }
       }
@@ -171,7 +173,7 @@ export class BudgetService {
    * Get task attendance records for a project
    */
   static async getTaskAttendanceRecords(
-    projectId: string,
+    milestoneId: string,
     userId?: string,
     startDate?: Date,
     endDate?: Date
@@ -187,10 +189,10 @@ export class BudgetService {
           attendance_status,
           created_at,
           approved,
-          tasks!inner(project_id)
+          tasks!inner(milestone_id)
         `
         )
-        .eq("tasks.project_id", projectId);
+        .eq("tasks.milestone_id", milestoneId);
 
       if (userId) {
         query = query.eq("user_id", userId);
@@ -227,13 +229,13 @@ export class BudgetService {
    */
   static async calculateMemberBudget(
     userId: string,
-    projectId: string,
+    milestoneId: string,
     projectStartDate: Date,
     projectEndDate: Date
   ): Promise<MemberBudgetSummary | null> {
     try {
       // Get member wage config
-      const wageConfig = await this.getMemberWageConfig(userId, projectId);
+      const wageConfig = await this.getMemberWageConfig(userId, milestoneId);
       if (!wageConfig) return null;
 
       // Get user profile
@@ -245,7 +247,7 @@ export class BudgetService {
 
       // Get attendance records
       const attendanceRecords = await this.getTaskAttendanceRecords(
-        projectId,
+        milestoneId,
         userId,
         projectStartDate,
         projectEndDate
@@ -326,7 +328,7 @@ export class BudgetService {
    * Generate comprehensive project budget report
    */
   static async generateProjectBudgetReport(
-    projectId: string,
+    milestoneId: string,
     filters?: {
       userId?: string;
       startDate?: Date;
@@ -335,23 +337,23 @@ export class BudgetService {
     }
   ): Promise<ProjectBudgetReport | null> {
     try {
-      // Get project details
-      const { data: project, error: projectError } = await supabase
-        .from("projects")
+      // Get milestone details
+      const { data: milestone, error: milestoneError } = await supabase
+        .from("milestones")
         .select("id, name, start_date, end_date, budget")
-        .eq("id", projectId)
+        .eq("id", milestoneId)
         .single();
 
-      if (projectError) throw projectError;
+      if (milestoneError) throw milestoneError;
 
-      const projectStartDate = project.start_date
-        ? new Date(project.start_date)
+      const milestoneStartDate = milestone.start_date
+        ? new Date(milestone.start_date)
         : new Date();
-      const projectEndDate = project.end_date
-        ? new Date(project.end_date)
+      const milestoneEndDate = milestone.end_date
+        ? new Date(milestone.end_date)
         : new Date();
 
-      // Get all project members
+      // Get all milestone members
       const { data: members, error: membersError } = await supabase
         .from("project_members")
         .select(
@@ -360,7 +362,7 @@ export class BudgetService {
           profiles(full_name, wage_type)
         `
         )
-        .eq("project_id", projectId);
+        .eq("milestone_id", milestoneId);
 
       if (membersError) throw membersError;
 
@@ -377,9 +379,9 @@ export class BudgetService {
       for (const member of filteredMembers) {
         const summary = await this.calculateMemberBudget(
           member.user_id,
-          projectId,
-          filters?.startDate || projectStartDate,
-          filters?.endDate || projectEndDate
+          milestoneId,
+          filters?.startDate || milestoneStartDate,
+          filters?.endDate || milestoneEndDate
         );
 
         if (summary) {
@@ -392,7 +394,7 @@ export class BudgetService {
 
       // Get detailed task budgets
       const taskBudgets: TaskBudget[] = await this.getDetailedTaskBudgets(
-        projectId,
+        milestoneId,
         filters?.userId,
         filters?.startDate,
         filters?.endDate
@@ -405,11 +407,11 @@ export class BudgetService {
       );
 
       return {
-        project_id: projectId,
-        project_name: project.name,
-        project_start_date: project.start_date,
-        project_end_date: project.end_date,
-        total_budget_allocated: project.budget || 0,
+        milestone_id: milestoneId,
+        project_name: milestone.name,
+        project_start_date: milestone.start_date,
+        project_end_date: milestone.end_date,
+        total_budget_allocated: milestone.budget || 0,
         total_budget_spent: totalBudgetSpent,
         member_summaries: memberSummaries,
         task_budgets: taskBudgets,
@@ -424,7 +426,7 @@ export class BudgetService {
    * Get detailed task budgets
    */
   static async getDetailedTaskBudgets(
-    projectId: string,
+    milestoneId: string,
     userId?: string,
     startDate?: Date,
     endDate?: Date
@@ -441,10 +443,10 @@ export class BudgetService {
           created_at,
           approved,
           profiles(full_name),
-          tasks!inner(project_id, title)
+          tasks!inner(milestone_id, title)
         `
         )
-        .eq("tasks.project_id", projectId)
+        .eq("tasks.milestone_id", milestoneId)
         .eq("approved", true);
 
       if (userId) {
@@ -468,7 +470,7 @@ export class BudgetService {
       for (const record of data || []) {
         const wageConfig = await this.getMemberWageConfig(
           record.user_id,
-          projectId
+          milestoneId
         );
         if (!wageConfig) continue;
 
@@ -511,14 +513,14 @@ export class BudgetService {
   static async updateMemberWageConfig(
     userId: string,
     wageConfig: Partial<MemberWageConfig>,
-    projectId?: string
+    milestoneId?: string
   ): Promise<boolean> {
     try {
-      if (projectId) {
+      if (milestoneId) {
         // Create or update project-specific config
         const { error } = await supabase.from("member_wage_config").upsert({
           user_id: userId,
-          project_id: projectId,
+          milestone_id: milestoneId,
           wage_type: wageConfig.wage_type,
           daily_rate: wageConfig.daily_rate,
           monthly_salary: wageConfig.monthly_salary,
@@ -563,7 +565,7 @@ export class BudgetService {
       // Get task and project info
       const { data: task } = await supabase
         .from("tasks")
-        .select("project_id")
+        .select("milestone_id")
         .eq("id", taskId)
         .single();
 
@@ -574,7 +576,7 @@ export class BudgetService {
       // Get member wage config
       const wageConfig = await this.getMemberWageConfig(
         userId,
-        task.project_id
+        task.milestone_id
       );
       if (!wageConfig) {
         return { success: false, calculatedBudget: 0 };
@@ -635,7 +637,7 @@ export class BudgetService {
       // Get task and project info
       const { data: task } = await supabase
         .from("tasks")
-        .select("project_id")
+        .select("milestone_id")
         .eq("id", attendance.task_id)
         .single();
 
@@ -646,7 +648,7 @@ export class BudgetService {
       // Get member wage config
       const wageConfig = await this.getMemberWageConfig(
         attendance.user_id,
-        task.project_id
+        task.milestone_id
       );
       if (!wageConfig) {
         return { success: false, calculatedBudget: 0 };

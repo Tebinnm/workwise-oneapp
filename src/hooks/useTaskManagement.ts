@@ -59,10 +59,10 @@ export function useTaskManagement(projectId: string) {
             user_id,
             profiles(full_name)
           ),
-          projects(name)
+          milestones(name)
         `
         )
-        .eq("project_id", projectId)
+        .eq("milestone_id", projectId)
         .order("created_at", { ascending: false });
 
       if (error) throw error;

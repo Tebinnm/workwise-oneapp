@@ -177,7 +177,7 @@ export class AttendanceService {
           `
           title,
           project_id,
-          projects(name)
+          milestones(name)
         `
         )
         .eq("id", taskId)
@@ -189,7 +189,7 @@ export class AttendanceService {
       const { data: supervisors } = await supabase
         .from("project_members")
         .select("user_id")
-        .eq("project_id", task.project_id)
+        .eq("milestone_id", task.milestone_id)
         .eq("role", "supervisor");
 
       if (!supervisors || supervisors.length === 0) return;
@@ -278,7 +278,7 @@ export class AttendanceService {
         .select(
           `
           *,
-          tasks(title, projects(name))
+          tasks(title, milestones(name))
         `
         )
         .eq("user_id", userId);
@@ -340,7 +340,7 @@ export class AttendanceService {
         .eq("approved", false);
 
       if (projectId) {
-        query = query.eq("tasks.project_id", projectId);
+        query = query.eq("tasks.milestone_id", projectId);
       }
 
       const { data, error } = await query.order("created_at", {
@@ -394,7 +394,7 @@ export class AttendanceService {
         .select(
           `
           *,
-          tasks(title, projects(name))
+          tasks(title, milestones(name))
         `
         )
         .eq("user_id", userId)

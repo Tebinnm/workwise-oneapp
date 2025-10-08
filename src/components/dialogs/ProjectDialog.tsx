@@ -18,7 +18,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Plus, Edit, Trash2, Folder, FolderOpen } from "lucide-react";
 import { toast } from "sonner";
 
-interface ProjectGroup {
+interface Project {
   id: string;
   name: string;
   description: string | null;
@@ -27,17 +27,17 @@ interface ProjectGroup {
   created_by: string;
   created_at: string;
   updated_at: string;
-  project_count?: number;
+  milestone_count?: number;
 }
 
-interface ProjectGroupDialogProps {
-  onGroupCreated?: () => void;
-  onGroupUpdated?: () => void;
-  onGroupDeleted?: () => void;
+interface ProjectDialogProps {
+  onProjectCreated?: () => void;
+  onProjectUpdated?: () => void;
+  onProjectDeleted?: () => void;
   trigger?: React.ReactNode;
 }
 
-const PROJECT_GROUP_COLORS = [
+const PROJECT_COLORS = [
   { name: "Blue", value: "#3B82F6" },
   { name: "Green", value: "#10B981" },
   { name: "Purple", value: "#8B5CF6" },
@@ -50,7 +50,7 @@ const PROJECT_GROUP_COLORS = [
   { name: "Gray", value: "#6B7280" },
 ];
 
-const PROJECT_GROUP_ICONS = [
+const PROJECT_ICONS = [
   { name: "Folder", value: "folder" },
   { name: "Open Folder", value: "folder-open" },
   { name: "Briefcase", value: "briefcase" },
@@ -63,16 +63,16 @@ const PROJECT_GROUP_ICONS = [
   { name: "Zap", value: "zap" },
 ];
 
-export function ProjectGroupDialog({
-  onGroupCreated,
-  onGroupUpdated,
-  onGroupDeleted,
+export function ProjectDialog({
+  onProjectCreated,
+  onProjectUpdated,
+  onProjectDeleted,
   trigger,
-}: ProjectGroupDialogProps) {
+}: ProjectDialogProps) {
   const [open, setOpen] = useState(false);
-  const [projectGroups, setProjectGroups] = useState<ProjectGroup[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(false);
-  const [editingGroup, setEditingGroup] = useState<ProjectGroup | null>(null);
+  const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
 
   // Form state
@@ -83,11 +83,11 @@ export function ProjectGroupDialog({
 
   useEffect(() => {
     if (open) {
-      fetchProjectGroups();
+      fetchProjects();
     }
   }, [open]);
 
-  const fetchProjectGroups = async () => {
+  const fetchProjects = async () => {
     try {
       setLoading(true);
       const {
@@ -96,11 +96,11 @@ export function ProjectGroupDialog({
       if (!user) return;
 
       const { data, error } = await supabase
-        .from("project_groups")
+        .from("projects")
         .select(
           `
           *,
-          projects:projects(count)
+          milestones:milestones(count)
         `
         )
         .eq("created_by", user.id)
@@ -108,24 +108,24 @@ export function ProjectGroupDialog({
 
       if (error) throw error;
 
-      const groupsWithCount =
-        data?.map((group) => ({
-          ...group,
-          project_count: group.projects?.[0]?.count || 0,
+      const projectsWithCount =
+        data?.map((project) => ({
+          ...project,
+          milestone_count: project.milestones?.[0]?.count || 0,
         })) || [];
 
-      setProjectGroups(groupsWithCount);
+      setProjects(projectsWithCount);
     } catch (error) {
-      console.error("Error fetching project groups:", error);
-      toast.error("Failed to fetch project groups");
+      console.error("Error fetching projects:", error);
+      toast.error("Failed to fetch projects");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleCreateGroup = async () => {
+  const handleCreateProject = async () => {
     if (!name.trim()) {
-      toast.error("Group name is required");
+      toast.error("Project name is required");
       return;
     }
 
@@ -136,7 +136,7 @@ export function ProjectGroupDialog({
       } = await supabase.auth.getUser();
       if (!user) return;
 
-      const { error } = await supabase.from("project_groups").insert({
+      const { error } = await supabase.from("projects").insert({
         name: name.trim(),
         description: description.trim() || null,
         color,
@@ -146,54 +146,54 @@ export function ProjectGroupDialog({
 
       if (error) throw error;
 
-      toast.success("Project group created successfully");
+      toast.success("Project created successfully");
       setOpen(false);
       resetForm();
-      onGroupCreated?.();
+      onProjectCreated?.();
     } catch (error) {
-      console.error("Error creating project :", error);
-      toast.error("Failed to create project ");
+      console.error("Error creating project:", error);
+      toast.error("Failed to create project");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleUpdateGroup = async () => {
-    if (!editingGroup || !name.trim()) {
-      toast.error("Group name is required");
+  const handleUpdateProject = async () => {
+    if (!editingProject || !name.trim()) {
+      toast.error("Project name is required");
       return;
     }
 
     try {
       setLoading(true);
       const { error } = await supabase
-        .from("project_groups")
+        .from("projects")
         .update({
           name: name.trim(),
           description: description.trim() || null,
           color,
           icon,
         })
-        .eq("id", editingGroup.id);
+        .eq("id", editingProject.id);
 
       if (error) throw error;
 
-      toast.success("Project group updated successfully");
+      toast.success("Project updated successfully");
       setOpen(false);
       resetForm();
-      onGroupUpdated?.();
+      onProjectUpdated?.();
     } catch (error) {
-      console.error("Error updating project group:", error);
-      toast.error("Failed to update project group");
+      console.error("Error updating project:", error);
+      toast.error("Failed to update project");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDeleteGroup = async (groupId: string) => {
+  const handleDeleteProject = async (projectId: string) => {
     if (
       !confirm(
-        'Are you sure you want to delete this project group? This will move all projects in this group to the "General" group.'
+        'Are you sure you want to delete this project? This will move all milestones in this project to the "General" project.'
       )
     ) {
       return;
@@ -202,39 +202,39 @@ export function ProjectGroupDialog({
     try {
       setLoading(true);
 
-      // First, move all projects in this group to the "General" group
+      // First, move all milestones in this project to the "General" project
       const {
         data: { user },
       } = await supabase.auth.getUser();
       if (!user) return;
 
-      const { data: generalGroup } = await supabase
-        .from("project_groups")
+      const { data: generalProject } = await supabase
+        .from("projects")
         .select("id")
         .eq("name", "General")
         .eq("created_by", user.id)
         .single();
 
-      if (generalGroup) {
+      if (generalProject) {
         await supabase
-          .from("projects")
-          .update({ project_group_id: generalGroup.id })
-          .eq("project_group_id", groupId);
+          .from("milestones")
+          .update({ project_id: generalProject.id })
+          .eq("project_id", projectId);
       }
 
-      // Then delete the group
+      // Then delete the project
       const { error } = await supabase
-        .from("project_groups")
+        .from("projects")
         .delete()
-        .eq("id", groupId);
+        .eq("id", projectId);
 
       if (error) throw error;
 
-      toast.success("Project group deleted successfully");
-      onGroupDeleted?.();
+      toast.success("Project deleted successfully");
+      onProjectDeleted?.();
     } catch (error) {
-      console.error("Error deleting project group:", error);
-      toast.error("Failed to delete project group");
+      console.error("Error deleting project:", error);
+      toast.error("Failed to delete project");
     } finally {
       setLoading(false);
     }
@@ -245,16 +245,16 @@ export function ProjectGroupDialog({
     setDescription("");
     setColor("#3B82F6");
     setIcon("folder");
-    setEditingGroup(null);
+    setEditingProject(null);
     setShowCreateForm(false);
   };
 
-  const startEdit = (group: ProjectGroup) => {
-    setEditingGroup(group);
-    setName(group.name);
-    setDescription(group.description || "");
-    setColor(group.color);
-    setIcon(group.icon);
+  const startEdit = (project: Project) => {
+    setEditingProject(project);
+    setName(project.name);
+    setDescription(project.description || "");
+    setColor(project.color);
+    setIcon(project.icon);
     setShowCreateForm(true);
   };
 
@@ -292,9 +292,9 @@ export function ProjectGroupDialog({
       </DialogTrigger>
       <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Project Groups</DialogTitle>
+          <DialogTitle>Projects</DialogTitle>
           <DialogDescription>
-            Organize your projects into groups for better management and
+            Organize your milestones into projects for better management and
             navigation.
           </DialogDescription>
         </DialogHeader>
@@ -307,9 +307,7 @@ export function ProjectGroupDialog({
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <h3 className="text-lg font-semibold">
-                      {editingGroup
-                        ? "Edit Project Group"
-                        : "Create New Project Group"}
+                      {editingProject ? "Edit Project" : "Create New Project"}
                     </h3>
                     <Button variant="ghost" size="sm" onClick={cancelEdit}>
                       Cancel
@@ -318,12 +316,12 @@ export function ProjectGroupDialog({
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="name">Group Name *</Label>
+                      <Label htmlFor="name">Project Name *</Label>
                       <Input
                         id="name"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
-                        placeholder="Enter group name"
+                        placeholder="Enter project name"
                       />
                     </div>
 
@@ -342,7 +340,7 @@ export function ProjectGroupDialog({
                   <div className="space-y-2">
                     <Label>Color</Label>
                     <div className="grid grid-cols-5 gap-2">
-                      {PROJECT_GROUP_COLORS.map((colorOption) => (
+                      {PROJECT_COLORS.map((colorOption) => (
                         <button
                           key={colorOption.value}
                           className={`w-8 h-8 rounded-full border-2 ${
@@ -361,7 +359,7 @@ export function ProjectGroupDialog({
                   <div className="space-y-2">
                     <Label>Icon</Label>
                     <div className="grid grid-cols-5 gap-2">
-                      {PROJECT_GROUP_ICONS.map((iconOption) => (
+                      {PROJECT_ICONS.map((iconOption) => (
                         <button
                           key={iconOption.value}
                           className={`p-2 rounded border ${
@@ -381,15 +379,17 @@ export function ProjectGroupDialog({
                   <DialogFooter>
                     <Button
                       onClick={
-                        editingGroup ? handleUpdateGroup : handleCreateGroup
+                        editingProject
+                          ? handleUpdateProject
+                          : handleCreateProject
                       }
                       disabled={loading || !name.trim()}
                     >
                       {loading
                         ? "Saving..."
-                        : editingGroup
-                        ? "Update Group"
-                        : "Create Group"}
+                        : editingProject
+                        ? "Update Project"
+                        : "Create Project"}
                     </Button>
                   </DialogFooter>
                 </div>
@@ -397,29 +397,29 @@ export function ProjectGroupDialog({
             </Card>
           )}
 
-          {/* Project Groups List */}
+          {/* Projects List */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold">Your Project Groups</h3>
+              <h3 className="text-lg font-semibold">Your Projects</h3>
               {!showCreateForm && (
                 <Button onClick={() => setShowCreateForm(true)}>
                   <Plus className="h-4 w-4 mr-2" />
-                  Create Group
+                  Create Project
                 </Button>
               )}
             </div>
 
             {loading ? (
               <div className="text-center py-8">Loading...</div>
-            ) : projectGroups.length === 0 ? (
+            ) : projects.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
-                No project groups found. Create your first group to get started.
+                No projects found. Create your first project to get started.
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {projectGroups.map((group) => (
+                {projects.map((project) => (
                   <Card
-                    key={group.id}
+                    key={project.id}
                     className="hover:shadow-md transition-shadow"
                   >
                     <CardContent className="p-4">
@@ -427,17 +427,17 @@ export function ProjectGroupDialog({
                         <div className="flex items-center space-x-3">
                           <div
                             className="p-2 rounded-lg"
-                            style={{ backgroundColor: group.color + "20" }}
+                            style={{ backgroundColor: project.color + "20" }}
                           >
-                            <div style={{ color: group.color }}>
-                              {getIconComponent(group.icon, 20)}
+                            <div style={{ color: project.color }}>
+                              {getIconComponent(project.icon, 20)}
                             </div>
                           </div>
                           <div>
-                            <h4 className="font-semibold">{group.name}</h4>
+                            <h4 className="font-semibold">{project.name}</h4>
                             <p className="text-sm text-gray-600">
-                              {group.project_count} project
-                              {group.project_count !== 1 ? "s" : ""}
+                              {project.milestone_count} milestone
+                              {project.milestone_count !== 1 ? "s" : ""}
                             </p>
                           </div>
                         </div>
@@ -445,23 +445,23 @@ export function ProjectGroupDialog({
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => startEdit(group)}
+                            onClick={() => startEdit(project)}
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => handleDeleteGroup(group.id)}
+                            onClick={() => handleDeleteProject(project.id)}
                             disabled={loading}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
                       </div>
-                      {group.description && (
+                      {project.description && (
                         <p className="text-sm text-gray-600 mt-2">
-                          {group.description}
+                          {project.description}
                         </p>
                       )}
                     </CardContent>

@@ -62,8 +62,8 @@ interface User {
   monthly_salary?: number;
   created_at: string;
   projects?: Array<{
-    project_id: string;
-    project_name: string;
+    milestone_id: string;
+    milestone_name: string;
     role: string;
     start_date: string;
     end_date: string;
@@ -91,6 +91,10 @@ export default function UserManagement() {
     email: "",
     role: "worker",
     status: "active" as "active" | "inactive",
+    wage_type: "daily" as "daily" | "monthly",
+    daily_rate: 0,
+    monthly_salary: 0,
+    default_working_days_per_month: 26,
   });
   const [showAddUserDialog, setShowAddUserDialog] = useState(false);
 
@@ -120,11 +124,11 @@ export default function UserManagement() {
             monthly_salary,
             created_at,
             project_members(
-              project_id,
+              milestone_id,
               role,
               start_date,
               end_date,
-              projects(name)
+              milestones(name)
             )
           `
           )
@@ -169,8 +173,8 @@ export default function UserManagement() {
         ...user,
         projects:
           user.project_members?.map((pm: any) => ({
-            project_id: pm.project_id,
-            project_name: pm.projects?.name || "Unknown",
+            milestone_id: pm.milestone_id,
+            milestone_name: pm.milestones?.name || "Unknown",
             role: pm.role,
             start_date: pm.start_date || null,
             end_date: pm.end_date || null,
@@ -189,14 +193,14 @@ export default function UserManagement() {
   const fetchProjects = async () => {
     try {
       const { data, error } = await supabase
-        .from("projects")
+        .from("milestones")
         .select("id, name, status")
         .order("name");
 
       if (error) throw error;
       setProjects(data || []);
     } catch (error) {
-      console.error("Error fetching projects:", error);
+      console.error("Error fetching milestones:", error);
     }
   };
 
@@ -213,7 +217,11 @@ export default function UserManagement() {
           email: newUser.email,
           role: newUser.role,
           status: newUser.status,
-          // Let Supabase generate the ID automatically
+          wage_type: newUser.wage_type || "daily",
+          daily_rate: newUser.daily_rate || 0,
+          monthly_salary: newUser.monthly_salary || 0,
+          default_working_days_per_month:
+            newUser.default_working_days_per_month || 26,
         })
         .select()
         .single();
@@ -227,6 +235,10 @@ export default function UserManagement() {
         email: "",
         role: "worker",
         status: "active",
+        wage_type: "daily",
+        daily_rate: 0,
+        monthly_salary: 0,
+        default_working_days_per_month: 26,
       });
       fetchUsers();
     } catch (error: any) {
@@ -843,8 +855,11 @@ export default function UserManagement() {
                       {user.projects && user.projects.length > 0 ? (
                         <div className="flex flex-wrap gap-2">
                           {user.projects.map((project) => (
-                            <Badge key={project.project_id} variant="secondary">
-                              {project.project_name} ({project.role})
+                            <Badge
+                              key={project.milestone_id}
+                              variant="secondary"
+                            >
+                              {project.milestone_name} ({project.role})
                             </Badge>
                           ))}
                         </div>

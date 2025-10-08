@@ -251,7 +251,7 @@ export function TaskDialog({
 
       // Only set project_id and created_by on create
       if (!isEditMode) {
-        taskData.project_id = projectId;
+        taskData.milestone_id = projectId;
         taskData.created_by = user.id;
       }
 
@@ -439,7 +439,7 @@ export function TaskDialog({
     const { data: supervisors } = await supabase
       .from("project_members")
       .select("user_id")
-      .eq("project_id", projectId)
+      .eq("milestone_id", projectId)
       .eq("role", "supervisor");
 
     if (supervisors && supervisors.length > 0) {

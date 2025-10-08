@@ -74,7 +74,7 @@ export default function BudgetReport() {
           profiles(full_name)
         `
         )
-        .eq("project_id", id);
+        .eq("milestone_id", id);
 
       if (error) throw error;
       setMembers(data || []);
