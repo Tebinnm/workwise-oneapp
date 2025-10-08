@@ -42,3 +42,4 @@ COMMENT ON COLUMN profiles.status IS 'User status - active or inactive';
 -- Success message
 SELECT '✅ Profiles table has been updated to allow user creation without auth!' as result;
 
+

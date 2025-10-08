@@ -40,3 +40,4 @@ GRANT EXECUTE ON FUNCTION get_user_milestones(UUID) TO authenticated;
 -- Verify the function works
 SELECT 'Helper function updated successfully!' as result;
 
+

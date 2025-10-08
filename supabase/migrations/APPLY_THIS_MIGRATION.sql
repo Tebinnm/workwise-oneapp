@@ -84,3 +84,4 @@ CREATE POLICY "Allow authenticated users to manage milestones" ON milestones FOR
 -- Success message
 SELECT '✅ Migration completed successfully! The 406 errors should now be fixed.' as result;
 
+

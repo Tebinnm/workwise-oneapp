@@ -265,7 +265,7 @@ export class RecurringTaskService {
           description: task.description,
           type: task.type,
           status: "todo", // New instances start as todo
-          project_id: task.project_id,
+          milestone_id: task.milestone_id,
           created_by: task.created_by,
           billable: task.billable,
           estimated_hours: task.estimated_hours,

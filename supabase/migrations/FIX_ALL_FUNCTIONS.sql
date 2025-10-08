@@ -57,3 +57,4 @@ AND view_definition LIKE '%project_id%';
 -- Success message
 SELECT '✅ All database functions have been checked and updated!' as result;
 
+

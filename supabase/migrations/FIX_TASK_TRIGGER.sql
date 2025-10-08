@@ -46,3 +46,4 @@ CREATE TRIGGER on_task_created
 -- Success message
 SELECT '✅ Task creation trigger has been fixed!' as result;
 
+

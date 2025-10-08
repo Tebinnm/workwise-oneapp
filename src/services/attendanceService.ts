@@ -126,10 +126,10 @@ export class AttendanceService {
         rate = profile?.hourly_rate || 0;
       }
 
-      // Get project ID from task
+      // Get milestone ID from task
       const { data: task } = await supabase
         .from("tasks")
-        .select("project_id")
+        .select("milestone_id")
         .eq("id", taskId)
         .single();
 
@@ -140,7 +140,7 @@ export class AttendanceService {
       const { error } = await supabase.from("billing_records").insert({
         user_id: userId,
         task_id: taskId,
-        project_id: task.project_id,
+        milestone_id: task.milestone_id,
         hours,
         rate,
         amount,
@@ -326,7 +326,7 @@ export class AttendanceService {
   /**
    * Get pending attendance records for supervisors
    */
-  static async getPendingAttendance(projectId?: string) {
+  static async getPendingAttendance(milestoneId?: string) {
     try {
       let query = supabase
         .from("attendance")
@@ -334,13 +334,13 @@ export class AttendanceService {
           `
           *,
           profiles(full_name),
-          tasks(title, project_id)
+          tasks(title, milestone_id)
         `
         )
         .eq("approved", false);
 
-      if (projectId) {
-        query = query.eq("tasks.milestone_id", projectId);
+      if (milestoneId) {
+        query = query.eq("tasks.milestone_id", milestoneId);
       }
 
       const { data, error } = await query.order("created_at", {

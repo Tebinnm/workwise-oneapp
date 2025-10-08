@@ -29,3 +29,4 @@ AND contype = 'f'; -- foreign key constraints
 SELECT '✅ Foreign key constraint removed from profiles table!' as result;
 SELECT '✅ Profiles can now be created independently of auth users!' as info;
 
+

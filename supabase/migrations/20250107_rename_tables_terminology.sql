@@ -181,3 +181,4 @@ COMMENT ON COLUMN member_wage_config.milestone_id IS 'Reference to milestone (fo
 -- 5. RLS policies have been updated
 -- 6. Helper functions have been updated
 -- =====================================================
+

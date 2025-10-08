@@ -9,3 +9,4 @@ WHERE table_schema = 'public'
   AND table_name IN ('projects', 'milestones', 'project_groups', 'tasks', 'project_members', 'member_wage_config', 'billing_records')
 ORDER BY table_name, ordinal_position;
 
+

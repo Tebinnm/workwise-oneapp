@@ -300,3 +300,4 @@ END $$;
 -- =====================================================
 SELECT 'Migration completed successfully. All column names have been updated to use milestone_id instead of project_id.' as status;
 
+

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -25,6 +26,11 @@ import {
   ListTodo,
   PlayCircle,
   CheckCircle,
+  Star,
+  Bookmark,
+  Edit,
+  ArrowRight,
+  ChevronRight,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -34,6 +40,9 @@ import {
   subDays,
   subWeeks,
   subMonths,
+  isToday,
+  isPast,
+  isFuture,
 } from "date-fns";
 
 interface Task {
@@ -54,7 +63,31 @@ interface Task {
   }>;
 }
 
+interface Milestone {
+  id: string;
+  name: string;
+  description: string | null;
+  start_date: string | null;
+  end_date: string | null;
+  status: string | null;
+  created_at: string;
+  projects: {
+    name: string;
+    id: string;
+  } | null;
+  project_members: Array<{
+    user_id: string;
+    role: string;
+    profiles: {
+      id: string;
+      full_name: string | null;
+      email: string;
+    };
+  }>;
+}
+
 export default function Dashboard() {
+  const navigate = useNavigate();
   const [profile, setProfile] = useState<any>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [activeTask, setActiveTask] = useState<Task | null>(null);
@@ -67,18 +100,19 @@ export default function Dashboard() {
   const [checkedIn, setCheckedIn] = useState(false);
   const [checkInTime, setCheckInTime] = useState<Date | null>(null);
 
-  // New state for task counts and date filtering
-  const [taskCounts, setTaskCounts] = useState({
-    todo: 0,
+  // Enhanced state for milestone dashboard
+  const [milestoneCounts, setMilestoneCounts] = useState({
+    planning: 0,
     in_progress: 0,
-    done: 0,
+    completed: 0,
   });
   const [dateFilter, setDateFilter] = useState("all");
   const [customDateRange, setCustomDateRange] = useState({
     start: "",
     end: "",
   });
-  const [allTasks, setAllTasks] = useState<Task[]>([]);
+  const [allMilestones, setAllMilestones] = useState<Milestone[]>([]);
+  const [filteredMilestones, setFilteredMilestones] = useState<Milestone[]>([]);
 
   useEffect(() => {
     fetchDashboardData();
@@ -87,64 +121,69 @@ export default function Dashboard() {
   }, []);
 
   useEffect(() => {
-    if (allTasks.length > 0) {
-      calculateTaskCounts();
-    }
-  }, [allTasks, dateFilter, customDateRange]);
+    filterMilestonesByDate();
+  }, [allMilestones, dateFilter, customDateRange]);
 
-  const calculateTaskCounts = () => {
-    let filteredTasks = [...allTasks];
+  const filterMilestonesByDate = () => {
+    console.log(
+      "Filtering milestones. Total:",
+      allMilestones.length,
+      "Filter:",
+      dateFilter
+    );
+    let filteredMilestones = [...allMilestones];
+    const now = new Date();
 
     // Apply date filter
-    if (dateFilter !== "all") {
-      const now = new Date();
-      let startDate: Date;
-      let endDate: Date = now;
-
-      switch (dateFilter) {
-        case "today":
-          startDate = startOfDay(now);
-          endDate = endOfDay(now);
-          break;
-        case "yesterday":
-          startDate = startOfDay(subDays(now, 1));
-          endDate = endOfDay(subDays(now, 1));
-          break;
-        case "week":
-          startDate = startOfDay(subWeeks(now, 1));
-          endDate = endOfDay(now);
-          break;
-        case "month":
-          startDate = startOfDay(subMonths(now, 1));
-          endDate = endOfDay(now);
-          break;
-        case "custom":
-          if (customDateRange.start && customDateRange.end) {
-            startDate = startOfDay(new Date(customDateRange.start));
-            endDate = endOfDay(new Date(customDateRange.end));
-          } else {
-            return; // Don't filter if custom dates are not set
-          }
-          break;
-        default:
-          return;
-      }
-
-      filteredTasks = allTasks.filter((task) => {
-        const taskDate = new Date(task.created_at);
-        return taskDate >= startDate && taskDate <= endDate;
-      });
+    switch (dateFilter) {
+      case "overdue":
+        filteredMilestones = allMilestones.filter((milestone) => {
+          if (milestone.status === "completed") return false;
+          if (!milestone.end_date) return false;
+          return new Date(milestone.end_date) < now;
+        });
+        break;
+      case "today":
+        filteredMilestones = allMilestones.filter((milestone) => {
+          if (!milestone.end_date) return false;
+          return isToday(new Date(milestone.end_date));
+        });
+        break;
+      case "upcoming":
+        filteredMilestones = allMilestones.filter((milestone) => {
+          if (milestone.status === "completed") return false;
+          if (!milestone.end_date) return false;
+          return isFuture(new Date(milestone.end_date));
+        });
+        break;
+      case "all":
+      default:
+        filteredMilestones = allMilestones;
+        break;
     }
+
+    console.log(
+      "Filtered milestones:",
+      filteredMilestones.length,
+      filteredMilestones
+    );
+    setFilteredMilestones(filteredMilestones);
 
     // Calculate counts by status
     const counts = {
-      todo: filteredTasks.filter((task) => task.status === "todo").length,
-      in_progress: filteredTasks.filter((task) => task.status === "in_progress")
-        .length,
-      done: filteredTasks.filter((task) => task.status === "done").length,
+      planning: filteredMilestones.filter(
+        (milestone) => milestone.status === "planning"
+      ).length,
+      in_progress: filteredMilestones.filter(
+        (milestone) => milestone.status === "in_progress"
+      ).length,
+      completed: filteredMilestones.filter(
+        (milestone) => milestone.status === "completed"
+      ).length,
     };
 
-    setTaskCounts(counts);
+    console.log("Milestone counts:", counts);
+    setMilestoneCounts(counts);
   };
 
   const fetchDashboardData = async () => {
@@ -161,47 +200,50 @@ export default function Dashboard() {
 
     setProfile(profileData);
 
-    // Fetch all tasks assigned to user
-    const { data: tasks } = await supabase
-      .from("tasks")
+    // Fetch all milestones with their members
+    const { data: milestones, error: milestonesError } = await supabase
+      .from("milestones")
       .select(
         `
         *,
-        milestones(name),
-        task_assignments!inner(
+        projects(id, name),
+        project_members(
           user_id,
-          profiles(full_name)
+          role,
+          profiles(id, full_name, email)
         )
       `
       )
-      .eq("task_assignments.user_id", user.id)
       .order("created_at", { ascending: false });
 
-    if (tasks) {
-      setAllTasks(tasks);
+    if (milestonesError) {
+      console.error("Error fetching milestones:", milestonesError);
+      toast.error("Failed to load milestones");
+      return;
+    }
 
-      // Find active task (in_progress)
-      const active = tasks.find((t: Task) => t.status === "in_progress");
-      setActiveTask(active || null);
-
-      // Get recent tasks
-      setRecentTasks(tasks.slice(0, 3));
+    if (milestones) {
+      console.log("Fetched milestones:", milestones);
+      setAllMilestones(milestones as any);
 
       // Calculate stats
       const now = new Date();
-      const overdue = tasks.filter(
-        (t: Task) =>
-          t.status !== "done" &&
-          t.end_datetime &&
-          new Date(t.end_datetime) < now
+      const overdue = (milestones as any[]).filter(
+        (m: any) =>
+          m.status !== "completed" && m.end_date && new Date(m.end_date) < now
       ).length;
-      const onTime = tasks.filter((t: Task) => t.status === "done").length;
+      const onTime = (milestones as any[]).filter(
+        (m: any) => m.status === "completed"
+      ).length;
 
       setStats({
         overrun: 0,
         overdue,
         onTime,
       });
+    } else {
+      console.log("No milestones found");
+      setAllMilestones([]);
     }
 
     // Check attendance status
@@ -291,278 +333,348 @@ export default function Dashboard() {
     }
   };
 
-  return (
-    <div className="space-y-6">
-      {/* Header Section */}
-      <div className="flex items-start justify-between">
-        <div className="space-y-1">
-          <h1 className="text-5xl font-bold text-foreground">
-            {currentTime.toLocaleTimeString("en-US", {
-              hour: "2-digit",
-              minute: "2-digit",
-              hour12: true,
-            })}
-          </h1>
-          <h2 className="text-3xl font-bold mt-4">
-            {getGreeting()}, {profile?.full_name || "User"}
-          </h2>
-          {checkedIn && checkInTime && (
-            <p className="text-muted-foreground">
-              Checked in on {format(checkInTime, "dd MMM yyyy h:mm:ss a")}
-            </p>
-          )}
-        </div>
-        <Button
-          size="lg"
-          onClick={handleCheckInOut}
-          variant={checkedIn ? "destructive" : "default"}
-          className="min-w-[140px]"
-        >
-          {checkedIn ? (
-            <>
-              <LogOut className="mr-2 h-5 w-5" />
-              Check Out
-            </>
-          ) : (
-            "Check In"
-          )}
-        </Button>
-      </div>
+  const updateMilestoneStatus = async (
+    milestoneId: string,
+    newStatus: string
+  ) => {
+    try {
+      const { error } = await supabase
+        .from("milestones")
+        .update({ status: newStatus })
+        .eq("id", milestoneId);
 
-      {/* Active Task Card */}
-      {activeTask && (
-        <Card className="bg-success border-success/20 shadow-elevated">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-lg bg-success/20 flex items-center justify-center">
-                  <Play className="h-5 w-5 text-success-foreground" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-lg">{activeTask.title}</h3>
-                  <p className="text-sm text-success-foreground/80">
-                    {activeTask.milestones?.name}
-                  </p>
-                </div>
-              </div>
-              <Badge className="bg-success-foreground/20 text-success-foreground">
-                {activeTask.status?.replace("_", " ")}
-              </Badge>
+      if (error) throw error;
+
+      // Update local state
+      setAllMilestones((prev) =>
+        prev.map((milestone) =>
+          milestone.id === milestoneId
+            ? { ...milestone, status: newStatus }
+            : milestone
+        )
+      );
+
+      toast.success(`Milestone moved to ${newStatus.replace("_", " ")}`);
+    } catch (error: any) {
+      toast.error("Failed to update milestone status");
+      console.error("Error updating milestone:", error);
+    }
+  };
+
+  const getMilestoneId = (milestone: Milestone) => {
+    return `MS${milestone.id.slice(-9).toUpperCase()}`;
+  };
+
+  return (
+    <div className="flex flex-col lg:flex-row lg:justify-between gap-6">
+      <div className="space-y-1 lg:flex-1">
+        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground">
+          {currentTime.toLocaleTimeString("en-US", {
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: true,
+          })}
+        </h1>
+        <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold mt-2 lg:mt-4">
+          {getGreeting()}, {profile?.full_name || "User"}
+        </h2>
+        {checkedIn && checkInTime && (
+          <p className="text-muted-foreground text-base sm:text-lg">
+            Last checked in on {format(checkInTime, "dd MMM yyyy h:mm:ss a")}
+          </p>
+        )}
+      </div>
+      <div className="w-full lg:w-1/3 flex flex-col space-y-4">
+        {/* Header Section */}
+
+        {/* My Milestones Section */}
+        <Card className="h-[500px] lg:h-[calc(100vh-8rem)] overflow-hidden">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-xl sm:text-2xl font-bold">
+              My Milestones
+            </CardTitle>
+
+            {/* Date Filter Tabs */}
+            <div className="flex gap-2 mt-3 flex-wrap">
+              <Button
+                variant={dateFilter === "all" ? "default" : "outline"}
+                onClick={() => setDateFilter("all")}
+                className="flex items-center gap-2 text-sm"
+                size="sm"
+              >
+                <ListTodo className="h-3 w-3 sm:h-4 sm:w-4" />
+                All
+              </Button>
+              <Button
+                variant={dateFilter === "overdue" ? "default" : "outline"}
+                onClick={() => setDateFilter("overdue")}
+                className="flex items-center gap-2 text-sm"
+                size="sm"
+              >
+                <AlertCircle className="h-3 w-3 sm:h-4 sm:w-4" />
+                Overdue
+              </Button>
+              <Button
+                variant={dateFilter === "today" ? "default" : "outline"}
+                onClick={() => setDateFilter("today")}
+                className="flex items-center gap-2 text-sm"
+                size="sm"
+              >
+                <Calendar className="h-3 w-3 sm:h-4 sm:w-4" />
+                Today
+              </Button>
+              <Button
+                variant={dateFilter === "upcoming" ? "default" : "outline"}
+                onClick={() => setDateFilter("upcoming")}
+                className="flex items-center gap-2 text-sm"
+                size="sm"
+              >
+                <Star className="h-3 w-3 sm:h-4 sm:w-4" />
+                Upcoming
+              </Button>
             </div>
-            <p className="text-success-foreground/80 text-sm mb-4">
-              {activeTask.description || "No description"}
-            </p>
-            {activeTask.task_assignments &&
-              activeTask.task_assignments.length > 0 && (
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-success-foreground/70">
-                    Assigned to:
-                  </span>
-                  <div className="flex -space-x-2">
-                    {activeTask.task_assignments.map((assignment, idx) => (
-                      <Avatar
-                        key={idx}
-                        className="h-6 w-6 border-2 border-background"
-                      >
-                        <AvatarFallback className="text-xs bg-primary text-primary-foreground">
-                          {assignment.profiles?.full_name?.[0] || "U"}
-                        </AvatarFallback>
-                      </Avatar>
-                    ))}
-                  </div>
+          </CardHeader>
+          <CardContent className="pb-4">
+            {/* Milestone List */}
+            <div className="h-[340px] lg:h-96 overflow-y-auto space-y-3 pr-2">
+              {(() => {
+                console.log(
+                  "Rendering milestone list. Count:",
+                  filteredMilestones.length,
+                  filteredMilestones
+                );
+                return null;
+              })()}
+              {filteredMilestones.map((milestone) => (
+                <MilestoneCard
+                  key={milestone.id}
+                  milestone={milestone}
+                  onStatusChange={updateMilestoneStatus}
+                  getMilestoneId={getMilestoneId}
+                  onNavigate={() => navigate(`/milestones/${milestone.id}`)}
+                />
+              ))}
+              {filteredMilestones.length === 0 && (
+                <div className="text-center py-8 text-muted-foreground">
+                  <ListTodo className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-2 opacity-50" />
+                  <p className="text-base sm:text-lg">No milestones found</p>
                 </div>
               )}
+            </div>
           </CardContent>
         </Card>
-      )}
+      </div>
+    </div>
+  );
+}
 
-      {/* User Profile Card */}
-      {/* <Card>
-        <CardContent className="p-6">
-          <div className="flex items-center gap-4">
-            <Avatar className="h-16 w-16">
-              <AvatarFallback className="bg-primary text-primary-foreground text-xl">
-                {profile?.full_name?.[0] || "U"}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-1">
-              <h3 className="font-semibold text-lg">
-                {profile?.full_name || "User"}
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                {profile?.phone || "No phone"}
+// Milestone Card Component
+function MilestoneCard({
+  milestone,
+  onStatusChange,
+  getMilestoneId,
+  onNavigate,
+}: {
+  milestone: Milestone;
+  onStatusChange: (milestoneId: string, status: string) => void;
+  getMilestoneId: (milestone: Milestone) => string;
+  onNavigate: () => void;
+}) {
+  const getStatusActions = (currentStatus: string) => {
+    switch (currentStatus) {
+      case "planning":
+        return [{ label: "Start", status: "in_progress", icon: Play }];
+      case "in_progress":
+        return [
+          { label: "Complete", status: "completed", icon: CheckCircle },
+          { label: "Back to Planning", status: "planning", icon: ListTodo },
+        ];
+      case "completed":
+        return [{ label: "Reopen", status: "in_progress", icon: PlayCircle }];
+      default:
+        return [];
+    }
+  };
+
+  const getStatusColor = (status: string | null) => {
+    switch (status) {
+      case "planning":
+        return "bg-muted text-muted-foreground";
+      case "in_progress":
+        return "bg-primary/10 text-primary";
+      case "completed":
+        return "bg-success/10 text-success";
+      default:
+        return "bg-muted text-muted-foreground";
+    }
+  };
+
+  const getStatusIcon = (status: string | null) => {
+    switch (status) {
+      case "planning":
+        return ListTodo;
+      case "in_progress":
+        return PlayCircle;
+      case "completed":
+        return CheckCircle;
+      default:
+        return ListTodo;
+    }
+  };
+
+  const StatusIcon = getStatusIcon(milestone.status || null);
+
+  console.log(
+    "Rendering milestone card:",
+    milestone.name,
+    "Project:",
+    milestone.projects,
+    "Members:",
+    milestone.project_members
+  );
+
+  return (
+    <Card
+      className="hover:shadow-elevated transition-all cursor-pointer border-l-4 border-l-primary"
+      onClick={onNavigate}
+    >
+      <CardContent className="p-3 sm:p-4">
+        <div className="space-y-2 sm:space-y-3">
+          {/* Milestone Header */}
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex-1 min-w-0">
+              <h4 className="font-semibold text-base sm:text-lg truncate">
+                {milestone.name}
+              </h4>
+              <p className="text-xs sm:text-sm text-muted-foreground font-mono">
+                {getMilestoneId(milestone)}
               </p>
             </div>
-            {checkedIn && (
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <Clock className="h-4 w-4" />
-                <span className="text-sm font-mono">{formatDuration()}</span>
-              </div>
-            )}
+            <div className="flex items-center gap-0.5 sm:gap-1 flex-shrink-0">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 sm:h-8 sm:w-8"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <Star className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 sm:h-8 sm:w-8"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <Bookmark className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 sm:h-8 sm:w-8"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <Edit className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              </Button>
+            </div>
           </div>
-        </CardContent>
-      </Card> */}
 
-      {/* Task Counts Section */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <ListTodo className="h-5 w-5" />
-              Task Overview
-            </CardTitle>
+          {/* Project Name */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs sm:text-sm text-muted-foreground flex-shrink-0">
+              Project:
+            </span>
+            <span className="text-base sm:text-lg font-medium truncate">
+              {milestone.projects?.name || "No project"}
+            </span>
+          </div>
+
+          {/* Team Members */}
+          <div className="space-y-1.5 sm:space-y-2">
+            <span className="text-xs sm:text-sm text-muted-foreground">
+              Team Members:
+            </span>
+            <div className="flex flex-wrap gap-1.5 sm:gap-2">
+              {milestone.project_members &&
+              milestone.project_members.length > 0 ? (
+                milestone.project_members.map((member, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center gap-1.5 sm:gap-2"
+                  >
+                    <Avatar className="h-6 w-6 sm:h-8 sm:w-8">
+                      <AvatarFallback className="text-xs">
+                        {member.profiles?.full_name
+                          ?.split(" ")
+                          .map((n) => n[0])
+                          .join("")
+                          .toUpperCase() || "U"}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="text-sm sm:text-lg truncate">
+                      {member.profiles?.full_name ||
+                        member.profiles?.email ||
+                        "Unknown"}
+                    </span>
+                  </div>
+                ))
+              ) : (
+                <span className="text-xs sm:text-sm text-muted-foreground">
+                  No members assigned
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Milestone Status */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <Badge
+                className={`${getStatusColor(
+                  milestone.status
+                )} flex items-center gap-1 text-xs`}
+              >
+                <StatusIcon className="h-3 w-3" />
+                {(milestone.status || "unknown")
+                  .replace("_", " ")
+                  .toUpperCase()}
+              </Badge>
+            </div>
             <div className="flex items-center gap-2">
-              <Filter className="h-4 w-4 text-muted-foreground" />
-              <Select value={dateFilter} onValueChange={setDateFilter}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Filter by date" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Time</SelectItem>
-                  <SelectItem value="today">Today</SelectItem>
-                  <SelectItem value="yesterday">Yesterday</SelectItem>
-                  <SelectItem value="week">Last 7 Days</SelectItem>
-                  <SelectItem value="month">Last 30 Days</SelectItem>
-                  <SelectItem value="custom">Custom Range</SelectItem>
-                </SelectContent>
-              </Select>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 sm:h-8 text-xs sm:text-sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onNavigate();
+                }}
+              >
+                <ArrowRight className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1" />
+                Open
+              </Button>
             </div>
           </div>
-          {dateFilter === "custom" && (
-            <div className="flex items-center gap-4 mt-4">
-              <div className="flex items-center gap-2">
-                <Label htmlFor="start-date" className="text-sm">
-                  From:
-                </Label>
-                <Input
-                  id="start-date"
-                  type="date"
-                  value={customDateRange.start}
-                  onChange={(e) =>
-                    setCustomDateRange((prev) => ({
-                      ...prev,
-                      start: e.target.value,
-                    }))
-                  }
-                  className="w-[150px]"
-                />
-              </div>
-              <div className="flex items-center gap-2">
-                <Label htmlFor="end-date" className="text-sm">
-                  To:
-                </Label>
-                <Input
-                  id="end-date"
-                  type="date"
-                  value={customDateRange.end}
-                  onChange={(e) =>
-                    setCustomDateRange((prev) => ({
-                      ...prev,
-                      end: e.target.value,
-                    }))
-                  }
-                  className="w-[150px]"
-                />
-              </div>
-            </div>
-          )}
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-3 gap-4">
-            <Card className="border-muted/50">
-              <CardContent className="p-6 text-center">
-                <div className="flex items-center justify-center gap-2 mb-2">
-                  <ListTodo className="h-5 w-5 text-muted-foreground" />
-                  <p className="text-sm text-muted-foreground">To Do</p>
-                </div>
-                <p className="text-4xl font-bold text-muted-foreground">
-                  {taskCounts.todo}
-                </p>
-              </CardContent>
-            </Card>
-            <Card className="border-primary/20">
-              <CardContent className="p-6 text-center">
-                <div className="flex items-center justify-center gap-2 mb-2">
-                  <PlayCircle className="h-5 w-5 text-primary" />
-                  <p className="text-sm text-primary">In Progress</p>
-                </div>
-                <p className="text-4xl font-bold text-primary">
-                  {taskCounts.in_progress}
-                </p>
-              </CardContent>
-            </Card>
-            <Card className="border-success/20">
-              <CardContent className="p-6 text-center">
-                <div className="flex items-center justify-center gap-2 mb-2">
-                  <CheckCircle className="h-5 w-5 text-success" />
-                  <p className="text-sm text-success">Done</p>
-                </div>
-                <p className="text-4xl font-bold text-success">
-                  {taskCounts.done}
-                </p>
-              </CardContent>
-            </Card>
+
+          {/* Status Actions */}
+          <div className="flex gap-1.5 sm:gap-2 flex-wrap">
+            {getStatusActions(milestone.status).map((action, index) => (
+              <Button
+                key={index}
+                variant="outline"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onStatusChange(milestone.id, action.status);
+                }}
+                className="flex items-center gap-1 text-xs sm:text-sm h-7 sm:h-8"
+              >
+                <action.icon className="h-3 w-3" />
+                {action.label}
+              </Button>
+            ))}
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Legacy Stats Grid */}
-      {/* <div className="grid grid-cols-3 gap-4">
-        <Card className="border-destructive/20">
-          <CardContent className="p-6 text-center">
-            <p className="text-sm text-muted-foreground mb-2">Over run</p>
-            <p className="text-4xl font-bold">{stats.overrun}</p>
-          </CardContent>
-        </Card>
-        <Card className="border-destructive/20">
-          <CardContent className="p-6 text-center">
-            <p className="text-sm text-muted-foreground mb-2">Over due</p>
-            <p className="text-4xl font-bold">{stats.overdue}</p>
-          </CardContent>
-        </Card>
-        <Card className="border-success/20">
-          <CardContent className="p-6 text-center">
-            <p className="text-sm text-muted-foreground mb-2">On time</p>
-            <p className="text-4xl font-bold">{stats.onTime}</p>
-          </CardContent>
-        </Card>
-      </div> */}
-
-      {/* Recent Tasks */}
-      {recentTasks.length > 0 && (
-        <div className="space-y-3">
-          {recentTasks.map((task) => (
-            <Card
-              key={task.id}
-              className="hover:shadow-elevated transition-all cursor-pointer"
-            >
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h4 className="font-medium">{task.title}</h4>
-                      <Badge variant="outline" className="text-xs">
-                        {task.milestones?.name}
-                      </Badge>
-                    </div>
-                    <p className="text-sm text-muted-foreground line-clamp-1">
-                      {task.description || "No description"}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Badge className={getStatusColor(task.status)}>
-                      {task.status?.replace("_", " ")}
-                    </Badge>
-                    <Button variant="ghost" size="icon">
-                      <MoreVertical className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
         </div>
-      )}
-    </div>
+      </CardContent>
+    </Card>
   );
 }

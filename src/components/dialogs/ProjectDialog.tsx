@@ -15,8 +15,30 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { Plus, Edit, Trash2, Folder, FolderOpen } from "lucide-react";
+import {
+  Plus,
+  Edit,
+  Trash2,
+  Folder,
+  FolderOpen,
+  CalendarIcon,
+} from "lucide-react";
 import { toast } from "sonner";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 interface Project {
   id: string;
@@ -26,7 +48,6 @@ interface Project {
   icon: string;
   created_by: string;
   created_at: string;
-  updated_at: string;
   milestone_count?: number;
 }
 
@@ -80,6 +101,13 @@ export function ProjectDialog({
   const [description, setDescription] = useState("");
   const [color, setColor] = useState("#3B82F6");
   const [icon, setIcon] = useState("folder");
+  const [siteLocation, setSiteLocation] = useState("");
+  const [siteAddress, setSiteAddress] = useState("");
+  const [startDate, setStartDate] = useState<Date>();
+  const [endDate, setEndDate] = useState<Date>();
+  const [totalBudget, setTotalBudget] = useState("");
+  const [receivedAmount, setReceivedAmount] = useState("");
+  const [status, setStatus] = useState("active");
 
   useEffect(() => {
     if (open) {
@@ -141,6 +169,13 @@ export function ProjectDialog({
         description: description.trim() || null,
         color,
         icon,
+        site_location: siteLocation.trim() || null,
+        site_address: siteAddress.trim() || null,
+        start_date: startDate ? format(startDate, "yyyy-MM-dd") : null,
+        end_date: endDate ? format(endDate, "yyyy-MM-dd") : null,
+        total_budget: totalBudget ? parseFloat(totalBudget) : null,
+        received_amount: receivedAmount ? parseFloat(receivedAmount) : 0,
+        status,
         created_by: user.id,
       });
 
@@ -173,6 +208,13 @@ export function ProjectDialog({
           description: description.trim() || null,
           color,
           icon,
+          site_location: siteLocation.trim() || null,
+          site_address: siteAddress.trim() || null,
+          start_date: startDate ? format(startDate, "yyyy-MM-dd") : null,
+          end_date: endDate ? format(endDate, "yyyy-MM-dd") : null,
+          total_budget: totalBudget ? parseFloat(totalBudget) : null,
+          received_amount: receivedAmount ? parseFloat(receivedAmount) : null,
+          status,
         })
         .eq("id", editingProject.id);
 
@@ -245,16 +287,30 @@ export function ProjectDialog({
     setDescription("");
     setColor("#3B82F6");
     setIcon("folder");
+    setSiteLocation("");
+    setSiteAddress("");
+    setStartDate(undefined);
+    setEndDate(undefined);
+    setTotalBudget("");
+    setReceivedAmount("");
+    setStatus("active");
     setEditingProject(null);
     setShowCreateForm(false);
   };
 
-  const startEdit = (project: Project) => {
+  const startEdit = (project: any) => {
     setEditingProject(project);
     setName(project.name);
     setDescription(project.description || "");
     setColor(project.color);
     setIcon(project.icon);
+    setSiteLocation(project.site_location || "");
+    setSiteAddress(project.site_address || "");
+    setStartDate(project.start_date ? new Date(project.start_date) : undefined);
+    setEndDate(project.end_date ? new Date(project.end_date) : undefined);
+    setTotalBudget(project.total_budget?.toString() || "");
+    setReceivedAmount(project.received_amount?.toString() || "");
+    setStatus(project.status || "active");
     setShowCreateForm(true);
   };
 
@@ -314,14 +370,37 @@ export function ProjectDialog({
                     </Button>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="name">Project Name *</Label>
+                        <Input
+                          id="name"
+                          value={name}
+                          onChange={(e) => setName(e.target.value)}
+                          placeholder="Enter project name"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="siteLocation">Site Location</Label>
+                        <Input
+                          id="siteLocation"
+                          value={siteLocation}
+                          onChange={(e) => setSiteLocation(e.target.value)}
+                          placeholder="e.g., Inkel Business Park"
+                        />
+                      </div>
+                    </div>
+
                     <div className="space-y-2">
-                      <Label htmlFor="name">Project Name *</Label>
-                      <Input
-                        id="name"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        placeholder="Enter project name"
+                      <Label htmlFor="siteAddress">Site Address</Label>
+                      <Textarea
+                        id="siteAddress"
+                        value={siteAddress}
+                        onChange={(e) => setSiteAddress(e.target.value)}
+                        placeholder="Full site address"
+                        rows={2}
                       />
                     </div>
 
@@ -331,9 +410,106 @@ export function ProjectDialog({
                         id="description"
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
-                        placeholder="Enter group description"
+                        placeholder="Enter project description"
                         rows={3}
                       />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Start Date</Label>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              className={cn(
+                                "w-full justify-start text-left font-normal",
+                                !startDate && "text-muted-foreground"
+                              )}
+                            >
+                              <CalendarIcon className="mr-2 h-4 w-4" />
+                              {startDate
+                                ? format(startDate, "PPP")
+                                : "Pick a date"}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0">
+                            <Calendar
+                              mode="single"
+                              selected={startDate}
+                              onSelect={setStartDate}
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>End Date</Label>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              className={cn(
+                                "w-full justify-start text-left font-normal",
+                                !endDate && "text-muted-foreground"
+                              )}
+                            >
+                              <CalendarIcon className="mr-2 h-4 w-4" />
+                              {endDate ? format(endDate, "PPP") : "Pick a date"}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0">
+                            <Calendar
+                              mode="single"
+                              selected={endDate}
+                              onSelect={setEndDate}
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="totalBudget">Total Budget</Label>
+                        <Input
+                          id="totalBudget"
+                          type="number"
+                          value={totalBudget}
+                          onChange={(e) => setTotalBudget(e.target.value)}
+                          placeholder="0.00"
+                          step="0.01"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="receivedAmount">Received Amount</Label>
+                        <Input
+                          id="receivedAmount"
+                          type="number"
+                          value={receivedAmount}
+                          onChange={(e) => setReceivedAmount(e.target.value)}
+                          placeholder="0.00"
+                          step="0.01"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="status">Status</Label>
+                        <Select value={status} onValueChange={setStatus}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select status" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="active">Active</SelectItem>
+                            <SelectItem value="completed">Completed</SelectItem>
+                            <SelectItem value="on_hold">On Hold</SelectItem>
+                            <SelectItem value="cancelled">Cancelled</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
                   </div>
 

@@ -148,7 +148,7 @@ export function AppLayout() {
               </DropdownMenu>
             </div>
           </header>
-          <main className="flex-1 p-3 md:p-6 lg:p-8 overflow-auto">
+          <main className="flex-1 p-3 md:p-6 lg:p-4 overflow-auto">
             <Outlet />
           </main>
         </div>

@@ -344,7 +344,15 @@ export class BudgetService {
         .eq("id", milestoneId)
         .single();
 
-      if (milestoneError) throw milestoneError;
+      if (milestoneError) {
+        console.error("Error fetching milestone:", milestoneError);
+        throw milestoneError;
+      }
+
+      if (!milestone) {
+        console.error("Milestone not found:", milestoneId);
+        return null;
+      }
 
       const milestoneStartDate = milestone.start_date
         ? new Date(milestone.start_date)
@@ -364,7 +372,10 @@ export class BudgetService {
         )
         .eq("milestone_id", milestoneId);
 
-      if (membersError) throw membersError;
+      if (membersError) {
+        console.error("Error fetching members:", membersError);
+        throw membersError;
+      }
 
       // Apply filters
       let filteredMembers = members || [];
@@ -408,17 +419,27 @@ export class BudgetService {
 
       return {
         milestone_id: milestoneId,
-        project_name: milestone.name,
+        project_name: milestone.name || "Unnamed Project",
         project_start_date: milestone.start_date,
         project_end_date: milestone.end_date,
-        total_budget_allocated: milestone.budget || 0,
+        total_budget_allocated: Number(milestone.budget) || 0,
         total_budget_spent: totalBudgetSpent,
         member_summaries: memberSummaries,
         task_budgets: taskBudgets,
       };
     } catch (error) {
       console.error("Error generating project budget report:", error);
-      return null;
+      // Return minimal valid structure instead of null
+      return {
+        milestone_id: milestoneId,
+        project_name: "Error Loading Project",
+        project_start_date: null,
+        project_end_date: null,
+        total_budget_allocated: 0,
+        total_budget_spent: 0,
+        member_summaries: [],
+        task_budgets: [],
+      };
     }
   }
 

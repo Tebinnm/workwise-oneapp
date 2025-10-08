@@ -8,6 +8,8 @@ import Dashboard from "./pages/Dashboard";
 import ProjectBoard from "./pages/ProjectBoard";
 import BudgetReport from "./pages/BudgetReport";
 import UserManagement from "./pages/UserManagement";
+import Projects from "./pages/Projects";
+import ProjectDetail from "./pages/ProjectDetail";
 import NotFound from "./pages/NotFound";
 import { AppLayout } from "./components/layout/AppLayout";
 
@@ -24,7 +26,8 @@ const App = () => (
           <Route path="/auth" element={<Auth />} />
           <Route element={<AppLayout />}>
             <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/projects/:id" element={<ProjectBoard />} />
+            <Route path="/projects" element={<Projects />} />
+            <Route path="/projects/:projectId" element={<ProjectDetail />} />
             <Route path="/milestones/:id" element={<ProjectBoard />} />
             <Route path="/budget-report/:id" element={<BudgetReport />} />
             <Route path="/users" element={<UserManagement />} />
