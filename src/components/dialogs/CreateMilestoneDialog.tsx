@@ -75,14 +75,15 @@ export function CreateMilestoneDialog({
       } = await supabase.auth.getUser();
       if (!user) return;
 
+      // Fetch all projects (RLS policies handle access control)
       const { data, error } = await supabase
-        .from("projects" as any)
+        .from("projects")
         .select("*")
-        .eq("created_by", user.id)
         .order("name");
 
       if (error) throw error;
-      setProjects((data || []) as unknown as Project[]);
+
+      setProjects((data || []) as Project[]);
     } catch (error) {
       console.error("Error fetching projects:", error);
       toast.error("Failed to fetch projects");

@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { TaskDialog } from "@/components/dialogs/TaskDialog";
+import { RecurringTaskDialog } from "@/components/dialogs/RecurringTaskDialog";
 import { NotificationSystem } from "@/components/NotificationSystem";
 import { GanttChart } from "@/components/GanttChart";
 import { KanbanBoard } from "@/components/KanbanBoard";
@@ -174,6 +175,12 @@ export default function ProjectBoard() {
               <span className="hidden sm:inline">Add Task</span>
             </Button>
           </TaskDialog>
+          {/* <RecurringTaskDialog milestoneId={id!} onSuccess={handleTaskUpdate}>
+            <Button size="sm" variant="outline" className="flex-1 sm:flex-none">
+              <Plus className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Recurring</span>
+            </Button>
+          </RecurringTaskDialog> */}
         </div>
       </div>
 

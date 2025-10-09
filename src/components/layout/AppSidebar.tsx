@@ -11,6 +11,7 @@ import {
   FolderOpen,
   Trash2,
   Users,
+  ClipboardCheck,
 } from "lucide-react";
 import {
   Sidebar,
@@ -40,6 +41,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { CreateMilestoneDialog } from "@/components/dialogs/CreateMilestoneDialog";
 import { ProjectDialog } from "@/components/dialogs/ProjectDialog";
+import { usePermissions } from "@/hooks/usePermissions";
 
 interface Milestone {
   id: string;
@@ -68,6 +70,8 @@ export function AppSidebar() {
     null
   );
   const navigate = useNavigate();
+  const { canManageUsers, canManageProjects, canApproveAttendance } =
+    usePermissions();
 
   useEffect(() => {
     fetchMilestones();
@@ -243,59 +247,80 @@ export function AppSidebar() {
                   </NavLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <NavLink
-                    to="/users"
-                    className={({ isActive }) =>
-                      isActive
-                        ? "bg-sidebar-accent text-sidebar-primary font-medium"
-                        : ""
-                    }
-                  >
-                    <Users className="h-4 w-4" />
-                    <span>User Management</span>
-                  </NavLink>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
+              {canApproveAttendance() && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <NavLink
+                      to="/attendance"
+                      className={({ isActive }) =>
+                        isActive
+                          ? "bg-sidebar-accent text-sidebar-primary font-medium"
+                          : ""
+                      }
+                    >
+                      <ClipboardCheck className="h-4 w-4" />
+                      <span>Attendance</span>
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
+              {canManageUsers() && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <NavLink
+                      to="/users"
+                      className={({ isActive }) =>
+                        isActive
+                          ? "bg-sidebar-accent text-sidebar-primary font-medium"
+                          : ""
+                      }
+                    >
+                      <Users className="h-4 w-4" />
+                      <span>User Management</span>
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
 
         <SidebarGroup>
-          <div className="flex flex-col px-2  gap-2">
-            <ProjectDialog
-              onProjectCreated={fetchProjects}
-              trigger={
+          {canManageProjects() && (
+            <div className="flex flex-col px-2  gap-2">
+              <ProjectDialog
+                onProjectCreated={fetchProjects}
+                trigger={
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full justify-start h-8"
+                    title="Manage projects"
+                  >
+                    <Folder className="h-4 w-4 mr-2" />
+                    Manage Projects
+                  </Button>
+                }
+              />
+
+              <CreateMilestoneDialog
+                onSuccess={() => {
+                  fetchMilestones();
+                  fetchProjects();
+                }}
+              >
                 <Button
                   variant="ghost"
                   size="sm"
                   className="w-full justify-start h-8"
-                  title="Manage projects"
+                  title="Create milestone"
                 >
-                  <Folder className="h-4 w-4 mr-2" />
-                  Manage Projects
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Milestone
                 </Button>
-              }
-            />
-
-            <CreateMilestoneDialog
-              onSuccess={() => {
-                fetchMilestones();
-                fetchProjects();
-              }}
-            >
-              <Button
-                variant="ghost"
-                size="sm"
-                className="w-full justify-start h-8"
-                title="Create milestone"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Create Milestone
-              </Button>
-            </CreateMilestoneDialog>
-          </div>
+              </CreateMilestoneDialog>
+            </div>
+          )}
 
           {/* <SidebarGroupContent>
             <SidebarMenu>

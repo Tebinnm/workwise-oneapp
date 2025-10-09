@@ -3,6 +3,7 @@ import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { BudgetService, AttendanceStatus } from "@/services/budgetService";
+import { usePermissions } from "@/hooks/usePermissions";
 import {
   Dialog,
   DialogContent,
@@ -41,6 +42,9 @@ import {
   MapPin,
   AlertCircle,
   Trash2,
+  Play,
+  Pause,
+  Square,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -82,6 +86,7 @@ export function TaskDialog({
   onDelete,
 }: TaskDialogProps) {
   const isEditMode = !!task;
+  const { isWorker, isSupervisor, isAdmin } = usePermissions();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [profiles, setProfiles] = useState<Profile[]>([]);
@@ -99,6 +104,12 @@ export function TaskDialog({
   const [priority, setPriority] = useState<"low" | "medium" | "high">("medium");
   const [estimatedHours, setEstimatedHours] = useState("");
   const [billable, setBillable] = useState(true);
+  const [autoStartTimer, setAutoStartTimer] = useState(true); // Default to true for "start task"
+  const [timerCategory, setTimerCategory] = useState("work");
+  const [timerDuration, setTimerDuration] = useState(""); // in minutes
+  const [timerRunning, setTimerRunning] = useState(false);
+  const [timerElapsed, setTimerElapsed] = useState(0); // in seconds
+  const [timerStartTime, setTimerStartTime] = useState<Date | null>(null); // Track when timer started
 
   // Date/time fields
   const [startDate, setStartDate] = useState<Date>();
@@ -129,6 +140,42 @@ export function TaskDialog({
     }
   }, [open, isEditMode, task]);
 
+  // Timer effect - calculates elapsed time from start time
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (timerRunning && timerStartTime) {
+      interval = setInterval(() => {
+        const elapsed = Math.floor(
+          (Date.now() - timerStartTime.getTime()) / 1000
+        );
+        setTimerElapsed(elapsed);
+      }, 1000);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [timerRunning, timerStartTime]);
+
+  // Recalculate budgets when task type changes
+  useEffect(() => {
+    const recalculateBudgets = async () => {
+      if (teamAssignments.length > 0) {
+        const updatedAssignments = await Promise.all(
+          teamAssignments.map(async (assignment) => {
+            const budget = await calculateMemberBudget(
+              assignment.userId,
+              assignment.attendanceType,
+              assignment.hours
+            );
+            return { ...assignment, calculatedBudget: budget };
+          })
+        );
+        setTeamAssignments(updatedAssignments);
+      }
+    };
+    recalculateBudgets();
+  }, [taskType]);
+
   const fetchProfiles = async () => {
     const { data, error } = await supabase
       .from("profiles")
@@ -153,6 +200,28 @@ export function TaskDialog({
     setPriority(task.priority || "medium");
     setEstimatedHours(task.estimated_hours?.toString() || "");
     setBillable(task.billable !== false);
+
+    // Load timer state from localStorage if task is in progress
+    if (task.status === "in_progress") {
+      const timerKey = `task_timer_${task.id}`;
+      const savedTimer = localStorage.getItem(timerKey);
+      if (savedTimer) {
+        const { startTime, isRunning } = JSON.parse(savedTimer);
+        const timerStart = new Date(startTime);
+        setTimerStartTime(timerStart);
+        setTimerRunning(isRunning);
+
+        // Calculate current elapsed time
+        const elapsed = Math.floor((Date.now() - timerStart.getTime()) / 1000);
+        setTimerElapsed(elapsed);
+
+        console.log("⏱️ Loaded timer state:", {
+          startTime: timerStart,
+          isRunning,
+          elapsed: formatTimer(elapsed),
+        });
+      }
+    }
 
     // Parse dates
     if (task.start_datetime) {
@@ -227,6 +296,27 @@ export function TaskDialog({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    console.log("🚀 Task creation started...");
+    console.log("📝 Title:", title);
+    console.log("⏱️ Auto-start timer:", autoStartTimer);
+
+    // Validation for mandatory fields
+    if (!title.trim()) {
+      toast.error("Task title is required!");
+      return;
+    }
+
+    if (!isEditMode && teamAssignments.length === 0) {
+      toast.error("Please assign at least one team member!");
+      return;
+    }
+
+    if (!isEditMode && !startDate) {
+      toast.error("Start date is required!");
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -236,15 +326,19 @@ export function TaskDialog({
 
       if (!user) {
         toast.error("You must be logged in to manage tasks");
+        setLoading(false);
         return;
       }
+
+      console.log("✅ User authenticated:", user.id);
 
       // Prepare task data
       const taskData: any = {
         title,
         description: description || null,
         type: taskType,
-        status,
+        status: isEditMode ? status : "in_progress", // Auto-start tasks are in progress
+        priority,
         billable,
         estimated_hours: estimatedHours ? parseFloat(estimatedHours) : null,
       };
@@ -288,10 +382,13 @@ export function TaskDialog({
         };
       }
 
+      console.log("📋 Task data prepared:", taskData);
+
       let resultTask;
 
       if (isEditMode) {
         // Update existing task
+        console.log("🔄 Updating existing task...");
         const { data: updatedTask, error: taskError } = await supabase
           .from("tasks")
           .update(taskData)
@@ -299,21 +396,30 @@ export function TaskDialog({
           .select()
           .single();
 
-        if (taskError) throw taskError;
+        if (taskError) {
+          console.error("❌ Task update error:", taskError);
+          throw taskError;
+        }
         resultTask = updatedTask;
+        console.log("✅ Task updated:", resultTask);
 
         // Delete existing assignments
         await supabase.from("task_assignments").delete().eq("task_id", task.id);
       } else {
         // Create new task
+        console.log("➕ Creating new task...");
         const { data: newTask, error: taskError } = await supabase
           .from("tasks")
           .insert(taskData)
           .select()
           .single();
 
-        if (taskError) throw taskError;
+        if (taskError) {
+          console.error("❌ Task creation error:", taskError);
+          throw taskError;
+        }
         resultTask = newTask;
+        console.log("✅ Task created successfully:", resultTask);
       }
 
       // Assign to selected users
@@ -351,18 +457,71 @@ export function TaskDialog({
         );
       }
 
+      console.log("🎉 Task operation completed successfully!");
+
+      // Start the timer if it's a new task
+      if (!isEditMode && autoStartTimer) {
+        console.log("⏱️ Starting timer...");
+        const startTime = new Date();
+        setTimerStartTime(startTime);
+        setTimerRunning(true);
+
+        // Save timer state to localStorage
+        const timerKey = `task_timer_${resultTask.id}`;
+        localStorage.setItem(
+          timerKey,
+          JSON.stringify({
+            startTime: startTime.toISOString(),
+            isRunning: true,
+          })
+        );
+
+        console.log("💾 Timer state saved to localStorage:", {
+          taskId: resultTask.id,
+          startTime: startTime.toISOString(),
+        });
+      }
+
+      // Update timer state in localStorage for edited tasks
+      if (isEditMode && task?.status === "in_progress") {
+        const timerKey = `task_timer_${task.id}`;
+        localStorage.setItem(
+          timerKey,
+          JSON.stringify({
+            startTime:
+              timerStartTime?.toISOString() || new Date().toISOString(),
+            isRunning: timerRunning,
+          })
+        );
+      }
+
       toast.success(
-        isEditMode ? "Task updated successfully!" : "Task created successfully!"
+        isEditMode
+          ? "Task updated successfully!"
+          : "Task started successfully with timer!"
       );
+
+      console.log("🔒 Closing dialog...");
       setOpen(false);
       resetForm();
       onSuccess?.();
+
+      console.log("✨ All done!");
     } catch (error: any) {
+      console.error("❌ Error in task operation:", error);
+      console.error("Error details:", {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint,
+      });
+
       toast.error(
         error.message || `Failed to ${isEditMode ? "update" : "create"} task`
       );
     } finally {
       setLoading(false);
+      console.log("🔄 Loading state reset");
     }
   };
 
@@ -490,6 +649,12 @@ export function TaskDialog({
     setPriority("medium");
     setEstimatedHours("");
     setBillable(true);
+    setAutoStartTimer(true); // Default to true for new tasks
+    setTimerCategory("work");
+    setTimerDuration("");
+    setTimerRunning(false);
+    setTimerElapsed(0);
+    setTimerStartTime(null);
     setStartDate(undefined);
     setEndDate(undefined);
     setStartTime("");
@@ -559,6 +724,12 @@ export function TaskDialog({
       );
       if (!wageConfig) return 0;
 
+      // For general tasks, use monthly salary directly
+      if (taskType === "general") {
+        return wageConfig.monthly_salary || 0;
+      }
+
+      // For attendance tasks, calculate based on attendance type
       // Calculate daily rate
       const dailyRate =
         wageConfig.wage_type === "daily"
@@ -621,636 +792,935 @@ export function TaskDialog({
     return "";
   };
 
+  const formatTimer = (seconds: number) => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    return `${hours.toString().padStart(2, "0")}:${minutes
+      .toString()
+      .padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+  };
+
+  const handleStartTimer = () => {
+    console.log("▶️ Starting/Resuming timer");
+
+    // If no start time exists, set it now
+    if (!timerStartTime) {
+      const startTime = new Date();
+      setTimerStartTime(startTime);
+    }
+
+    setTimerRunning(true);
+
+    // Update localStorage
+    if (task?.id) {
+      const timerKey = `task_timer_${task.id}`;
+      localStorage.setItem(
+        timerKey,
+        JSON.stringify({
+          startTime: timerStartTime?.toISOString() || new Date().toISOString(),
+          isRunning: true,
+        })
+      );
+    }
+  };
+
+  const handlePauseTimer = () => {
+    console.log("⏸️ Pausing timer");
+    setTimerRunning(false);
+
+    // Update localStorage
+    if (task?.id) {
+      const timerKey = `task_timer_${task.id}`;
+      localStorage.setItem(
+        timerKey,
+        JSON.stringify({
+          startTime: timerStartTime?.toISOString() || new Date().toISOString(),
+          isRunning: false,
+        })
+      );
+    }
+  };
+
+  const handleStopTimer = () => {
+    console.log("⏹️ Stopping timer");
+    setTimerRunning(false);
+    setTimerElapsed(0);
+    setTimerStartTime(null);
+
+    // Remove from localStorage
+    if (task?.id) {
+      const timerKey = `task_timer_${task.id}`;
+      localStorage.removeItem(timerKey);
+    }
+  };
+
+  // Determine if user can only pause timer (worker with started task)
+  const isWorkerWithStartedTask =
+    isWorker() && isEditMode && task?.status === "in_progress";
+
+  // Determine if user can edit task details (supervisor/admin or worker with non-started task)
+  const canEditTaskDetails =
+    isAdmin() ||
+    isSupervisor() ||
+    (isWorker() && (!isEditMode || task?.status !== "in_progress"));
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader className="relative">
           <DialogTitle>
-            {isEditMode ? "Edit Task" : "Create New Task"}
+            {isWorkerWithStartedTask
+              ? "Task Timer"
+              : isEditMode
+              ? "Edit Task"
+              : "Start New Task"}
           </DialogTitle>
           <DialogDescription className="text-lg">
-            {isEditMode
+            {isWorkerWithStartedTask
+              ? "This task is currently running. You can only pause or stop the timer."
+              : isEditMode
               ? "Update task details, assignments, and scheduling."
-              : "Create a new task with advanced features including recurrence, multi-assignment, and attendance integration."}
+              : "Start a new task with automatic timer and advanced features including recurrence, multi-assignment, and attendance integration."}
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Basic Information */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Basic Information</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="title">Task Title *</Label>
-                  <Input
-                    id="title"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    placeholder="Enter task title"
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="type">Task Type</Label>
-                  <Select
-                    value={taskType}
-                    onValueChange={(value: "attendance" | "general") =>
-                      setTaskType(value)
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="general">General Task</SelectItem>
-                      <SelectItem value="attendance">
-                        Attendance Task
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Enter task description"
-                  rows={3}
-                />
-              </div>
-
-              <div className="grid grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="status">Status</Label>
-                  <Select
-                    value={status}
-                    onValueChange={(value: any) => setStatus(value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="todo">To Do</SelectItem>
-                      <SelectItem value="in_progress">In Progress</SelectItem>
-                      <SelectItem value="blocked">Blocked</SelectItem>
-                      <SelectItem value="done">Done</SelectItem>
-                      <SelectItem value="cancelled">Cancelled</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="priority">Priority</Label>
-                  <Select
-                    value={priority}
-                    onValueChange={(value: "low" | "medium" | "high") =>
-                      setPriority(value)
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="low">Low</SelectItem>
-                      <SelectItem value="medium">Medium</SelectItem>
-                      <SelectItem value="high">High</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="estimatedHours">Estimated Hours</Label>
-                  <Input
-                    id="estimatedHours"
-                    type="number"
-                    step="0.5"
-                    value={estimatedHours}
-                    onChange={(e) => setEstimatedHours(e.target.value)}
-                    placeholder="0"
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="billable"
-                  checked={billable}
-                  onCheckedChange={(checked) => setBillable(checked as boolean)}
-                />
-                <Label htmlFor="billable">Billable task</Label>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Date and Time */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Schedule</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Start Date</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          "w-full justify-start text-left font-normal",
-                          !startDate && "text-muted-foreground"
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {startDate ? format(startDate, "PPP") : "Pick a date"}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
-                      <Calendar
-                        mode="single"
-                        selected={startDate}
-                        onSelect={setStartDate}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-                <div className="space-y-2">
-                  <Label>End Date</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          "w-full justify-start text-left font-normal",
-                          !endDate && "text-muted-foreground"
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {endDate ? format(endDate, "PPP") : "Pick a date"}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
-                      <Calendar
-                        mode="single"
-                        selected={endDate}
-                        onSelect={setEndDate}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="startTime">Start Time</Label>
-                  <Input
-                    id="startTime"
-                    type="time"
-                    value={startTime}
-                    onChange={(e) => setStartTime(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="endTime">End Time</Label>
-                  <Input
-                    id="endTime"
-                    type="time"
-                    value={endTime}
-                    onChange={(e) => setEndTime(e.target.value)}
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Recurrence */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Repeat className="h-5 w-5" />
-                Recurrence
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="recurring"
-                  checked={showRecurrence}
-                  onCheckedChange={(checked) =>
-                    setShowRecurrence(checked === true)
-                  }
-                />
-                <Label htmlFor="recurring">Make this task recurring</Label>
-              </div>
-
-              {showRecurrence && (
-                <div className="space-y-4 pl-6 border-l-2 border-muted">
-                  <div className="space-y-2">
-                    <Label>Recurrence Type</Label>
-                    <Select
-                      value={recurrence.type}
-                      onValueChange={(value: any) =>
-                        setRecurrence((prev) => ({ ...prev, type: value }))
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="daily">Daily</SelectItem>
-                        <SelectItem value="weekly">Weekly</SelectItem>
-                        <SelectItem value="monthly">Monthly</SelectItem>
-                        <SelectItem value="custom">Custom</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {recurrence.type !== "none" && (
+        <form onSubmit={handleSubmit} className="relative space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Left Column - Main Content */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* Basic Information */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Basic Information</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label>Interval</Label>
+                      <Label
+                        htmlFor="title"
+                        className="flex items-center gap-1"
+                      >
+                        Task Title <span className="text-red-500">*</span>
+                      </Label>
                       <Input
-                        type="number"
-                        min="1"
-                        value={recurrence.interval || 1}
-                        onChange={(e) =>
-                          setRecurrence((prev) => ({
-                            ...prev,
-                            interval: parseInt(e.target.value),
-                          }))
-                        }
-                        placeholder="1"
+                        id="title"
+                        value={title}
+                        onChange={(e) => setTitle(e.target.value)}
+                        placeholder="Enter task title"
+                        required
+                        disabled={!canEditTaskDetails}
                       />
                     </div>
-                  )}
-
-                  {recurrence.type === "weekly" && (
                     <div className="space-y-2">
-                      <Label>Days of Week</Label>
-                      <div className="flex flex-wrap gap-2">
-                        {[
-                          "Monday",
-                          "Tuesday",
-                          "Wednesday",
-                          "Thursday",
-                          "Friday",
-                          "Saturday",
-                          "Sunday",
-                        ].map((day, index) => (
-                          <Button
-                            key={day}
-                            type="button"
-                            variant={
-                              recurrence.daysOfWeek?.includes(index)
-                                ? "default"
-                                : "outline"
-                            }
-                            size="sm"
-                            onClick={() => {
-                              const days = recurrence.daysOfWeek || [];
-                              const newDays = days.includes(index)
-                                ? days.filter((d) => d !== index)
-                                : [...days, index];
+                      <Label htmlFor="type">Task Type</Label>
+                      <Select
+                        value={taskType}
+                        onValueChange={(value: "attendance" | "general") =>
+                          setTaskType(value)
+                        }
+                        disabled={!canEditTaskDetails}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="general">General Task</SelectItem>
+                          <SelectItem value="attendance">
+                            Attendance Task
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="description">Description</Label>
+                    <Textarea
+                      id="description"
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                      placeholder="Enter task description"
+                      rows={3}
+                      disabled={!canEditTaskDetails}
+                    />
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="billable"
+                      checked={billable}
+                      onCheckedChange={(checked) =>
+                        setBillable(checked as boolean)
+                      }
+                      disabled={!canEditTaskDetails}
+                    />
+                    <Label htmlFor="billable">Billable task</Label>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Recurrence - Only show for general tasks, not attendance tasks */}
+              {canEditTaskDetails && taskType !== "attendance" && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Repeat className="h-5 w-5" />
+                      Recurrence
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="recurring"
+                        checked={showRecurrence}
+                        onCheckedChange={(checked) =>
+                          setShowRecurrence(checked === true)
+                        }
+                      />
+                      <Label htmlFor="recurring">
+                        Make this task recurring
+                      </Label>
+                    </div>
+
+                    {showRecurrence && (
+                      <div className="space-y-4 pl-6 border-l-2 border-muted">
+                        <div className="space-y-2">
+                          <Label>Recurrence Type</Label>
+                          <Select
+                            value={recurrence.type}
+                            onValueChange={(value: any) =>
                               setRecurrence((prev) => ({
                                 ...prev,
-                                daysOfWeek: newDays,
-                              }));
-                            }}
+                                type: value,
+                              }))
+                            }
                           >
-                            {day.slice(0, 3)}
-                          </Button>
-                        ))}
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="daily">Daily</SelectItem>
+                              <SelectItem value="weekly">Weekly</SelectItem>
+                              <SelectItem value="monthly">Monthly</SelectItem>
+                              <SelectItem value="custom">Custom</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {recurrence.type !== "none" && (
+                          <div className="space-y-2">
+                            <Label>Interval</Label>
+                            <Input
+                              type="number"
+                              min="1"
+                              value={recurrence.interval || 1}
+                              onChange={(e) =>
+                                setRecurrence((prev) => ({
+                                  ...prev,
+                                  interval: parseInt(e.target.value),
+                                }))
+                              }
+                              placeholder="1"
+                            />
+                          </div>
+                        )}
+
+                        {recurrence.type === "weekly" && (
+                          <div className="space-y-2">
+                            <Label>Days of Week</Label>
+                            <div className="flex flex-wrap gap-2">
+                              {[
+                                "Monday",
+                                "Tuesday",
+                                "Wednesday",
+                                "Thursday",
+                                "Friday",
+                                "Saturday",
+                                "Sunday",
+                              ].map((day, index) => (
+                                <Button
+                                  key={day}
+                                  type="button"
+                                  variant={
+                                    recurrence.daysOfWeek?.includes(index)
+                                      ? "default"
+                                      : "outline"
+                                  }
+                                  size="sm"
+                                  onClick={() => {
+                                    const days = recurrence.daysOfWeek || [];
+                                    const newDays = days.includes(index)
+                                      ? days.filter((d) => d !== index)
+                                      : [...days, index];
+                                    setRecurrence((prev) => ({
+                                      ...prev,
+                                      daysOfWeek: newDays,
+                                    }));
+                                  }}
+                                >
+                                  {day.slice(0, 3)}
+                                </Button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {recurrence.type === "monthly" && (
+                          <div className="space-y-2">
+                            <Label>Day of Month</Label>
+                            <Input
+                              type="number"
+                              min="1"
+                              max="31"
+                              value={recurrence.dayOfMonth || 1}
+                              onChange={(e) =>
+                                setRecurrence((prev) => ({
+                                  ...prev,
+                                  dayOfMonth: parseInt(e.target.value),
+                                }))
+                              }
+                              placeholder="1"
+                            />
+                          </div>
+                        )}
+
+                        <div className="space-y-2">
+                          <Label>End Date (Optional)</Label>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="outline"
+                                className={cn(
+                                  "w-full justify-start text-left font-normal",
+                                  !recurrence.endDate && "text-muted-foreground"
+                                )}
+                              >
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {recurrence.endDate
+                                  ? format(recurrence.endDate, "PPP")
+                                  : "No end date"}
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0">
+                              <Calendar
+                                mode="single"
+                                selected={recurrence.endDate}
+                                onSelect={(date) =>
+                                  setRecurrence((prev) => ({
+                                    ...prev,
+                                    endDate: date,
+                                  }))
+                                }
+                                initialFocus
+                              />
+                            </PopoverContent>
+                          </Popover>
+                        </div>
+
+                        <div className="p-3 bg-muted rounded-lg">
+                          <p className="text-sm text-muted-foreground">
+                            <strong>Preview:</strong>{" "}
+                            {getRecurrenceDescription()}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Team Assignment with Attendance */}
+              {canEditTaskDetails && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Users className="h-5 w-5" />
+                      {taskType === "attendance"
+                        ? "Team Assignment & Attendance"
+                        : "Team Assignment"}{" "}
+                      <span className="text-red-500 text-base">*</span>
+                    </CardTitle>
+                    <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                      <p className="text-sm text-blue-800">
+                        <strong>Note:</strong>{" "}
+                        {taskType === "attendance"
+                          ? "Configure attendance settings for each team member. Budget will be calculated based on attendance type (full day, half day, or hours)."
+                          : "Assign team members to this task. Budget will be calculated using monthly salary for each member."}
+                      </p>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <Label>Assign to team members</Label>
+                      <div className="space-y-3 max-h-96 overflow-y-auto">
+                        {profiles.map((profile) => {
+                          const assignment = getAssignmentForUser(profile.id);
+                          const isAssigned = !!assignment;
+
+                          return (
+                            <div
+                              key={profile.id}
+                              className={`p-4 border rounded-lg transition-all cursor-pointer ${
+                                isAssigned
+                                  ? "border-primary bg-primary/5"
+                                  : "border-muted hover:bg-muted/50"
+                              }`}
+                            >
+                              <div className="flex items-center space-x-3">
+                                <Checkbox
+                                  checked={isAssigned}
+                                  onCheckedChange={() =>
+                                    toggleAssignee(profile.id)
+                                  }
+                                />
+                                <Avatar className="h-10 w-10">
+                                  <AvatarFallback className="text-sm">
+                                    {profile.full_name?.[0] || "U"}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-medium truncate">
+                                    {profile.full_name || "Unknown User"}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground capitalize">
+                                    {profile.role}
+                                  </p>
+                                </div>
+                              </div>
+
+                              {isAssigned && assignment && (
+                                <div
+                                  className="mt-4 pl-10 space-y-3"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  {/* Only show attendance type controls for attendance tasks */}
+                                  {taskType === "attendance" && (
+                                    <>
+                                      <div className="space-y-2">
+                                        <Label className="text-sm">
+                                          Attendance Type
+                                        </Label>
+                                        <Select
+                                          value={assignment.attendanceType}
+                                          onValueChange={(
+                                            value:
+                                              | "full_day"
+                                              | "half_day"
+                                              | "hour_based"
+                                              | "leave"
+                                          ) =>
+                                            updateAssignmentAttendance(
+                                              profile.id,
+                                              value,
+                                              assignment.hours,
+                                              assignment.leaveType
+                                            )
+                                          }
+                                        >
+                                          <SelectTrigger className="w-full">
+                                            <SelectValue />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            <SelectItem value="full_day">
+                                              Full Day (8 hours)
+                                            </SelectItem>
+                                            <SelectItem value="half_day">
+                                              Half Day (4 hours)
+                                            </SelectItem>
+                                            <SelectItem value="hour_based">
+                                              Custom Hours
+                                            </SelectItem>
+                                            <SelectItem value="leave">
+                                              Leave Day
+                                            </SelectItem>
+                                          </SelectContent>
+                                        </Select>
+                                      </div>
+
+                                      {assignment.attendanceType ===
+                                        "hour_based" && (
+                                        <div className="space-y-2">
+                                          <Label className="text-sm">
+                                            Hours
+                                          </Label>
+                                          <Input
+                                            type="number"
+                                            min="0.5"
+                                            max="24"
+                                            step="0.5"
+                                            value={assignment.hours || 1}
+                                            onChange={(e) =>
+                                              updateAssignmentAttendance(
+                                                profile.id,
+                                                "hour_based",
+                                                parseFloat(e.target.value) || 1,
+                                                assignment.leaveType
+                                              )
+                                            }
+                                            className="w-full"
+                                            placeholder="Enter hours"
+                                          />
+                                        </div>
+                                      )}
+
+                                      {assignment.attendanceType ===
+                                        "leave" && (
+                                        <div className="space-y-2">
+                                          <Label className="text-sm">
+                                            Leave Type
+                                          </Label>
+                                          <Select
+                                            value={
+                                              assignment.leaveType || "vacation"
+                                            }
+                                            onValueChange={(
+                                              value:
+                                                | "sick"
+                                                | "vacation"
+                                                | "personal"
+                                            ) =>
+                                              updateAssignmentAttendance(
+                                                profile.id,
+                                                "leave",
+                                                assignment.hours,
+                                                value
+                                              )
+                                            }
+                                          >
+                                            <SelectTrigger className="w-full">
+                                              <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                              <SelectItem value="sick">
+                                                Sick Leave
+                                              </SelectItem>
+                                              <SelectItem value="vacation">
+                                                Vacation
+                                              </SelectItem>
+                                              <SelectItem value="personal">
+                                                Personal Leave
+                                              </SelectItem>
+                                            </SelectContent>
+                                          </Select>
+                                        </div>
+                                      )}
+                                    </>
+                                  )}
+
+                                  {/* Budget Calculation Display */}
+                                  {assignment.calculatedBudget !==
+                                    undefined && (
+                                    <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                                      <div className="flex flex-col gap-1">
+                                        <div className="flex items-center justify-between">
+                                          <span className="text-sm font-medium text-green-800">
+                                            {taskType === "general"
+                                              ? "Monthly Salary:"
+                                              : "Calculated Budget:"}
+                                          </span>
+                                          <span className="text-sm font-bold text-green-900">
+                                            {formatCurrency(
+                                              assignment.calculatedBudget
+                                            )}
+                                          </span>
+                                        </div>
+                                        {taskType === "general" && (
+                                          <p className="text-xs text-green-700">
+                                            Based on monthly salary
+                                          </p>
+                                        )}
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
-                  )}
 
-                  {recurrence.type === "monthly" && (
-                    <div className="space-y-2">
-                      <Label>Day of Month</Label>
-                      <Input
-                        type="number"
-                        min="1"
-                        max="31"
-                        value={recurrence.dayOfMonth || 1}
-                        onChange={(e) =>
-                          setRecurrence((prev) => ({
-                            ...prev,
-                            dayOfMonth: parseInt(e.target.value),
-                          }))
-                        }
-                        placeholder="1"
-                      />
-                    </div>
-                  )}
-
-                  <div className="space-y-2">
-                    <Label>End Date (Optional)</Label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className={cn(
-                            "w-full justify-start text-left font-normal",
-                            !recurrence.endDate && "text-muted-foreground"
-                          )}
-                        >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {recurrence.endDate
-                            ? format(recurrence.endDate, "PPP")
-                            : "No end date"}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0">
-                        <Calendar
-                          mode="single"
-                          selected={recurrence.endDate}
-                          onSelect={(date) =>
-                            setRecurrence((prev) => ({
-                              ...prev,
-                              endDate: date,
-                            }))
-                          }
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-
-                  <div className="p-3 bg-muted rounded-lg">
-                    <p className="text-sm text-muted-foreground">
-                      <strong>Preview:</strong> {getRecurrenceDescription()}
-                    </p>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Team Assignment with Attendance */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Users className="h-5 w-5" />
-                Team Assignment & Attendance
-              </CardTitle>
-              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                <p className="text-sm text-blue-800">
-                  <strong>Note:</strong> Configure attendance settings for each
-                  team member. This will automatically create attendance records
-                  and billing entries.
-                </p>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label>Assign to team members</Label>
-                <div className="space-y-3 max-h-96 overflow-y-auto">
-                  {profiles.map((profile) => {
-                    const assignment = getAssignmentForUser(profile.id);
-                    const isAssigned = !!assignment;
-
-                    return (
-                      <div
-                        key={profile.id}
-                        className={`p-4 border rounded-lg transition-all cursor-pointer ${
-                          isAssigned
-                            ? "border-primary bg-primary/5"
-                            : "border-muted hover:bg-muted/50"
-                        }`}
-                      >
-                        <div className="flex items-center space-x-3">
-                          <Checkbox
-                            checked={isAssigned}
-                            onCheckedChange={() => toggleAssignee(profile.id)}
-                          />
-                          <Avatar className="h-10 w-10">
-                            <AvatarFallback className="text-sm">
-                              {profile.full_name?.[0] || "U"}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium truncate">
-                              {profile.full_name || "Unknown User"}
-                            </p>
-                            <p className="text-xs text-muted-foreground capitalize">
-                              {profile.role}
-                            </p>
+                    {teamAssignments.length > 0 && (
+                      <>
+                        <div className="space-y-2">
+                          <Label>
+                            Selected Assignees ({teamAssignments.length})
+                          </Label>
+                          <div className="flex flex-wrap gap-2">
+                            {teamAssignments.map((assignment) => {
+                              const profile = profiles.find(
+                                (p) => p.id === assignment.userId
+                              );
+                              const attendanceLabel = {
+                                full_day: "Full Day",
+                                half_day: "Half Day",
+                                hour_based: `${assignment.hours || 1}h`,
+                                leave: assignment.leaveType || "Leave",
+                              }[assignment.attendanceType];
+                              return (
+                                <Badge
+                                  key={assignment.userId}
+                                  variant="secondary"
+                                  className="flex items-center gap-1"
+                                >
+                                  <Avatar className="h-4 w-4">
+                                    <AvatarFallback className="text-xs">
+                                      {profile?.full_name?.[0] || "U"}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <span className="text-xs">
+                                    {profile?.full_name || "Unknown"}
+                                    {taskType === "attendance" &&
+                                      ` - ${attendanceLabel}`}
+                                  </span>
+                                </Badge>
+                              );
+                            })}
                           </div>
                         </div>
 
-                        {isAssigned && assignment && (
-                          <div
-                            className="mt-4 pl-10 space-y-3"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <div className="space-y-2">
-                              <Label className="text-sm">Attendance Type</Label>
-                              <Select
-                                value={assignment.attendanceType}
-                                onValueChange={(
-                                  value:
-                                    | "full_day"
-                                    | "half_day"
-                                    | "hour_based"
-                                    | "leave"
-                                ) =>
-                                  updateAssignmentAttendance(
-                                    profile.id,
-                                    value,
-                                    assignment.hours,
-                                    assignment.leaveType
-                                  )
-                                }
-                              >
-                                <SelectTrigger className="w-full">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="full_day">
-                                    Full Day (8 hours)
-                                  </SelectItem>
-                                  <SelectItem value="half_day">
-                                    Half Day (4 hours)
-                                  </SelectItem>
-                                  <SelectItem value="hour_based">
-                                    Custom Hours
-                                  </SelectItem>
-                                  <SelectItem value="leave">
-                                    Leave Day
-                                  </SelectItem>
-                                </SelectContent>
-                              </Select>
+                        {/* Total Task Budget */}
+                        <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-sm font-medium">
+                                {taskType === "general"
+                                  ? "Total Monthly Salary"
+                                  : "Total Task Budget"}
+                              </p>
+                              <p className="text-lg text-muted-foreground">
+                                {taskType === "general"
+                                  ? "Sum of all members' monthly salaries"
+                                  : "Sum of all member budgets for this task"}
+                              </p>
                             </div>
+                            <p className="text-2xl font-bold text-primary">
+                              {formatCurrency(getTotalTaskBudget())}
+                            </p>
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+            </div>
 
-                            {assignment.attendanceType === "hour_based" && (
-                              <div className="space-y-2">
-                                <Label className="text-sm">Hours</Label>
-                                <Input
-                                  type="number"
-                                  min="0.5"
-                                  max="24"
-                                  step="0.5"
-                                  value={assignment.hours || 1}
-                                  onChange={(e) =>
-                                    updateAssignmentAttendance(
-                                      profile.id,
-                                      "hour_based",
-                                      parseFloat(e.target.value) || 1,
-                                      assignment.leaveType
-                                    )
-                                  }
-                                  className="w-full"
-                                  placeholder="Enter hours"
-                                />
-                              </div>
-                            )}
+            {/* Right Column - Task Configuration & Schedule */}
+            <div className="lg:col-span-1 space-y-6">
+              <Card className="sticky top-0">
+                <CardHeader>
+                  <CardTitle className="text-lg">
+                    Task Configuration & Schedule
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Status, Priority, and Estimated Hours Section */}
+                  <div className="space-y-4 pb-6 border-b">
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="status">Status</Label>
+                        <Select
+                          value={status}
+                          onValueChange={(value: any) => setStatus(value)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="todo">To Do</SelectItem>
+                            <SelectItem value="in_progress">
+                              In Progress
+                            </SelectItem>
+                            <SelectItem value="blocked">Blocked</SelectItem>
+                            <SelectItem value="done">Done</SelectItem>
+                            <SelectItem value="cancelled">Cancelled</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="priority">Priority</Label>
+                        <Select
+                          value={priority}
+                          onValueChange={(value: "low" | "medium" | "high") =>
+                            setPriority(value)
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="low">Low</SelectItem>
+                            <SelectItem value="medium">Medium</SelectItem>
+                            <SelectItem value="high">High</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="estimatedHours">Estimated Hours</Label>
+                        <Input
+                          id="estimatedHours"
+                          type="number"
+                          step="0.5"
+                          value={estimatedHours}
+                          onChange={(e) => setEstimatedHours(e.target.value)}
+                          placeholder="0"
+                        />
+                      </div>
 
-                            {/* Budget Calculation Display */}
-                            {assignment.calculatedBudget !== undefined && (
-                              <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-                                <div className="flex items-center justify-between">
-                                  <span className="text-sm font-medium text-green-800">
-                                    Calculated Budget:
-                                  </span>
-                                  <span className="text-sm font-bold text-green-900">
-                                    {formatCurrency(
-                                      assignment.calculatedBudget
-                                    )}
-                                  </span>
-                                </div>
-                              </div>
-                            )}
-
-                            {assignment.attendanceType === "leave" && (
-                              <div className="space-y-2">
-                                <Label className="text-sm">Leave Type</Label>
-                                <Select
-                                  value={assignment.leaveType || "vacation"}
-                                  onValueChange={(
-                                    value: "sick" | "vacation" | "personal"
-                                  ) =>
-                                    updateAssignmentAttendance(
-                                      profile.id,
-                                      "leave",
-                                      assignment.hours,
-                                      value
-                                    )
-                                  }
-                                >
-                                  <SelectTrigger className="w-full">
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="sick">
-                                      Sick Leave
-                                    </SelectItem>
-                                    <SelectItem value="vacation">
-                                      Vacation
-                                    </SelectItem>
-                                    <SelectItem value="personal">
-                                      Personal Leave
-                                    </SelectItem>
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                            )}
+                      <div className="space-y-3 pt-2">
+                        {!isEditMode && canEditTaskDetails && (
+                          <div className="flex items-center space-x-2">
+                            <Checkbox
+                              id="autoStartTimer"
+                              checked={autoStartTimer}
+                              onCheckedChange={(checked) =>
+                                setAutoStartTimer(checked as boolean)
+                              }
+                            />
+                            <Label
+                              htmlFor="autoStartTimer"
+                              className="text-sm cursor-pointer"
+                            >
+                              Start timer immediately
+                            </Label>
                           </div>
                         )}
+
+                        {/* Live Running Timer Display */}
+                        {isEditMode &&
+                          task?.status === "in_progress" &&
+                          timerStartTime && (
+                            <div className="p-6 bg-gradient-to-br from-blue-500 via-indigo-600 to-purple-600 rounded-lg shadow-xl">
+                              <div className="space-y-4">
+                                <div className="flex items-center gap-3">
+                                  <div
+                                    className={cn(
+                                      "h-4 w-4 rounded-full",
+                                      timerRunning
+                                        ? "bg-green-400 animate-pulse shadow-lg shadow-green-400/50"
+                                        : "bg-yellow-400 shadow-lg shadow-yellow-400/50"
+                                    )}
+                                  ></div>
+                                  <div>
+                                    <p className="text-sm font-medium text-white/90">
+                                      Task Timer
+                                    </p>
+                                    <p className="text-xs text-white/70">
+                                      {timerRunning ? "Running" : "Paused"}
+                                    </p>
+                                  </div>
+                                </div>
+
+                                <div className="text-center ">
+                                  <p className="text-2xl   font-bold font-mono text-white tracking-wider drop-shadow-lg">
+                                    {formatTimer(timerElapsed)}
+                                  </p>
+                                </div>
+
+                                <div className="flex  gap-2">
+                                  {timerRunning ? (
+                                    <>
+                                      <Button
+                                        type="button"
+                                        onClick={handlePauseTimer}
+                                        className="w-full bg-white/20 hover:bg-white/30 text-white border-white/30 backdrop-blur-sm"
+                                      >
+                                        <Pause className="h-4 w-4 mr-2" />
+                                        Pause Timer
+                                      </Button>
+                                      <Button
+                                        type="button"
+                                        onClick={handleStopTimer}
+                                        variant="destructive"
+                                        className="w-full bg-red-500/90 hover:bg-red-600 text-white"
+                                      >
+                                        <Square className="h-4 w-4 mr-2" />
+                                        Stop & Reset
+                                      </Button>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Button
+                                        type="button"
+                                        onClick={handleStartTimer}
+                                        className="w-full bg-green-500 hover:bg-green-600 text-white"
+                                      >
+                                        <Play className="h-4 w-4 mr-2" />
+                                        Resume Timer
+                                      </Button>
+                                      <Button
+                                        type="button"
+                                        onClick={handleStopTimer}
+                                        variant="outline"
+                                        className="w-full bg-white/10 hover:bg-white/20 text-white border-white/30"
+                                      >
+                                        <Square className="h-4 w-4 mr-2" />
+                                        Stop & Reset
+                                      </Button>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          )}
                       </div>
-                    );
-                  })}
-                </div>
+                    </div>
+                  </div>
+
+                  {/* Schedule Section */}
+                  {canEditTaskDetails && (
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Clock className="h-5 w-5 text-muted-foreground" />
+                        <h3 className="text-base font-medium">Schedule</h3>
+                      </div>
+
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <Label className="flex items-center gap-1">
+                            Start Date <span className="text-red-500">*</span>
+                          </Label>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="outline"
+                                className={cn(
+                                  "w-full justify-start text-left font-normal",
+                                  !startDate && "text-muted-foreground"
+                                )}
+                              >
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {startDate
+                                  ? format(startDate, "PPP")
+                                  : "Pick a date"}
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0">
+                              <Calendar
+                                mode="single"
+                                selected={startDate}
+                                onSelect={setStartDate}
+                                initialFocus
+                              />
+                            </PopoverContent>
+                          </Popover>
+                        </div>
+                        <div className="space-y-2">
+                          <Label>End Date</Label>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="outline"
+                                className={cn(
+                                  "w-full justify-start text-left font-normal",
+                                  !endDate && "text-muted-foreground"
+                                )}
+                              >
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {endDate
+                                  ? format(endDate, "PPP")
+                                  : "Pick a date"}
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0">
+                              <Calendar
+                                mode="single"
+                                selected={endDate}
+                                onSelect={setEndDate}
+                                initialFocus
+                              />
+                            </PopoverContent>
+                          </Popover>
+                        </div>
+                      </div>
+
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="startTime">Start Time</Label>
+                          <Input
+                            id="startTime"
+                            type="time"
+                            value={startTime}
+                            onChange={(e) => setStartTime(e.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="endTime">End Time</Label>
+                          <Input
+                            id="endTime"
+                            type="time"
+                            value={endTime}
+                            onChange={(e) => setEndTime(e.target.value)}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+
+          {/* Floating Timer/Start Button - Absolute Position */}
+          <div className="sticky bottom-4 right-4 z-[100] flex justify-end">
+            {!isEditMode ? (
+              <div className="relative">
+                <Button
+                  type="submit"
+                  disabled={
+                    loading ||
+                    !title.trim() ||
+                    teamAssignments.length === 0 ||
+                    !startDate
+                  }
+                  className="h-16 w-16 rounded-full shadow-2xl hover:shadow-3xl transition-all duration-300 bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 border-4 border-white/20 backdrop-blur-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <div className="flex flex-col items-center gap-1">
+                    {loading ? (
+                      <div className="h-6 w-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <Play className="h-6 w-6 text-white" />
+                    )}
+                    <span className="text-xs font-bold text-white drop-shadow-lg">
+                      {loading ? "..." : "START"}
+                    </span>
+                  </div>
+                </Button>
+                {(!title.trim() ||
+                  teamAssignments.length === 0 ||
+                  !startDate) && (
+                  <div className="absolute top-0 right-0 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center">
+                    <span className="text-white text-xs font-bold">!</span>
+                  </div>
+                )}
               </div>
-
-              {teamAssignments.length > 0 && (
-                <>
-                  <div className="space-y-2">
-                    <Label>Selected Assignees ({teamAssignments.length})</Label>
-                    <div className="flex flex-wrap gap-2">
-                      {teamAssignments.map((assignment) => {
-                        const profile = profiles.find(
-                          (p) => p.id === assignment.userId
-                        );
-                        const attendanceLabel = {
-                          full_day: "Full Day",
-                          half_day: "Half Day",
-                          hour_based: `${assignment.hours || 1}h`,
-                          leave: assignment.leaveType || "Leave",
-                        }[assignment.attendanceType];
-                        return (
-                          <Badge
-                            key={assignment.userId}
-                            variant="secondary"
-                            className="flex items-center gap-1"
-                          >
-                            <Avatar className="h-4 w-4">
-                              <AvatarFallback className="text-xs">
-                                {profile?.full_name?.[0] || "U"}
-                              </AvatarFallback>
-                            </Avatar>
-                            <span className="text-xs">
-                              {profile?.full_name || "Unknown"} -{" "}
-                              {attendanceLabel}
-                            </span>
-                          </Badge>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Total Task Budget */}
-                  <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium">Total Task Budget</p>
-                        <p className="text-lg text-muted-foreground">
-                          Sum of all member budgets for this task
-                        </p>
-                      </div>
-                      <p className="text-2xl font-bold text-primary">
-                        {formatCurrency(getTotalTaskBudget())}
-                      </p>
-                    </div>
-                  </div>
-                </>
-              )}
-            </CardContent>
-          </Card>
+            ) : null}
+          </div>
 
           <DialogFooter>
-            {isEditMode && (
-              <Button
-                type="button"
-                variant="destructive"
-                onClick={handleDelete}
-                disabled={loading}
-                className="mr-auto"
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Delete Task
-              </Button>
+            {isEditMode && canEditTaskDetails && (
+              <>
+                {/* Only admins and supervisors can delete tasks */}
+                {(isAdmin() || isSupervisor()) && (
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    onClick={handleDelete}
+                    disabled={loading}
+                    className="mr-auto"
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete Task
+                  </Button>
+                )}
+                <Button type="submit" disabled={loading}>
+                  {loading ? "Updating..." : "Update Task"}
+                </Button>
+              </>
             )}
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" disabled={loading}>
-              {loading
-                ? isEditMode
-                  ? "Updating..."
-                  : "Creating..."
-                : isEditMode
-                ? "Update Task"
-                : "Create Task"}
-            </Button>
           </DialogFooter>
         </form>
       </DialogContent>

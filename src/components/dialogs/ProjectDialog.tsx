@@ -131,7 +131,6 @@ export function ProjectDialog({
           milestones:milestones(count)
         `
         )
-        .eq("created_by", user.id)
         .order("name");
 
       if (error) throw error;

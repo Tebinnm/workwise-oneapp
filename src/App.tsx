@@ -8,10 +8,12 @@ import Dashboard from "./pages/Dashboard";
 import ProjectBoard from "./pages/ProjectBoard";
 import BudgetReport from "./pages/BudgetReport";
 import UserManagement from "./pages/UserManagement";
+import AttendanceManagement from "./pages/AttendanceManagement";
 import Projects from "./pages/Projects";
 import ProjectDetail from "./pages/ProjectDetail";
 import NotFound from "./pages/NotFound";
 import { AppLayout } from "./components/layout/AppLayout";
+import { ProtectedRoute } from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
@@ -25,12 +27,62 @@ const App = () => (
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/auth" element={<Auth />} />
           <Route element={<AppLayout />}>
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/projects" element={<Projects />} />
-            <Route path="/projects/:projectId" element={<ProjectDetail />} />
-            <Route path="/milestones/:id" element={<ProjectBoard />} />
-            <Route path="/budget-report/:id" element={<BudgetReport />} />
-            <Route path="/users" element={<UserManagement />} />
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/projects"
+              element={
+                <ProtectedRoute>
+                  <Projects />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/projects/:projectId"
+              element={
+                <ProtectedRoute>
+                  <ProjectDetail />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/milestones/:id"
+              element={
+                <ProtectedRoute>
+                  <ProjectBoard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/budget-report/:id"
+              element={
+                <ProtectedRoute allowedRoles={["admin", "supervisor"]}>
+                  <BudgetReport />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/users"
+              element={
+                <ProtectedRoute allowedRoles={["admin"]}>
+                  <UserManagement />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/attendance"
+              element={
+                <ProtectedRoute allowedRoles={["admin", "supervisor"]}>
+                  <AttendanceManagement />
+                </ProtectedRoute>
+              }
+            />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>
