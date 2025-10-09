@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -289,146 +289,164 @@ export function KanbanBoard({
 }: KanbanBoardProps) {
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [overId, setOverId] = useState<string | null>(null);
+  const [optimisticTasks, setOptimisticTasks] = useState<Task[]>(tasks);
 
-  // Configure sensors for drag and drop
+  // Update optimistic tasks when props change
+  useEffect(() => {
+    setOptimisticTasks(tasks);
+  }, [tasks]);
+
+  // Configure sensors for drag and drop with optimized settings
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 8,
+        distance: 5, // Reduced for more responsive feel
       },
     }),
     useSensor(KeyboardSensor)
   );
 
-  const getTasksByStatus = (status: string) => {
-    return tasks.filter((task) => task.status === status);
-  };
+  // Memoize tasks by status to prevent unnecessary recalculations
+  const tasksByStatus = useMemo(() => {
+    return {
+      todo: optimisticTasks.filter((task) => task.status === "todo"),
+      in_progress: optimisticTasks.filter(
+        (task) => task.status === "in_progress"
+      ),
+      done: optimisticTasks.filter((task) => task.status === "done"),
+    };
+  }, [optimisticTasks]);
 
-  // Improved collision detection that works well with Kanban boards
-  const collisionDetectionStrategy = (args: any) => {
-    // Start with pointer intersections (most accurate)
+  const getTasksByStatus = useCallback(
+    (status: string) => {
+      return tasksByStatus[status as keyof typeof tasksByStatus] || [];
+    },
+    [tasksByStatus]
+  );
+
+  // Optimized collision detection strategy
+  const collisionDetectionStrategy = useCallback((args: any) => {
+    // Use pointerWithin for most accurate detection
     const pointerIntersections = pointerWithin(args);
 
     if (pointerIntersections.length > 0) {
-      // Check if we're over a column first
-      const columnIntersection = pointerIntersections.find(
-        (intersection: any) =>
-          ["todo", "in_progress", "done"].includes(intersection.id as string)
-      );
-
-      if (columnIntersection) {
-        return [columnIntersection];
-      }
-
       return pointerIntersections;
     }
 
     // Fall back to rectangle intersections
-    const rectIntersections = rectIntersection(args);
+    return rectIntersection(args);
+  }, []);
 
-    if (rectIntersections.length > 0) {
-      // Prioritize columns over tasks
-      const columnIntersection = rectIntersections.find((intersection: any) =>
-        ["todo", "in_progress", "done"].includes(intersection.id as string)
+  const handleDragStart = useCallback(
+    (event: DragStartEvent) => {
+      const { active } = event;
+      const task = optimisticTasks.find((t) => t.id === active.id);
+      setActiveTask(task || null);
+    },
+    [optimisticTasks]
+  );
+
+  const handleDragOver = useCallback(
+    (event: DragOverEvent) => {
+      const { over } = event;
+
+      if (!over) {
+        setOverId(null);
+        return;
+      }
+
+      // Determine which column we're over
+      let columnId = over.id as string;
+
+      // If over a task, find its column
+      if (!["todo", "in_progress", "done"].includes(columnId)) {
+        const task = optimisticTasks.find((t) => t.id === over.id);
+        if (task) {
+          columnId = task.status;
+        }
+      }
+
+      setOverId(columnId);
+    },
+    [optimisticTasks]
+  );
+
+  const handleDragEnd = useCallback(
+    async (event: DragEndEvent) => {
+      const { active, over } = event;
+      setActiveTask(null);
+      setOverId(null);
+
+      if (!over) {
+        return;
+      }
+
+      const taskId = active.id as string;
+      const task = optimisticTasks.find((t) => t.id === taskId);
+
+      if (!task) {
+        console.error("Task not found:", taskId);
+        return;
+      }
+
+      // Determine new status based on where it was dropped
+      let newStatus: string | null = null;
+
+      // Check if dropped directly on a column
+      if (["todo", "in_progress", "done"].includes(over.id as string)) {
+        newStatus = over.id as string;
+      } else {
+        // Dropped on a task, get that task's column
+        const overTask = optimisticTasks.find((t) => t.id === over.id);
+        if (overTask) {
+          newStatus = overTask.status;
+        }
+      }
+
+      // If we couldn't determine the new status or it hasn't changed, return
+      if (!newStatus || task.status === newStatus) {
+        return;
+      }
+
+      // Optimistic update - immediately update the UI
+      setOptimisticTasks((prevTasks) =>
+        prevTasks.map((t) =>
+          t.id === taskId ? { ...t, status: newStatus as any } : t
+        )
       );
 
-      if (columnIntersection) {
-        return [columnIntersection];
+      try {
+        // Update database in the background
+        const { error } = await supabase
+          .from("tasks")
+          .update({ status: newStatus as any })
+          .eq("id", taskId);
+
+        if (error) {
+          throw error;
+        }
+
+        toast.success(`Task moved to ${newStatus.replace("_", " ")}`);
+
+        // Trigger callbacks to refresh data
+        onTasksUpdate();
+        if (onBudgetUpdate) {
+          onBudgetUpdate();
+        }
+      } catch (error) {
+        // Revert optimistic update on error
+        setOptimisticTasks((prevTasks) =>
+          prevTasks.map((t) =>
+            t.id === taskId ? { ...t, status: task.status as any } : t
+          )
+        );
+
+        toast.error("Failed to update task status");
+        console.error("Error updating task:", error);
       }
-
-      return rectIntersections;
-    }
-
-    return [];
-  };
-
-  const handleDragStart = (event: DragStartEvent) => {
-    const { active } = event;
-    const task = tasks.find((t) => t.id === active.id);
-    setActiveTask(task || null);
-  };
-
-  const handleDragOver = (event: DragOverEvent) => {
-    const { over } = event;
-
-    if (!over) {
-      setOverId(null);
-      return;
-    }
-
-    // Determine which column we're over
-    let columnId = over.id as string;
-
-    // If over a task, find its column
-    if (!["todo", "in_progress", "done"].includes(columnId)) {
-      const task = tasks.find((t) => t.id === over.id);
-      if (task) {
-        columnId = task.status;
-      }
-    }
-
-    setOverId(columnId);
-  };
-
-  const handleDragEnd = async (event: DragEndEvent) => {
-    const { active, over } = event;
-    setActiveTask(null);
-    setOverId(null);
-
-    if (!over) {
-      return;
-    }
-
-    const taskId = active.id as string;
-    const task = tasks.find((t) => t.id === taskId);
-
-    if (!task) {
-      console.error("Task not found:", taskId);
-      return;
-    }
-
-    // Determine new status based on where it was dropped
-    let newStatus: string | null = null;
-
-    // Check if dropped directly on a column
-    if (["todo", "in_progress", "done"].includes(over.id as string)) {
-      newStatus = over.id as string;
-    } else {
-      // Dropped on a task, get that task's column
-      const overTask = tasks.find((t) => t.id === over.id);
-      if (overTask) {
-        newStatus = overTask.status;
-      }
-    }
-
-    // If we couldn't determine the new status or it hasn't changed, return
-    if (!newStatus || task.status === newStatus) {
-      return;
-    }
-
-    try {
-      // Update database
-      const { error } = await supabase
-        .from("tasks")
-        .update({ status: newStatus })
-        .eq("id", taskId);
-
-      if (error) {
-        throw error;
-      }
-
-      toast.success(`Task moved to ${newStatus.replace("_", " ")}`);
-
-      // Trigger callbacks to refresh data
-      onTasksUpdate();
-      if (onBudgetUpdate) {
-        onBudgetUpdate();
-      }
-    } catch (error) {
-      toast.error("Failed to update task status");
-      console.error("Error updating task:", error);
-    }
-  };
+    },
+    [optimisticTasks, onTasksUpdate, onBudgetUpdate]
+  );
 
   return (
     <DndContext
