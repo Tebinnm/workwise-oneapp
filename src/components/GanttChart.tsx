@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import {
   format,
   startOfMonth,
@@ -8,9 +8,6 @@ import {
   eachMonthOfInterval,
   addMonths,
   subMonths,
-  isToday,
-  isSameDay,
-  startOfWeek,
   endOfWeek,
   differenceInDays,
   addDays,
@@ -25,8 +22,10 @@ import {
   ZoomIn,
   ZoomOut,
   Calendar as CalendarIcon,
+  GripVertical,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 interface Task {
   id: string;
@@ -44,6 +43,11 @@ interface Task {
 
 interface GanttChartProps {
   tasks: Task[];
+  onTaskClick?: (task: Task) => void;
+  onTaskUpdate?: (
+    taskId: string,
+    updates: { start_datetime?: string; end_datetime?: string }
+  ) => Promise<void>;
 }
 
 type ZoomLevel = "month" | "week" | "day";
@@ -56,13 +60,32 @@ const statusColors = {
   cancelled: "bg-gray-300",
 };
 
-export function GanttChart({ tasks }: GanttChartProps) {
+export function GanttChart({
+  tasks,
+  onTaskClick,
+  onTaskUpdate,
+}: GanttChartProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [zoomLevel, setZoomLevel] = useState<ZoomLevel>("week");
   const [hoveredTask, setHoveredTask] = useState<string | null>(null);
   const [windowWidth, setWindowWidth] = useState(
     typeof window !== "undefined" ? window.innerWidth : 1024
   );
+
+  // Drag state
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragType, setDragType] = useState<
+    "move" | "resize-start" | "resize-end" | null
+  >(null);
+  const [dragStartX, setDragStartX] = useState(0);
+  const [dragStartDate, setDragStartDate] = useState<Date | null>(null);
+  const [draggedTask, setDraggedTask] = useState<Task | null>(null);
+  const [originalTaskDates, setOriginalTaskDates] = useState<{
+    start: Date;
+    end: Date;
+  } | null>(null);
+
+  const ganttRef = useRef<HTMLDivElement>(null);
 
   // Handle window resize for responsive recalculation
   useEffect(() => {
@@ -220,6 +243,190 @@ export function GanttChart({ tasks }: GanttChartProps) {
 
   const todayPosition = getTodayPosition();
 
+  // Convert pixel position to date
+  const pixelToDate = useCallback(
+    (pixelX: number) => {
+      const { start: rangeStart } = dateRange;
+      let pixelsPerDay: number;
+
+      switch (zoomLevel) {
+        case "day":
+          pixelsPerDay = columnWidth;
+          break;
+        case "week":
+          pixelsPerDay = columnWidth / 7;
+          break;
+        case "month":
+          pixelsPerDay = columnWidth / 30;
+          break;
+        default:
+          pixelsPerDay = columnWidth / 7;
+      }
+
+      const daysFromStart = Math.round(pixelX / pixelsPerDay);
+      return addDays(rangeStart, daysFromStart);
+    },
+    [dateRange, zoomLevel, columnWidth]
+  );
+
+  // Handle drag start
+  const handleDragStart = useCallback(
+    (
+      e: React.MouseEvent,
+      task: Task,
+      type: "move" | "resize-start" | "resize-end"
+    ) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (!task.start_datetime || !task.end_datetime) return;
+
+      setIsDragging(true);
+      setDragType(type);
+      setDragStartX(e.clientX);
+      setDraggedTask(task);
+      setOriginalTaskDates({
+        start: new Date(task.start_datetime),
+        end: new Date(task.end_datetime),
+      });
+
+      // Set initial drag date based on type
+      const rect = ganttRef.current?.getBoundingClientRect();
+      if (rect) {
+        const relativeX = e.clientX - rect.left - taskColumnWidth;
+        setDragStartDate(pixelToDate(relativeX));
+      }
+    },
+    [pixelToDate, taskColumnWidth]
+  );
+
+  // Handle drag move
+  const handleDragMove = useCallback(
+    (e: MouseEvent) => {
+      if (!isDragging || !draggedTask || !originalTaskDates || !dragStartDate)
+        return;
+
+      const rect = ganttRef.current?.getBoundingClientRect();
+      if (!rect) return;
+
+      const currentX = e.clientX - rect.left - taskColumnWidth;
+      const currentDate = pixelToDate(currentX);
+      const deltaX = e.clientX - dragStartX;
+      const deltaDays = Math.round(
+        deltaX /
+          (columnWidth /
+            (zoomLevel === "day" ? 1 : zoomLevel === "week" ? 7 : 30))
+      );
+
+      if (dragType === "move") {
+        // Move entire task
+        const newStart = addDays(originalTaskDates.start, deltaDays);
+        const newEnd = addDays(originalTaskDates.end, deltaDays);
+
+        // Update task dates in real-time (visual feedback)
+        setDraggedTask({
+          ...draggedTask,
+          start_datetime: newStart.toISOString(),
+          end_datetime: newEnd.toISOString(),
+        });
+      } else if (dragType === "resize-start") {
+        // Resize start date
+        const newStart = addDays(originalTaskDates.start, deltaDays);
+        if (newStart < originalTaskDates.end) {
+          setDraggedTask({
+            ...draggedTask,
+            start_datetime: newStart.toISOString(),
+          });
+        }
+      } else if (dragType === "resize-end") {
+        // Resize end date
+        const newEnd = addDays(originalTaskDates.end, deltaDays);
+        if (newEnd > originalTaskDates.start) {
+          setDraggedTask({
+            ...draggedTask,
+            end_datetime: newEnd.toISOString(),
+          });
+        }
+      }
+    },
+    [
+      isDragging,
+      draggedTask,
+      originalTaskDates,
+      dragStartDate,
+      dragStartX,
+      dragType,
+      pixelToDate,
+      taskColumnWidth,
+      columnWidth,
+      zoomLevel,
+    ]
+  );
+
+  // Handle drag end
+  const handleDragEnd = useCallback(async () => {
+    if (!isDragging || !draggedTask || !onTaskUpdate) {
+      resetDragState();
+      return;
+    }
+
+    try {
+      // Update task in database
+      await onTaskUpdate(draggedTask.id, {
+        start_datetime: draggedTask.start_datetime,
+        end_datetime: draggedTask.end_datetime,
+      });
+
+      toast.success("Task dates updated successfully");
+    } catch (error) {
+      console.error("Error updating task dates:", error);
+      toast.error("Failed to update task dates");
+    } finally {
+      resetDragState();
+    }
+  }, [isDragging, draggedTask, onTaskUpdate]);
+
+  // Reset drag state
+  const resetDragState = useCallback(() => {
+    setIsDragging(false);
+    setDragType(null);
+    setDragStartX(0);
+    setDragStartDate(null);
+    setDraggedTask(null);
+    setOriginalTaskDates(null);
+  }, []);
+
+  // Handle task click
+  const handleTaskClick = useCallback(
+    (task: Task) => {
+      if (isDragging) return; // Don't trigger click if we were dragging
+
+      if (onTaskClick) {
+        onTaskClick(task);
+      } else {
+        // Default behavior: toggle hover state
+        setHoveredTask(hoveredTask === task.id ? null : task.id);
+      }
+    },
+    [isDragging, onTaskClick, hoveredTask]
+  );
+
+  // Add global mouse event listeners for drag
+  useEffect(() => {
+    if (isDragging) {
+      const handleMouseMove = (e: MouseEvent) => handleDragMove(e);
+      const handleMouseUp = () => handleDragEnd();
+
+      document.addEventListener("mousemove", handleMouseMove);
+      document.addEventListener("mouseup", handleMouseUp);
+
+      return () => {
+        document.removeEventListener("mousemove", handleMouseMove);
+        document.removeEventListener("mouseup", handleMouseUp);
+      };
+    }
+  }, [isDragging, handleDragMove, handleDragEnd]);
+
   const handleZoomIn = () => {
     if (zoomLevel === "month") setZoomLevel("week");
     else if (zoomLevel === "week") setZoomLevel("day");
@@ -325,7 +532,12 @@ export function GanttChart({ tasks }: GanttChartProps) {
       </Card>
 
       {/* Gantt Chart */}
-      <Card className="overflow-hidden flex flex-col max-h-[calc(100vh-16rem)]">
+      <Card
+        className={cn(
+          "overflow-hidden flex flex-col max-h-[calc(100vh-16rem)]",
+          isDragging && "ring-2 ring-primary ring-opacity-50"
+        )}
+      >
         <div className="overflow-x-auto overflow-y-hidden flex-shrink-0">
           <div className="min-w-max">
             {/* Timeline Header */}
@@ -368,9 +580,12 @@ export function GanttChart({ tasks }: GanttChartProps) {
                 </div>
               </div>
             ) : (
-              <div className="relative">
+              <div className="relative" ref={ganttRef}>
                 {validTasks.map((task, taskIndex) => {
-                  const barStyle = getTaskBarStyle(task);
+                  // Use dragged task data if this is the task being dragged
+                  const displayTask =
+                    draggedTask?.id === task.id ? draggedTask : task;
+                  const barStyle = getTaskBarStyle(displayTask);
                   if (!barStyle) return null;
 
                   return (
@@ -436,24 +651,45 @@ export function GanttChart({ tasks }: GanttChartProps) {
                         {/* Task Bar */}
                         <div
                           className={cn(
-                            "absolute top-1/2 -translate-y-1/2 h-6 sm:h-8 rounded-md flex items-center px-2 sm:px-3 cursor-pointer transition-all hover:shadow-lg hover:z-20 touch-manipulation",
+                            "absolute top-1/2 -translate-y-1/2 h-6 sm:h-8 rounded-md flex items-center px-2 sm:px-3 cursor-pointer transition-all hover:shadow-lg hover:z-20 touch-manipulation group",
                             statusColors[
-                              task.status as keyof typeof statusColors
+                              displayTask.status as keyof typeof statusColors
                             ] || "bg-gray-400",
                             hoveredTask === task.id &&
-                              "ring-2 ring-offset-2 ring-primary shadow-lg scale-105"
+                              "ring-2 ring-offset-2 ring-primary shadow-lg scale-105",
+                            isDragging &&
+                              draggedTask?.id === task.id &&
+                              "opacity-80 shadow-xl z-30"
                           )}
                           style={barStyle}
                           onMouseEnter={() => setHoveredTask(task.id)}
                           onMouseLeave={() => setHoveredTask(null)}
-                          onClick={() =>
-                            setHoveredTask(
-                              hoveredTask === task.id ? null : task.id
-                            )
-                          }
+                          onClick={() => handleTaskClick(task)}
+                          onMouseDown={(e) => handleDragStart(e, task, "move")}
                         >
-                          <span className="text-xs font-medium text-white truncate">
-                            {task.title}
+                          {/* Resize handles */}
+                          <div
+                            className="absolute left-0 top-0 bottom-0 w-2 cursor-ew-resize opacity-0 group-hover:opacity-100 transition-opacity bg-white/20 hover:bg-white/40"
+                            onMouseDown={(e) => {
+                              e.stopPropagation();
+                              handleDragStart(e, task, "resize-start");
+                            }}
+                          />
+                          <div
+                            className="absolute right-0 top-0 bottom-0 w-2 cursor-ew-resize opacity-0 group-hover:opacity-100 transition-opacity bg-white/20 hover:bg-white/40"
+                            onMouseDown={(e) => {
+                              e.stopPropagation();
+                              handleDragStart(e, task, "resize-end");
+                            }}
+                          />
+
+                          {/* Drag indicator */}
+                          <div className="absolute left-1 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <GripVertical className="h-3 w-3 text-white/70" />
+                          </div>
+
+                          <span className="text-xs font-medium text-white truncate ml-4">
+                            {displayTask.title}
                           </span>
                         </div>
                       </div>
@@ -492,6 +728,12 @@ export function GanttChart({ tasks }: GanttChartProps) {
             </div>
           ))}
         </div>
+        <div className="mt-3 pt-3 border-t">
+          <p className="text-xs text-muted-foreground">
+            💡 <strong>Tip:</strong> Click on tasks to view details. Drag tasks
+            to move them or use the resize handles to change duration.
+          </p>
+        </div>
       </Card>
 
       {/* Task Details on Hover */}
@@ -501,16 +743,20 @@ export function GanttChart({ tasks }: GanttChartProps) {
             const task = validTasks.find((t) => t.id === hoveredTask);
             if (!task) return null;
 
+            // Use dragged task data if this is the task being dragged
+            const displayTask =
+              draggedTask?.id === task.id ? draggedTask : task;
+
             return (
               <div className="space-y-2 sm:space-y-3">
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
                     <h4 className="font-semibold text-sm sm:text-base line-clamp-2">
-                      {task.title}
+                      {displayTask.title}
                     </h4>
-                    {task.description && (
+                    {displayTask.description && (
                       <p className="text-sm sm:text-lg text-muted-foreground mt-1 line-clamp-3">
-                        {task.description}
+                        {displayTask.description}
                       </p>
                     )}
                   </div>
@@ -527,9 +773,9 @@ export function GanttChart({ tasks }: GanttChartProps) {
                   <div className="flex justify-between gap-2">
                     <span className="text-muted-foreground">Start:</span>
                     <span className="font-medium text-right">
-                      {task.start_datetime
+                      {displayTask.start_datetime
                         ? format(
-                            new Date(task.start_datetime),
+                            new Date(displayTask.start_datetime),
                             windowWidth < 640 ? "PP" : "PPP"
                           )
                         : "N/A"}
@@ -538,9 +784,9 @@ export function GanttChart({ tasks }: GanttChartProps) {
                   <div className="flex justify-between gap-2">
                     <span className="text-muted-foreground">End:</span>
                     <span className="font-medium text-right">
-                      {task.end_datetime
+                      {displayTask.end_datetime
                         ? format(
-                            new Date(task.end_datetime),
+                            new Date(displayTask.end_datetime),
                             windowWidth < 640 ? "PP" : "PPP"
                           )
                         : "N/A"}
@@ -549,11 +795,11 @@ export function GanttChart({ tasks }: GanttChartProps) {
                   <div className="flex justify-between gap-2">
                     <span className="text-muted-foreground">Duration:</span>
                     <span className="font-medium">
-                      {task.start_datetime && task.end_datetime
+                      {displayTask.start_datetime && displayTask.end_datetime
                         ? `${
                             differenceInDays(
-                              new Date(task.end_datetime),
-                              new Date(task.start_datetime)
+                              new Date(displayTask.end_datetime),
+                              new Date(displayTask.start_datetime)
                             ) + 1
                           } days`
                         : "N/A"}

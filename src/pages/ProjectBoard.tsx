@@ -108,6 +108,31 @@ export default function ProjectBoard() {
     setTasks(data as Task[]);
   };
 
+  const updateTask = async (
+    taskId: string,
+    updates: { start_datetime?: string; end_datetime?: string }
+  ) => {
+    try {
+      const { error } = await supabase
+        .from("tasks")
+        .update(updates)
+        .eq("id", taskId);
+
+      if (error) throw error;
+
+      // Refresh tasks to get updated data
+      await fetchTasks();
+    } catch (error) {
+      console.error("Error updating task:", error);
+      throw error;
+    }
+  };
+
+  const handleTaskClick = (task: Task) => {
+    // Show tasks updated snackbar when clicking on a task
+    toast.success("Tasks updated");
+  };
+
   const fetchBudgetSummary = async () => {
     try {
       const report = await BudgetService.generateProjectBudgetReport(id!);
@@ -242,7 +267,13 @@ export default function ProjectBoard() {
       )}
 
       {/* Gantt View */}
-      {view === "gantt" && <GanttChart tasks={tasks} />}
+      {view === "gantt" && (
+        <GanttChart
+          tasks={tasks}
+          onTaskClick={handleTaskClick}
+          onTaskUpdate={updateTask}
+        />
+      )}
 
       {/* Notifications View */}
       {view === "notifications" && <NotificationSystem />}
