@@ -104,30 +104,59 @@ export function InvoiceDialog({
 
   useEffect(() => {
     if (open) {
-      fetchMilestones();
-      if (invoice) {
-        // Edit mode - populate form with existing data
-        setFormData({
-          client_name: invoice.client_name,
-          client_email: invoice.client_email || "",
-          client_address: invoice.client_address || "",
-          issue_date: new Date(invoice.issue_date),
-          due_date: new Date(invoice.due_date),
-          payment_terms: invoice.payment_terms || "Net 30",
-          tax_rate: invoice.tax_rate || 0,
-          status: invoice.status || "draft",
-          notes: invoice.notes || "",
-          milestone_id: invoice.milestone_id,
-        });
-        setItems(
-          invoice.invoice_items?.map((item) => ({
-            id: item.id,
-            description: item.description,
-            quantity: item.quantity || 1,
-            rate: item.rate,
-            amount: item.amount,
-            item_type: item.item_type as "wage" | "expense" | "custom",
-          })) || [
+      const initializeForm = async () => {
+        await fetchMilestones();
+
+        // Small delay to ensure milestones state is updated
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
+        if (invoice) {
+          // Edit mode - populate form with existing data
+          setFormData({
+            client_name: invoice.client_name,
+            client_email: invoice.client_email || "",
+            client_address: invoice.client_address || "",
+            issue_date: new Date(invoice.issue_date),
+            due_date: new Date(invoice.due_date),
+            payment_terms: invoice.payment_terms || "Net 30",
+            tax_rate: invoice.tax_rate || 0,
+            status: invoice.status || "draft",
+            notes: invoice.notes || "",
+            milestone_id: invoice.milestone_id,
+          });
+          setItems(
+            invoice.invoice_items?.map((item) => ({
+              id: item.id,
+              description: item.description,
+              quantity: item.quantity || 1,
+              rate: item.rate,
+              amount: item.amount,
+              item_type: item.item_type as "wage" | "expense" | "custom",
+            })) || [
+              {
+                description: "",
+                quantity: 1,
+                rate: 0,
+                amount: 0,
+                item_type: "custom",
+              },
+            ]
+          );
+        } else {
+          // Create mode - reset form
+          setFormData({
+            client_name: "",
+            client_email: "",
+            client_address: "",
+            issue_date: new Date(),
+            due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+            payment_terms: "Net 30",
+            tax_rate: 0,
+            status: "draft",
+            notes: "",
+            milestone_id: milestoneId || "",
+          });
+          setItems([
             {
               description: "",
               quantity: 1,
@@ -135,36 +164,21 @@ export function InvoiceDialog({
               amount: 0,
               item_type: "custom",
             },
-          ]
-        );
-      } else {
-        // Create mode - reset form
-        setFormData({
-          client_name: "",
-          client_email: "",
-          client_address: "",
-          issue_date: new Date(),
-          due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-          payment_terms: "Net 30",
-          tax_rate: 0,
-          status: "draft",
-          notes: "",
-          milestone_id: milestoneId || "",
-        });
-        setItems([
-          {
-            description: "",
-            quantity: 1,
-            rate: 0,
-            amount: 0,
-            item_type: "custom",
-          },
-        ]);
-      }
+          ]);
+        }
+      };
+
+      initializeForm();
     }
   }, [open, invoice, milestoneId]);
 
-  const fetchMilestones = async () => {
+  const fetchMilestones = async (): Promise<void> => {
+    if (!projectId || projectId.trim() === "") {
+      console.warn("No valid projectId provided for fetching milestones");
+      setMilestones([]);
+      return;
+    }
+
     try {
       const { data, error } = await supabase
         .from("milestones")
@@ -175,7 +189,9 @@ export function InvoiceDialog({
       if (error) throw error;
       setMilestones(data || []);
     } catch (error: any) {
+      console.error("Error fetching milestones:", error);
       toast.error("Failed to fetch milestones");
+      setMilestones([]);
     }
   };
 
@@ -416,6 +432,7 @@ export function InvoiceDialog({
                 <div className="space-y-2">
                   <Label>Milestone *</Label>
                   <Select
+                    key={`milestone-select-${milestones.length}-${formData.milestone_id}`}
                     value={formData.milestone_id}
                     onValueChange={(value) =>
                       handleInputChange("milestone_id", value)

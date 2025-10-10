@@ -11,6 +11,7 @@ import UserManagement from "./pages/UserManagement";
 import AttendanceManagement from "./pages/AttendanceManagement";
 import Projects from "./pages/Projects";
 import ProjectDetail from "./pages/ProjectDetail";
+import InvoiceDetail from "./pages/InvoiceDetail";
 import NotFound from "./pages/NotFound";
 import { AppLayout } from "./components/layout/AppLayout";
 import { ProtectedRoute } from "./components/ProtectedRoute";
@@ -48,6 +49,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <ProjectDetail />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/invoices/:invoiceId"
+              element={
+                <ProtectedRoute>
+                  <InvoiceDetail />
                 </ProtectedRoute>
               }
             />

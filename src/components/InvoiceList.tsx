@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import {
@@ -47,6 +48,7 @@ export function InvoiceList({
   projectId,
   onRefresh,
 }: InvoiceListProps) {
+  const navigate = useNavigate();
   const { canCreateProjects } = usePermissions();
   const [deleteInvoiceId, setDeleteInvoiceId] = useState<string | null>(null);
   const [editingInvoice, setEditingInvoice] = useState<InvoiceWithItems | null>(
@@ -92,8 +94,7 @@ export function InvoiceList({
   };
 
   const handleViewInvoice = (invoice: InvoiceWithItems) => {
-    // For now, we'll just show a toast. In the future, this could open a detailed view
-    toast.info(`Invoice ${invoice.invoice_number} details`);
+    navigate(`/invoices/${invoice.id}`);
   };
 
   if (invoices.length === 0) {
@@ -152,7 +153,11 @@ export function InvoiceList({
             </TableHeader>
             <TableBody>
               {invoices.map((invoice) => (
-                <TableRow key={invoice.id}>
+                <TableRow
+                  key={invoice.id}
+                  className="cursor-pointer hover:bg-muted/50"
+                  onClick={() => handleViewInvoice(invoice)}
+                >
                   <TableCell className="font-medium">
                     {invoice.invoice_number}
                   </TableCell>
@@ -205,7 +210,11 @@ export function InvoiceList({
                   <TableCell>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>

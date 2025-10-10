@@ -266,7 +266,9 @@ export class InvoiceService {
         invoice_items (*),
         milestones (
           name,
+          project_id,
           projects (
+            id,
             name,
             site_location
           )

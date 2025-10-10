@@ -1,0 +1,90 @@
+/* Print styles for invoice detail page */
+
+@media print {
+  /* Hide navigation and non-essential elements */
+  .print\\:hidden {
+    display: none !important;
+  }
+
+  /* Remove shadows and borders for cleaner print */
+  .print\\:shadow-none {
+    box-shadow: none !important;
+  }
+
+  .print\\:border-0 {
+    border: none !important;
+  }
+
+  /* Adjust padding for print */
+  .print\\:p-6 {
+    padding: 1.5rem !important;
+  }
+
+  .print\\:mb-6 {
+    margin-bottom: 1.5rem !important;
+  }
+
+  .print\\:mb-4 {
+    margin-bottom: 1rem !important;
+  }
+
+  /* Ensure text colors are print-friendly */
+  .print\\:text-black {
+    color: black !important;
+  }
+
+  .print\\:text-gray-600 {
+    color: #4b5563 !important;
+  }
+
+  .print\\:text-gray-400 {
+    color: #9ca3af !important;
+  }
+
+  .print\\:text-green-800 {
+    color: #166534 !important;
+  }
+
+  .print\\:text-red-800 {
+    color: #991b1b !important;
+  }
+
+  /* Ensure borders are visible in print */
+  .print\\:border-black {
+    border-color: black !important;
+  }
+
+  /* Page setup */
+  @page {
+    margin: 0.5in;
+    size: A4;
+  }
+
+  /* Ensure proper page breaks */
+  .invoice-content {
+    page-break-inside: avoid;
+  }
+
+  /* Hide any background colors */
+  * {
+    background: white !important;
+    color: black !important;
+  }
+
+  /* Ensure table borders are visible */
+  table {
+    border-collapse: collapse !important;
+  }
+
+  th,
+  td {
+    border: 1px solid #000 !important;
+  }
+
+  /* Make sure badges are visible */
+  .badge {
+    border: 1px solid #000 !important;
+    background: white !important;
+    color: black !important;
+  }
+}
