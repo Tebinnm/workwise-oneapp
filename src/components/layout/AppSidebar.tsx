@@ -12,6 +12,7 @@ import {
   Trash2,
   Users,
   ClipboardCheck,
+  Info,
 } from "lucide-react";
 import {
   Sidebar,
@@ -67,6 +68,7 @@ export function AppSidebar() {
     new Set()
   );
   const [hoveredMilestone, setHoveredMilestone] = useState<string | null>(null);
+  const [hoveredProject, setHoveredProject] = useState<string | null>(null);
   const [milestoneToDelete, setMilestoneToDelete] = useState<Milestone | null>(
     null
   );
@@ -442,31 +444,51 @@ export function AppSidebar() {
               ) : (
                 projects.map((project) => (
                   <div key={project.id}>
-                    <SidebarMenuItem>
-                      <SidebarMenuButton
-                        onClick={() => toggleProjectExpansion(project.id)}
-                        className="w-full justify-between"
-                      >
-                        <div className="flex items-center space-x-2">
-                          <div
-                            className="p-1 rounded"
-                            style={{ backgroundColor: project.color + "20" }}
-                          >
-                            <div style={{ color: project.color }}>
-                              {getIconComponent(project.icon, 14)}
+                    <SidebarMenuItem
+                      onMouseEnter={() => setHoveredProject(project.id)}
+                      onMouseLeave={() => setHoveredProject(null)}
+                    >
+                      <div className="flex items-center w-full group">
+                        <SidebarMenuButton
+                          onClick={() => toggleProjectExpansion(project.id)}
+                          className="flex-1 justify-between"
+                        >
+                          <div className="flex items-center space-x-2">
+                            <div
+                              className="p-1 rounded"
+                              style={{ backgroundColor: project.color + "20" }}
+                            >
+                              <div style={{ color: project.color }}>
+                                {getIconComponent(project.icon, 14)}
+                              </div>
                             </div>
+                            <span className="truncate">{project.name}</span>
+                            <span className="text-xs text-muted-foreground">
+                              ({project.milestones?.length || 0})
+                            </span>
                           </div>
-                          <span className="truncate">{project.name}</span>
-                          <span className="text-xs text-muted-foreground">
-                            ({project.milestones?.length || 0})
-                          </span>
-                        </div>
-                        {expandedProjects.has(project.id) ? (
-                          <ChevronDown className="h-4 w-4" />
-                        ) : (
-                          <ChevronRight className="h-4 w-4" />
+                          {expandedProjects.has(project.id) ? (
+                            <ChevronDown className="h-4 w-4" />
+                          ) : (
+                            <ChevronRight className="h-4 w-4" />
+                          )}
+                        </SidebarMenuButton>
+                        {hoveredProject === project.id && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              navigate(`/projects/${project.id}`);
+                            }}
+                            title="View project overview"
+                          >
+                            <Info className="h-4 w-4" />
+                          </Button>
                         )}
-                      </SidebarMenuButton>
+                      </div>
                     </SidebarMenuItem>
 
                     {expandedProjects.has(project.id) && (

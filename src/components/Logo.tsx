@@ -1,5 +1,5 @@
-import oneappLogo from "@/oneapp.png";
-import oneappLogo1 from "@/oneapp1.png";
+import oneappLogo from "/oneapp.png";
+import oneappLogo1 from "/oneapp1.png";
 
 export const Logo = ({
   className = "",
