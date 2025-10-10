@@ -26,6 +26,7 @@ import { ProjectDialog } from "@/components/dialogs/ProjectDialog";
 import { format } from "date-fns";
 import { usePermissions } from "@/hooks/usePermissions";
 import { PermissionService } from "@/services/permissionService";
+import { Loader } from "@/components/ui/loader";
 
 interface Project {
   id: string;
@@ -206,7 +207,9 @@ export default function Projects() {
 
       {/* Projects Grid */}
       {loading ? (
-        <div className="text-center py-12">Loading projects...</div>
+        <div className="text-center py-12">
+          <Loader size="lg" text="Loading projects..." />
+        </div>
       ) : filteredProjects.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">

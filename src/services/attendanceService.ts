@@ -419,6 +419,128 @@ export class AttendanceService {
   }
 
   /**
+   * Get member attendance history within a date range
+   */
+  static async getMemberAttendanceHistory(
+    userId: string,
+    startDate: Date,
+    endDate: Date
+  ) {
+    try {
+      const { data, error } = await supabase
+        .from("attendance")
+        .select(
+          `
+          id,
+          user_id,
+          attendance_status,
+          attendance_type,
+          clock_in,
+          clock_out,
+          duration_minutes,
+          created_at,
+          approved,
+          task_id,
+          tasks(title, milestone_id, milestones(name))
+        `
+        )
+        .eq("user_id", userId)
+        .gte("created_at", startDate.toISOString())
+        .lte("created_at", endDate.toISOString())
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error("Error fetching attendance history:", error);
+        return null;
+      }
+
+      return data || [];
+    } catch (error) {
+      console.error("Error fetching attendance history:", error);
+      return null;
+    }
+  }
+
+  /**
+   * Get attendance statistics for a member within a date range
+   */
+  static async getAttendanceStatistics(
+    userId: string,
+    startDate: Date,
+    endDate: Date
+  ) {
+    try {
+      const { data, error } = await supabase
+        .from("attendance")
+        .select("*")
+        .eq("user_id", userId)
+        .gte("created_at", startDate.toISOString())
+        .lte("created_at", endDate.toISOString());
+
+      if (error) {
+        console.error("Error fetching attendance statistics:", error);
+        return null;
+      }
+
+      // Calculate statistics
+      const records = data || [];
+
+      // Count unique working days (full_day or half_day)
+      const uniqueDates = new Set(
+        records
+          .filter(
+            (r) =>
+              r.attendance_status === "full_day" ||
+              r.attendance_status === "half_day"
+          )
+          .map((r) => format(new Date(r.created_at || ""), "yyyy-MM-dd"))
+      );
+
+      const totalDaysWorked = uniqueDates.size;
+
+      // Calculate total hours
+      const totalHours = records.reduce((sum, record) => {
+        if (record.duration_minutes) {
+          return sum + record.duration_minutes / 60;
+        } else if (record.attendance_status === "full_day") {
+          return sum + 8; // Default 8 hours for full day
+        } else if (record.attendance_status === "half_day") {
+          return sum + 4; // Default 4 hours for half day
+        }
+        return sum;
+      }, 0);
+
+      // Calculate total working days in range (excluding weekends)
+      let totalWorkingDays = 0;
+      let currentDate = new Date(startDate);
+      while (currentDate <= endDate) {
+        const dayOfWeek = currentDate.getDay();
+        if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+          // Not Sunday or Saturday
+          totalWorkingDays++;
+        }
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+
+      // Calculate attendance percentage
+      const attendancePercentage =
+        totalWorkingDays > 0
+          ? Math.round((totalDaysWorked / totalWorkingDays) * 100)
+          : 0;
+
+      return {
+        totalDaysWorked,
+        totalHours: Math.round(totalHours * 10) / 10, // Round to 1 decimal
+        totalWorkingDays,
+        attendancePercentage,
+      };
+    } catch (error) {
+      console.error("Error calculating attendance statistics:", error);
+      return null;
+    }
+  }
+
+  /**
    * Clock out user from current session
    */
   static async clockOut(userId: string): Promise<boolean> {

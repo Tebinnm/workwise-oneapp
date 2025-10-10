@@ -37,6 +37,7 @@ import {
   FinancialService,
   type ProjectExpenseWithDetails,
 } from "@/services/financialService";
+import { Loader } from "@/components/ui/loader";
 
 export default function ProjectDetail() {
   const { projectId } = useParams<{ projectId: string }>();
@@ -54,6 +55,7 @@ export default function ProjectDetail() {
   );
   const [totalSpentFromBudgets, setTotalSpentFromBudgets] = useState<number>(0);
   const [totalExpensesAmount, setTotalExpensesAmount] = useState<number>(0);
+  const [projectMembers, setProjectMembers] = useState<any[]>([]);
 
   useEffect(() => {
     if (projectId) {
@@ -81,6 +83,72 @@ export default function ProjectDetail() {
     }
   };
 
+  const fetchProjectMembers = async () => {
+    if (!projectId || !project) return;
+
+    try {
+      // Get all milestone IDs for this project
+      const milestoneIds = project.milestones?.map((m: any) => m.id) || [];
+
+      if (milestoneIds.length === 0) {
+        setProjectMembers([]);
+        return;
+      }
+
+      // Fetch all members from all milestones in this project
+      const { data, error } = await supabase
+        .from("project_members")
+        .select(
+          `
+          id,
+          user_id,
+          role,
+          milestone_id,
+          profiles:user_id (
+            id,
+            full_name,
+            role,
+            phone
+          ),
+          milestones:milestone_id (
+            id,
+            name
+          )
+        `
+        )
+        .in("milestone_id", milestoneIds);
+
+      if (error) {
+        console.error("Error fetching project members:", error);
+        return;
+      }
+
+      // Aggregate members - a user might be in multiple milestones
+      const memberMap = new Map();
+      data?.forEach((member: any) => {
+        const userId = member.user_id;
+        if (!memberMap.has(userId)) {
+          memberMap.set(userId, {
+            userId,
+            name: member.profiles?.full_name || "Unknown",
+            systemRole: member.profiles?.role || "member",
+            phone: member.profiles?.phone,
+            milestones: [],
+          });
+        }
+        memberMap.get(userId).milestones.push({
+          id: member.milestone_id,
+          name: member.milestones?.name || "Unknown Milestone",
+          role: member.role,
+        });
+      });
+
+      setProjectMembers(Array.from(memberMap.values()));
+    } catch (error) {
+      console.error("Error fetching project members:", error);
+    }
+  };
+
   // Update total spent whenever milestone budgets change
   useEffect(() => {
     let total = 0;
@@ -97,6 +165,13 @@ export default function ProjectDetail() {
     const total = expenses.reduce((sum, expense) => sum + expense.amount, 0);
     setTotalExpensesAmount(total);
   }, [expenses]);
+
+  // Fetch project members when project data is loaded
+  useEffect(() => {
+    if (project) {
+      fetchProjectMembers();
+    }
+  }, [project]);
 
   const fetchProjectDetails = async () => {
     if (!projectId) return;
@@ -168,7 +243,7 @@ export default function ProjectDetail() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
-        Loading project...
+        <Loader size="lg" text="Loading project..." />
       </div>
     );
   }
@@ -382,7 +457,7 @@ export default function ProjectDetail() {
             </div>
           ) : loading ? (
             <div className="text-center py-4 text-muted-foreground">
-              <p className="text-lg">Loading financial data...</p>
+              <Loader size="md" text="Loading financial data..." />
             </div>
           ) : (
             <div className="text-center py-8 text-muted-foreground">
@@ -429,7 +504,7 @@ export default function ProjectDetail() {
                 <div className="text-3xl font-bold mb-2">
                   {summary?.milestones_count || 0}
                 </div>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-lg text-muted-foreground">
                   {summary?.completed_milestones || 0} completed
                 </p>
               </CardContent>
@@ -443,7 +518,7 @@ export default function ProjectDetail() {
                 <div className="text-3xl font-bold mb-2">
                   {formatCurrency(summary?.outstanding_amount || 0)}
                 </div>
-                <p className="text-sm text-muted-foreground">Amount pending</p>
+                <p className="text-lg text-muted-foreground">Amount pending</p>
               </CardContent>
             </Card>
 
@@ -458,12 +533,84 @@ export default function ProjectDetail() {
                       (totalExpensesAmount || summary?.total_expenses || 0)
                   )}
                 </div>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-lg text-muted-foreground">
                   Wages + Expenses
                 </p>
               </CardContent>
             </Card>
           </div>
+
+          {/* Project Members Section */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                Team Members Engaged
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {projectMembers.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {projectMembers.map((member) => (
+                    <div
+                      key={member.userId}
+                      className="p-4 border rounded-lg hover:shadow-md transition-shadow"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="p-2 bg-primary/10 rounded-full">
+                          <Users className="h-4 w-4 text-primary" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-semibold truncate">
+                            {member.name}
+                          </h4>
+                          <Badge
+                            variant="outline"
+                            className="mt-1 mb-2 text-xs"
+                          >
+                            {member.systemRole}
+                          </Badge>
+                          {member.phone && (
+                            <p className="text-lg text-muted-foreground mb-2">
+                              {member.phone}
+                            </p>
+                          )}
+                          <div className="space-y-1">
+                            <p className="text-lg font-medium text-muted-foreground">
+                              Assigned to:
+                            </p>
+                            {member.milestones.map((milestone: any) => (
+                              <div
+                                key={milestone.id}
+                                className="flex items-center justify-between text-lg"
+                              >
+                                <span className="text-muted-foreground truncate">
+                                  {milestone.name}
+                                </span>
+                                <Badge
+                                  variant="secondary"
+                                  className="ml-2 text-xs"
+                                >
+                                  {milestone.role}
+                                </Badge>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <Users className="h-12 w-12 mx-auto mb-3 text-muted-foreground opacity-50" />
+                  <p className="text-lg text-muted-foreground">
+                    No team members assigned to this project yet
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
           {project.site_address && (
             <Card>
@@ -541,10 +688,8 @@ export default function ProjectDetail() {
                           </div>
                         </div>
                       ) : (
-                        <div className="border-t pt-3">
-                          <p className="text-sm text-muted-foreground">
-                            Loading budget...
-                          </p>
+                        <div className="border-t pt-3 flex justify-center">
+                          <Loader size="sm" />
                         </div>
                       )}
 

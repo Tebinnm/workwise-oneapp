@@ -91,10 +91,10 @@ export function AppLayout() {
             <div className="flex h-14 md:h-16 items-center gap-2 md:gap-4 px-3 md:px-6">
               <SidebarTrigger />
               <div className="flex-1" />
-              <Button variant="ghost" size="icon" className="relative h-9 w-9">
+              {/* <Button variant="ghost" size="icon" className="relative h-9 w-9">
                 <Bell className="h-4 w-4 md:h-5 md:w-5" />
                 <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-destructive" />
-              </Button>
+              </Button> */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -124,18 +124,7 @@ export function AppLayout() {
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem>
-                    <User className="mr-2 h-4 w-4" />
-                    Profile
-                  </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    <BarChart3 className="mr-2 h-4 w-4" />
-                    Statistics
-                  </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    <Settings className="mr-2 h-4 w-4" />
-                    Settings
-                  </DropdownMenuItem>
+
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     onClick={handleLogout}

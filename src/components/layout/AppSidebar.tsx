@@ -241,7 +241,7 @@ export function AppSidebar() {
   return (
     <Sidebar>
       <SidebarHeader className="border-b border-sidebar-border px-4 py-4">
-        <Logo className="text-sidebar-foreground" />
+        <Logo className="text-sidebar-foreground" variant="sidebar" />
       </SidebarHeader>
       <div className="px-2 mb-3">
         <div className="relative">

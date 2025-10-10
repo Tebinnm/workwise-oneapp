@@ -1,15 +1,22 @@
-import { Hexagon } from "lucide-react";
+import oneappLogo from "@/oneapp.png";
+import oneappLogo1 from "@/oneapp1.png";
 
-export const Logo = ({ className = "" }: { className?: string }) => {
+export const Logo = ({
+  className = "",
+  variant = "default",
+}: {
+  className?: string;
+  variant?: "default" | "sidebar";
+}) => {
+  const logoSrc = variant === "sidebar" ? oneappLogo1 : oneappLogo;
+
   return (
     <div className={`flex items-center gap-2 ${className}`}>
-      <div className="relative">
-        <Hexagon className="h-8 w-8 text-primary fill-primary/20" />
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="h-2 w-2 rounded-full bg-primary" />
-        </div>
-      </div>
-      <span className="text-xl font-bold">OneApp</span>
+      <img
+        src={logoSrc}
+        alt="OneApp Logo"
+        className="h-8 w-auto object-contain"
+      />
     </div>
   );
 };

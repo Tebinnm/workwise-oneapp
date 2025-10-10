@@ -39,6 +39,7 @@ import {
 } from "@/components/ui/select";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { Loader } from "@/components/ui/loader";
 
 interface Project {
   id: string;
@@ -585,7 +586,9 @@ export function ProjectDialog({
             </div>
 
             {loading ? (
-              <div className="text-center py-8">Loading...</div>
+              <div className="text-center py-8">
+                <Loader size="lg" />
+              </div>
             ) : projects.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
                 No projects found. Create your first project to get started.
