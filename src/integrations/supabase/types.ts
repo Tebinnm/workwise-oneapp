@@ -260,27 +260,48 @@ export type Database = {
           created_at: string | null;
           created_by: string | null;
           description: string | null;
+          end_date: string | null;
           icon: string;
           id: string;
           name: string;
+          received_amount: number | null;
+          site_address: string | null;
+          site_location: string | null;
+          start_date: string | null;
+          status: string | null;
+          total_budget: number | null;
         };
         Insert: {
           color: string;
           created_at?: string | null;
           created_by?: string | null;
           description?: string | null;
+          end_date?: string | null;
           icon: string;
           id?: string;
           name: string;
+          received_amount?: number | null;
+          site_address?: string | null;
+          site_location?: string | null;
+          start_date?: string | null;
+          status?: string | null;
+          total_budget?: number | null;
         };
         Update: {
           color?: string;
           created_at?: string | null;
           created_by?: string | null;
           description?: string | null;
+          end_date?: string | null;
           icon?: string;
           id?: string;
           name?: string;
+          received_amount?: number | null;
+          site_address?: string | null;
+          site_location?: string | null;
+          start_date?: string | null;
+          status?: string | null;
+          total_budget?: number | null;
         };
         Relationships: [
           {

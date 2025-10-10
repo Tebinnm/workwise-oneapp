@@ -132,12 +132,15 @@ export default function ProjectDetail() {
             )}
           </div>
           {canCreateProjects() && (
-            <ProjectDialog onProjectUpdated={fetchProjectDetails}>
-              <Button variant="outline">
-                <Edit className="h-4 w-4 mr-2" />
-                Edit Project
-              </Button>
-            </ProjectDialog>
+            <ProjectDialog
+              onProjectUpdated={fetchProjectDetails}
+              trigger={
+                <Button variant="outline">
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit Project
+                </Button>
+              }
+            />
           )}
         </div>
 
