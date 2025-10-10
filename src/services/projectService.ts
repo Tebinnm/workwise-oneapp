@@ -153,7 +153,8 @@ export class ProjectService {
         // Calculate wages from attendance records for all milestones
         for (const milestone of milestones) {
           try {
-            const { data: budgetData, error } = await supabase
+            // Using type assertion - calculate_milestone_budget function exists in DB but not in generated types
+            const { data: budgetData, error } = await (supabase as any)
               .rpc("calculate_milestone_budget", {
                 p_milestone_id: milestone.id,
               })
@@ -161,6 +162,11 @@ export class ProjectService {
 
             if (!error && budgetData) {
               totalSpent += Number(budgetData) || 0;
+            } else if (error) {
+              console.warn(
+                `Failed to calculate budget for milestone ${milestone.id}:`,
+                error
+              );
             }
           } catch (err) {
             console.warn(
@@ -172,18 +178,28 @@ export class ProjectService {
         }
       }
 
-      // Get total expenses
-      const { data: expenses } = await supabase
-        .from("project_expenses")
+      // Get total expenses (using type assertion for missing table in types)
+      const { data: expenses, error: expensesError } = await supabase
+        .from("project_expenses" as any)
         .select("amount")
         .eq("project_id", projectId);
 
-      const totalExpenses =
-        expenses?.reduce((sum, exp) => sum + Number(exp.amount), 0) || 0;
+      if (expensesError) {
+        console.warn(
+          "Error fetching expenses or table does not exist:",
+          expensesError
+        );
+      }
 
-      // Get total invoiced
-      const { data: invoices } = await supabase
-        .from("invoices")
+      const totalExpenses =
+        expenses?.reduce(
+          (sum: number, exp: any) => sum + Number(exp.amount || 0),
+          0
+        ) || 0;
+
+      // Get total invoiced (using type assertion for missing table in types)
+      const { data: invoices, error: invoicesError } = await supabase
+        .from("invoices" as any)
         .select("total, milestone_id")
         .in(
           "milestone_id",
@@ -192,8 +208,18 @@ export class ProjectService {
             : ["00000000-0000-0000-0000-000000000000"]
         ); // Use dummy UUID if no milestones
 
+      if (invoicesError) {
+        console.warn(
+          "Error fetching invoices or table does not exist:",
+          invoicesError
+        );
+      }
+
       const totalInvoiced =
-        invoices?.reduce((sum, inv) => sum + Number(inv.total), 0) || 0;
+        invoices?.reduce(
+          (sum: number, inv: any) => sum + Number(inv.total || 0),
+          0
+        ) || 0;
 
       return {
         project,
@@ -227,34 +253,62 @@ export class ProjectService {
   static async getProjectFinancials(
     projectId: string
   ): Promise<ProjectFinancials> {
-    const summary = await this.getProjectSummary(projectId);
+    try {
+      const summary = await this.getProjectSummary(projectId);
 
-    const totalBudget = Number(summary.project.total_budget) || 0;
-    const receivedAmount = Number(summary.project.received_amount) || 0;
-    const totalCosts = summary.total_spent + summary.total_expenses;
-    const profitLoss = receivedAmount - totalCosts;
+      const totalBudget = Number(summary.project.total_budget) || 0;
+      const receivedAmount = Number(summary.project.received_amount) || 0;
+      const totalCosts = summary.total_spent + summary.total_expenses;
+      const profitLoss = receivedAmount - totalCosts;
 
-    // Get outstanding invoices count
-    const { data: milestones } = await supabase
-      .from("milestones")
-      .select("id")
-      .eq("project_id", projectId);
+      // Get outstanding invoices count
+      const { data: milestones, error: milestonesError } = await supabase
+        .from("milestones")
+        .select("id")
+        .eq("project_id", projectId);
 
-    const { count: outstandingInvoices } = await supabase
-      .from("invoices")
-      .select("*", { count: "exact", head: true })
-      .in("milestone_id", milestones?.map((m) => m.id) || [])
-      .in("status", ["pending", "partial", "overdue"]);
+      if (milestonesError) {
+        console.warn(
+          "Error fetching milestones for invoices:",
+          milestonesError
+        );
+      }
 
-    return {
-      total_budget: totalBudget,
-      received_amount: receivedAmount,
-      total_spent: summary.total_spent,
-      total_expenses: summary.total_expenses,
-      total_invoiced: summary.total_invoiced,
-      profit_loss: profitLoss,
-      outstanding_invoices: outstandingInvoices || 0,
-    };
+      let outstandingInvoices = 0;
+
+      if (milestones && milestones.length > 0) {
+        const { count, error: invoicesError } = await supabase
+          .from("invoices" as any)
+          .select("*", { count: "exact", head: true })
+          .in(
+            "milestone_id",
+            milestones.map((m) => m.id)
+          )
+          .in("status", ["pending", "partial", "overdue"]);
+
+        if (invoicesError) {
+          console.warn(
+            "Error fetching outstanding invoices or table does not exist:",
+            invoicesError
+          );
+        } else {
+          outstandingInvoices = count || 0;
+        }
+      }
+
+      return {
+        total_budget: totalBudget,
+        received_amount: receivedAmount,
+        total_spent: summary.total_spent,
+        total_expenses: summary.total_expenses,
+        total_invoiced: summary.total_invoiced,
+        profit_loss: profitLoss,
+        outstanding_invoices: outstandingInvoices,
+      };
+    } catch (error) {
+      console.error("Error in getProjectFinancials:", error);
+      throw error;
+    }
   }
 
   /**
