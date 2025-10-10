@@ -54,6 +54,8 @@ interface TaskDialogProps {
   task?: any; // Optional task for edit mode
   onSuccess?: () => void;
   onDelete?: () => void;
+  open?: boolean; // External control of dialog open state
+  onOpenChange?: (open: boolean) => void; // External control of dialog open state
 }
 
 interface Profile {
@@ -84,10 +86,16 @@ export function TaskDialog({
   task,
   onSuccess,
   onDelete,
+  open: externalOpen,
+  onOpenChange: externalOnOpenChange,
 }: TaskDialogProps) {
   const isEditMode = !!task;
   const { isWorker, isSupervisor, isAdmin } = usePermissions();
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+
+  // Use external open state if provided, otherwise use internal state
+  const open = externalOpen !== undefined ? externalOpen : internalOpen;
+  const setOpen = externalOnOpenChange || setInternalOpen;
   const [loading, setLoading] = useState(false);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [teamAssignments, setTeamAssignments] = useState<
