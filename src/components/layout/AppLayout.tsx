@@ -34,7 +34,14 @@ export function AppLayout() {
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [profile, setProfile] = useState<any>(null);
   const navigate = useNavigate();
-  const { themeColor, setThemeColor, background, setBackground } = useTheme();
+  const {
+    themeColor,
+    setThemeColor,
+    background,
+    setBackground,
+    theme,
+    setTheme,
+  } = useTheme();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -129,6 +136,27 @@ export function AppLayout() {
                       </p>
                     </div>
                   </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+
+                  <DropdownMenuItem
+                    onClick={() =>
+                      setTheme(theme === "light" ? "dark" : "light")
+                    }
+                    className="cursor-pointer"
+                  >
+                    {theme === "light" ? (
+                      <>
+                        <Moon className="mr-2 h-4 w-4" />
+                        <span>Dark Mode</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sun className="mr-2 h-4 w-4" />
+                        <span>Light Mode</span>
+                      </>
+                    )}
+                  </DropdownMenuItem>
+
                   <DropdownMenuSeparator />
 
                   <div className="px-2 py-1.5">
