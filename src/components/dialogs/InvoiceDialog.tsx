@@ -293,7 +293,9 @@ export function InvoiceDialog({
         toast.success("Invoice updated successfully");
       } else {
         // Create new invoice
-        const { data: user } = await supabase.auth.getUser();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
 
         const invoiceData = {
           milestone_id: formData.milestone_id,
@@ -310,7 +312,7 @@ export function InvoiceDialog({
           tax_amount: taxAmount,
           total,
           balance_due: total,
-          created_by: user.data.user?.id,
+          created_by: user?.id,
         };
 
         const newInvoice = await InvoiceService.createInvoice(invoiceData);
