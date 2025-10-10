@@ -32,6 +32,11 @@ import {
   InvoiceService,
   type InvoiceWithItems,
 } from "@/services/invoiceService";
+import { ExpenseList } from "@/components/ExpenseList";
+import {
+  FinancialService,
+  type ProjectExpenseWithDetails,
+} from "@/services/financialService";
 
 export default function ProjectDetail() {
   const { projectId } = useParams<{ projectId: string }>();
@@ -41,12 +46,14 @@ export default function ProjectDetail() {
   const [summary, setSummary] = useState<any>(null);
   const [financials, setFinancials] = useState<any>(null);
   const [invoices, setInvoices] = useState<InvoiceWithItems[]>([]);
+  const [expenses, setExpenses] = useState<ProjectExpenseWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("overview");
   const [milestoneBudgets, setMilestoneBudgets] = useState<Map<string, any>>(
     new Map()
   );
   const [totalSpentFromBudgets, setTotalSpentFromBudgets] = useState<number>(0);
+  const [totalExpensesAmount, setTotalExpensesAmount] = useState<number>(0);
 
   useEffect(() => {
     if (projectId) {
@@ -85,22 +92,34 @@ export default function ProjectDetail() {
     setTotalSpentFromBudgets(total);
   }, [milestoneBudgets]);
 
+  // Update total expenses whenever expenses change
+  useEffect(() => {
+    const total = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+    setTotalExpensesAmount(total);
+  }, [expenses]);
+
   const fetchProjectDetails = async () => {
     if (!projectId) return;
 
     try {
       setLoading(true);
-      const [projectData, summaryData, financialData, invoicesData] =
-        await Promise.all([
-          ProjectService.getProjectById(projectId),
-          ProjectService.getProjectSummary(projectId),
-          ProjectService.getProjectFinancials(projectId).catch((err) => {
-            console.error("Error fetching financial data:", err);
-            // Return null if financials fail, but don't block other data
-            return null;
-          }),
-          InvoiceService.getInvoicesByProject(projectId),
-        ]);
+      const [
+        projectData,
+        summaryData,
+        financialData,
+        invoicesData,
+        expensesData,
+      ] = await Promise.all([
+        ProjectService.getProjectById(projectId),
+        ProjectService.getProjectSummary(projectId),
+        ProjectService.getProjectFinancials(projectId).catch((err) => {
+          console.error("Error fetching financial data:", err);
+          // Return null if financials fail, but don't block other data
+          return null;
+        }),
+        InvoiceService.getInvoicesByProject(projectId),
+        FinancialService.getProjectExpenses(projectId),
+      ]);
 
       setProject(projectData);
       setSummary(summaryData);
@@ -115,6 +134,7 @@ export default function ProjectDetail() {
         await Promise.all(budgetPromises);
       }
       setInvoices(invoicesData);
+      setExpenses(expensesData);
     } catch (error: any) {
       console.error("Error fetching project details:", error);
       toast.error(error.message || "Failed to fetch project details");
@@ -314,7 +334,9 @@ export default function ProjectDetail() {
               <div>
                 <p className="text-lg text-muted-foreground mb-1">Expenses</p>
                 <p className="text-lg font-bold text-red-600">
-                  {formatCurrency(financials.total_expenses || 0)}
+                  {formatCurrency(
+                    totalExpensesAmount || financials.total_expenses || 0
+                  )}
                 </p>
               </div>
               <div>
@@ -337,10 +359,10 @@ export default function ProjectDetail() {
                   className={`text-lg font-bold ${(() => {
                     const spent =
                       totalSpentFromBudgets || financials.total_spent || 0;
+                    const expenses =
+                      totalExpensesAmount || financials.total_expenses || 0;
                     const profitLoss =
-                      financials.received_amount -
-                      spent -
-                      (financials.total_expenses || 0);
+                      financials.received_amount - spent - expenses;
                     return profitLoss >= 0
                       ? "text-success"
                       : "text-destructive";
@@ -350,11 +372,9 @@ export default function ProjectDetail() {
                     (() => {
                       const spent =
                         totalSpentFromBudgets || financials.total_spent || 0;
-                      return (
-                        financials.received_amount -
-                        spent -
-                        (financials.total_expenses || 0)
-                      );
+                      const expenses =
+                        totalExpensesAmount || financials.total_expenses || 0;
+                      return financials.received_amount - spent - expenses;
                     })()
                   )}
                 </p>
@@ -434,7 +454,8 @@ export default function ProjectDetail() {
               <CardContent>
                 <div className="text-3xl font-bold mb-2">
                   {formatCurrency(
-                    (summary?.total_spent || 0) + (summary?.total_expenses || 0)
+                    (summary?.total_spent || 0) +
+                      (totalExpensesAmount || summary?.total_expenses || 0)
                   )}
                 </div>
                 <p className="text-sm text-muted-foreground">
@@ -577,15 +598,11 @@ export default function ProjectDetail() {
 
         {/* Expenses Tab */}
         <TabsContent value="expenses">
-          <Card>
-            <CardContent className="flex flex-col items-center justify-center py-12">
-              <DollarSign className="h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Expenses</h3>
-              <p className="text-muted-foreground">
-                Expense tracking coming soon
-              </p>
-            </CardContent>
-          </Card>
+          <ExpenseList
+            expenses={expenses}
+            projectId={projectId!}
+            onRefresh={fetchProjectDetails}
+          />
         </TabsContent>
       </Tabs>
     </div>

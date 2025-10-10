@@ -687,6 +687,7 @@ export type Database = {
       project_expenses: {
         Row: {
           amount: number;
+          assigned_to: string | null;
           created_at: string | null;
           created_by: string | null;
           description: string;
@@ -694,12 +695,14 @@ export type Database = {
           expense_date: string;
           id: string;
           milestone_id: string | null;
+          payment_method: string | null;
           project_id: string | null;
           receipt_url: string | null;
           vendor_name: string | null;
         };
         Insert: {
           amount: number;
+          assigned_to?: string | null;
           created_at?: string | null;
           created_by?: string | null;
           description: string;
@@ -707,12 +710,14 @@ export type Database = {
           expense_date?: string;
           id?: string;
           milestone_id?: string | null;
+          payment_method?: string | null;
           project_id?: string | null;
           receipt_url?: string | null;
           vendor_name?: string | null;
         };
         Update: {
           amount?: number;
+          assigned_to?: string | null;
           created_at?: string | null;
           created_by?: string | null;
           description?: string;
@@ -720,11 +725,19 @@ export type Database = {
           expense_date?: string;
           id?: string;
           milestone_id?: string | null;
+          payment_method?: string | null;
           project_id?: string | null;
           receipt_url?: string | null;
           vendor_name?: string | null;
         };
         Relationships: [
+          {
+            foreignKeyName: "project_expenses_assigned_to_fkey";
+            columns: ["assigned_to"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
           {
             foreignKeyName: "project_expenses_created_by_fkey";
             columns: ["created_by"];

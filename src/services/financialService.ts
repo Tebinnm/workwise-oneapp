@@ -6,6 +6,17 @@ type ProjectExpense = Database["public"]["Tables"]["project_expenses"]["Row"];
 type ProjectExpenseInsert =
   Database["public"]["Tables"]["project_expenses"]["Insert"];
 
+export interface ProjectExpenseWithDetails extends ProjectExpense {
+  assigned_member?: {
+    id: string;
+    full_name: string | null;
+  };
+  milestone?: {
+    id: string;
+    name: string;
+  };
+}
+
 export interface FinancialSummary {
   total_revenue: number;
   total_expenses: number;
@@ -50,14 +61,26 @@ export class FinancialService {
   }
 
   /**
-   * Get expenses for a project
+   * Get expenses for a project with member and milestone details
    */
   static async getProjectExpenses(
     projectId: string
-  ): Promise<ProjectExpense[]> {
+  ): Promise<ProjectExpenseWithDetails[]> {
     const { data, error } = await supabase
       .from("project_expenses" as any)
-      .select("*")
+      .select(
+        `
+        *,
+        assigned_member:assigned_to (
+          id,
+          full_name
+        ),
+        milestone:milestones (
+          id,
+          name
+        )
+      `
+      )
       .eq("project_id", projectId)
       .order("expense_date", { ascending: false });
 
@@ -66,14 +89,26 @@ export class FinancialService {
   }
 
   /**
-   * Get expenses for a milestone
+   * Get expenses for a milestone with member details
    */
   static async getMilestoneExpenses(
     milestoneId: string
-  ): Promise<ProjectExpense[]> {
+  ): Promise<ProjectExpenseWithDetails[]> {
     const { data, error } = await supabase
       .from("project_expenses" as any)
-      .select("*")
+      .select(
+        `
+        *,
+        assigned_member:assigned_to (
+          id,
+          full_name
+        ),
+        milestone:milestones (
+          id,
+          name
+        )
+      `
+      )
       .eq("milestone_id", milestoneId)
       .order("expense_date", { ascending: false });
 
