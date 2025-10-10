@@ -190,6 +190,53 @@ export class InvoiceService {
   }
 
   /**
+   * Create a custom invoice with items in a transaction
+   */
+  static async createInvoiceWithItems(
+    invoiceData: InvoiceInsert,
+    items: Array<{
+      description: string;
+      quantity: number;
+      rate: number;
+      amount: number;
+      item_type: "wage" | "expense" | "custom";
+    }>
+  ): Promise<InvoiceWithItems> {
+    // Start a transaction by creating the invoice first
+    const { data: invoice, error: invoiceError } = await supabase
+      .from("invoices")
+      .insert(invoiceData)
+      .select()
+      .single();
+
+    if (invoiceError) throw invoiceError;
+
+    // Create invoice items
+    const invoiceItems: InvoiceItemInsert[] = items.map((item) => ({
+      invoice_id: invoice.id,
+      description: item.description,
+      quantity: item.quantity,
+      rate: item.rate,
+      amount: item.amount,
+      item_type: item.item_type,
+      reference_type: "none",
+    }));
+
+    const { error: itemsError } = await supabase
+      .from("invoice_items")
+      .insert(invoiceItems);
+
+    if (itemsError) {
+      // If items creation fails, try to clean up the invoice
+      await supabase.from("invoices").delete().eq("id", invoice.id);
+      throw itemsError;
+    }
+
+    // Return the complete invoice with items
+    return this.getInvoiceById(invoice.id);
+  }
+
+  /**
    * Update an invoice
    */
   static async updateInvoice(
@@ -487,5 +534,3 @@ export class InvoiceService {
     if (error) throw error;
   }
 }
-
-

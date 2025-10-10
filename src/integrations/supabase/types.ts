@@ -550,6 +550,255 @@ export type Database = {
           }
         ];
       };
+      invoices: {
+        Row: {
+          amount_paid: number | null;
+          balance_due: number;
+          client_address: string | null;
+          client_email: string | null;
+          client_name: string;
+          created_at: string | null;
+          created_by: string | null;
+          due_date: string;
+          id: string;
+          invoice_number: string;
+          issue_date: string;
+          milestone_id: string;
+          notes: string | null;
+          payment_terms: string | null;
+          share_token: string | null;
+          status: string | null;
+          subtotal: number;
+          tax_amount: number | null;
+          tax_rate: number | null;
+          total: number;
+          updated_at: string | null;
+        };
+        Insert: {
+          amount_paid?: number | null;
+          balance_due?: number;
+          client_address?: string | null;
+          client_email?: string | null;
+          client_name: string;
+          created_at?: string | null;
+          created_by?: string | null;
+          due_date: string;
+          id?: string;
+          invoice_number?: string;
+          issue_date?: string;
+          milestone_id: string;
+          notes?: string | null;
+          payment_terms?: string | null;
+          share_token?: string | null;
+          status?: string | null;
+          subtotal?: number;
+          tax_amount?: number | null;
+          tax_rate?: number | null;
+          total?: number;
+          updated_at?: string | null;
+        };
+        Update: {
+          amount_paid?: number | null;
+          balance_due?: number;
+          client_address?: string | null;
+          client_email?: string | null;
+          client_name?: string;
+          created_at?: string | null;
+          created_by?: string | null;
+          due_date?: string;
+          id?: string;
+          invoice_number?: string;
+          issue_date?: string;
+          milestone_id?: string;
+          notes?: string | null;
+          payment_terms?: string | null;
+          share_token?: string | null;
+          status?: string | null;
+          subtotal?: number;
+          tax_amount?: number | null;
+          tax_rate?: number | null;
+          total?: number;
+          updated_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "invoices_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "invoices_milestone_id_fkey";
+            columns: ["milestone_id"];
+            isOneToOne: false;
+            referencedRelation: "milestones";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      invoice_items: {
+        Row: {
+          amount: number;
+          created_at: string | null;
+          description: string;
+          id: string;
+          invoice_id: string;
+          item_type: string | null;
+          quantity: number | null;
+          rate: number;
+          reference_id: string | null;
+          reference_type: string | null;
+        };
+        Insert: {
+          amount: number;
+          created_at?: string | null;
+          description: string;
+          id?: string;
+          invoice_id: string;
+          item_type?: string | null;
+          quantity?: number | null;
+          rate: number;
+          reference_id?: string | null;
+          reference_type?: string | null;
+        };
+        Update: {
+          amount?: number;
+          created_at?: string | null;
+          description?: string;
+          id?: string;
+          invoice_id?: string;
+          item_type?: string | null;
+          quantity?: number | null;
+          rate?: number;
+          reference_id?: string | null;
+          reference_type?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "invoice_items_invoice_id_fkey";
+            columns: ["invoice_id"];
+            isOneToOne: false;
+            referencedRelation: "invoices";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      project_expenses: {
+        Row: {
+          amount: number;
+          created_at: string | null;
+          created_by: string | null;
+          description: string;
+          expense_category: string | null;
+          expense_date: string;
+          id: string;
+          milestone_id: string | null;
+          project_id: string | null;
+          receipt_url: string | null;
+          vendor_name: string | null;
+        };
+        Insert: {
+          amount: number;
+          created_at?: string | null;
+          created_by?: string | null;
+          description: string;
+          expense_category?: string | null;
+          expense_date?: string;
+          id?: string;
+          milestone_id?: string | null;
+          project_id?: string | null;
+          receipt_url?: string | null;
+          vendor_name?: string | null;
+        };
+        Update: {
+          amount?: number;
+          created_at?: string | null;
+          created_by?: string | null;
+          description?: string;
+          expense_category?: string | null;
+          expense_date?: string;
+          id?: string;
+          milestone_id?: string | null;
+          project_id?: string | null;
+          receipt_url?: string | null;
+          vendor_name?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "project_expenses_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "project_expenses_milestone_id_fkey";
+            columns: ["milestone_id"];
+            isOneToOne: false;
+            referencedRelation: "milestones";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "project_expenses_project_id_fkey";
+            columns: ["project_id"];
+            isOneToOne: false;
+            referencedRelation: "projects";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      payment_records: {
+        Row: {
+          created_at: string | null;
+          id: string;
+          invoice_id: string;
+          notes: string | null;
+          payment_amount: number;
+          payment_date: string;
+          payment_method: string | null;
+          recorded_by: string | null;
+          transaction_reference: string | null;
+        };
+        Insert: {
+          created_at?: string | null;
+          id?: string;
+          invoice_id: string;
+          notes?: string | null;
+          payment_amount: number;
+          payment_date?: string;
+          payment_method?: string | null;
+          recorded_by?: string | null;
+          transaction_reference?: string | null;
+        };
+        Update: {
+          created_at?: string | null;
+          id?: string;
+          invoice_id?: string;
+          notes?: string | null;
+          payment_amount?: number;
+          payment_date?: string;
+          payment_method?: string | null;
+          recorded_by?: string | null;
+          transaction_reference?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "payment_records_invoice_id_fkey";
+            columns: ["invoice_id"];
+            isOneToOne: false;
+            referencedRelation: "invoices";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "payment_records_recorded_by_fkey";
+            columns: ["recorded_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
     };
     Views: {
       [_ in never]: never;

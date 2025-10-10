@@ -26,6 +26,11 @@ import { format } from "date-fns";
 import { ProjectDialog } from "@/components/dialogs/ProjectDialog";
 import { CreateMilestoneDialog } from "@/components/dialogs/CreateMilestoneDialog";
 import { usePermissions } from "@/hooks/usePermissions";
+import { InvoiceList } from "@/components/InvoiceList";
+import {
+  InvoiceService,
+  type InvoiceWithItems,
+} from "@/services/invoiceService";
 
 export default function ProjectDetail() {
   const { projectId } = useParams<{ projectId: string }>();
@@ -34,6 +39,7 @@ export default function ProjectDetail() {
   const [project, setProject] = useState<ProjectWithDetails | null>(null);
   const [summary, setSummary] = useState<any>(null);
   const [financials, setFinancials] = useState<any>(null);
+  const [invoices, setInvoices] = useState<InvoiceWithItems[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("overview");
 
@@ -48,15 +54,18 @@ export default function ProjectDetail() {
 
     try {
       setLoading(true);
-      const [projectData, summaryData, financialData] = await Promise.all([
-        ProjectService.getProjectById(projectId),
-        ProjectService.getProjectSummary(projectId),
-        ProjectService.getProjectFinancials(projectId),
-      ]);
+      const [projectData, summaryData, financialData, invoicesData] =
+        await Promise.all([
+          ProjectService.getProjectById(projectId),
+          ProjectService.getProjectSummary(projectId),
+          ProjectService.getProjectFinancials(projectId),
+          InvoiceService.getInvoicesByProject(projectId),
+        ]);
 
       setProject(projectData);
       setSummary(summaryData);
       setFinancials(financialData);
+      setInvoices(invoicesData);
     } catch (error: any) {
       toast.error(error.message || "Failed to fetch project details");
     } finally {
@@ -419,15 +428,11 @@ export default function ProjectDetail() {
 
         {/* Invoices Tab */}
         <TabsContent value="invoices">
-          <Card>
-            <CardContent className="flex flex-col items-center justify-center py-12">
-              <Receipt className="h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Invoices</h3>
-              <p className="text-muted-foreground">
-                Invoice management coming soon
-              </p>
-            </CardContent>
-          </Card>
+          <InvoiceList
+            invoices={invoices}
+            projectId={projectId!}
+            onRefresh={fetchProjectDetails}
+          />
         </TabsContent>
 
         {/* Expenses Tab */}
