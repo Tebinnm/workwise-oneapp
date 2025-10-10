@@ -37,7 +37,7 @@ export class FinancialService {
     } = await supabase.auth.getUser();
 
     const { data, error } = await supabase
-      .from("project_expenses")
+      .from("project_expenses" as any)
       .insert({
         ...expenseData,
         created_by: user?.id,
@@ -56,13 +56,13 @@ export class FinancialService {
     projectId: string
   ): Promise<ProjectExpense[]> {
     const { data, error } = await supabase
-      .from("project_expenses")
+      .from("project_expenses" as any)
       .select("*")
       .eq("project_id", projectId)
       .order("expense_date", { ascending: false });
 
     if (error) throw error;
-    return data;
+    return data || [];
   }
 
   /**
@@ -72,13 +72,13 @@ export class FinancialService {
     milestoneId: string
   ): Promise<ProjectExpense[]> {
     const { data, error } = await supabase
-      .from("project_expenses")
+      .from("project_expenses" as any)
       .select("*")
       .eq("milestone_id", milestoneId)
       .order("expense_date", { ascending: false });
 
     if (error) throw error;
-    return data;
+    return data || [];
   }
 
   /**
@@ -89,7 +89,7 @@ export class FinancialService {
     updates: Partial<ProjectExpenseInsert>
   ): Promise<ProjectExpense> {
     const { data, error } = await supabase
-      .from("project_expenses")
+      .from("project_expenses" as any)
       .update(updates)
       .eq("id", expenseId)
       .select()
@@ -104,7 +104,7 @@ export class FinancialService {
    */
   static async deleteExpense(expenseId: string): Promise<void> {
     const { error } = await supabase
-      .from("project_expenses")
+      .from("project_expenses" as any)
       .delete()
       .eq("id", expenseId);
 
@@ -152,12 +152,15 @@ export class FinancialService {
 
         // Get project expenses
         const { data: expenses } = await supabase
-          .from("project_expenses")
+          .from("project_expenses" as any)
           .select("amount")
           .eq("project_id", project.id);
 
         totalExpenses +=
-          expenses?.reduce((sum, exp) => sum + Number(exp.amount), 0) || 0;
+          expenses?.reduce(
+            (sum: number, exp: any) => sum + Number(exp.amount || 0),
+            0
+          ) || 0;
 
         // Get milestones for wage calculation
         const { data: milestones } = await supabase
@@ -167,7 +170,7 @@ export class FinancialService {
 
         if (milestones) {
           for (const milestone of milestones) {
-            const { data: budgetData } = await supabase
+            const { data: budgetData } = await (supabase as any)
               .rpc("calculate_milestone_budget", {
                 p_milestone_id: milestone.id,
               })
@@ -183,13 +186,13 @@ export class FinancialService {
 
     // Get outstanding invoices
     const { data: outstandingInvoices } = await supabase
-      .from("invoices")
+      .from("invoices" as any)
       .select("balance_due")
       .in("status", ["pending", "partial", "overdue"]);
 
     const outstandingAmount =
       outstandingInvoices?.reduce(
-        (sum, inv) => sum + Number(inv.balance_due),
+        (sum: number, inv: any) => sum + Number(inv.balance_due || 0),
         0
       ) || 0;
 
@@ -241,7 +244,7 @@ export class FinancialService {
     projectId?: string
   ): Promise<Record<string, number>> {
     let query = supabase
-      .from("project_expenses")
+      .from("project_expenses" as any)
       .select("expense_category, amount");
 
     if (projectId) {
@@ -252,10 +255,10 @@ export class FinancialService {
 
     const categoryTotals: Record<string, number> = {};
 
-    expenses?.forEach((expense) => {
+    expenses?.forEach((expense: any) => {
       const category = expense.expense_category || "other";
       categoryTotals[category] =
-        (categoryTotals[category] || 0) + Number(expense.amount);
+        (categoryTotals[category] || 0) + Number(expense.amount || 0);
     });
 
     return categoryTotals;
@@ -270,7 +273,7 @@ export class FinancialService {
     projectId?: string
   ): Promise<ProjectExpense[]> {
     let query = supabase
-      .from("project_expenses")
+      .from("project_expenses" as any)
       .select("*")
       .gte("expense_date", startDate)
       .lte("expense_date", endDate)
@@ -283,8 +286,6 @@ export class FinancialService {
     const { data, error } = await query;
 
     if (error) throw error;
-    return data;
+    return data || [];
   }
 }
-
-

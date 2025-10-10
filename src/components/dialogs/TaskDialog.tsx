@@ -185,9 +185,30 @@ export function TaskDialog({
   }, [taskType]);
 
   const fetchProfiles = async () => {
+    // Fetch only profiles that are assigned to this project
+    const { data: projectMembers, error: membersError } = await supabase
+      .from("project_members")
+      .select("user_id")
+      .eq("milestone_id", projectId);
+
+    if (membersError) {
+      toast.error("Failed to fetch project members");
+      return;
+    }
+
+    if (!projectMembers || projectMembers.length === 0) {
+      setProfiles([]);
+      return;
+    }
+
+    // Get the user IDs of project members
+    const memberIds = projectMembers.map((pm) => pm.user_id);
+
+    // Fetch profiles for these users only
     const { data, error } = await supabase
       .from("profiles")
       .select("id, full_name, role")
+      .in("id", memberIds)
       .order("full_name");
 
     if (error) {

@@ -26,6 +26,7 @@ import { format } from "date-fns";
 import { ProjectDialog } from "@/components/dialogs/ProjectDialog";
 import { CreateMilestoneDialog } from "@/components/dialogs/CreateMilestoneDialog";
 import { usePermissions } from "@/hooks/usePermissions";
+import { BudgetService } from "@/services/budgetService";
 import { InvoiceList } from "@/components/InvoiceList";
 import {
   InvoiceService,
@@ -42,12 +43,47 @@ export default function ProjectDetail() {
   const [invoices, setInvoices] = useState<InvoiceWithItems[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("overview");
+  const [milestoneBudgets, setMilestoneBudgets] = useState<Map<string, any>>(
+    new Map()
+  );
+  const [totalSpentFromBudgets, setTotalSpentFromBudgets] = useState<number>(0);
 
   useEffect(() => {
     if (projectId) {
       fetchProjectDetails();
     }
   }, [projectId]);
+
+  const fetchMilestoneBudget = async (milestoneId: string) => {
+    try {
+      const report = await BudgetService.generateProjectBudgetReport(
+        milestoneId
+      );
+      setMilestoneBudgets((prev) => {
+        const newMap = new Map(prev);
+        newMap.set(milestoneId, report);
+        return newMap;
+      });
+      return report;
+    } catch (error) {
+      console.error(
+        `Error fetching budget for milestone ${milestoneId}:`,
+        error
+      );
+      return null;
+    }
+  };
+
+  // Update total spent whenever milestone budgets change
+  useEffect(() => {
+    let total = 0;
+    milestoneBudgets.forEach((budget) => {
+      if (budget && budget.total_budget_spent) {
+        total += budget.total_budget_spent;
+      }
+    });
+    setTotalSpentFromBudgets(total);
+  }, [milestoneBudgets]);
 
   const fetchProjectDetails = async () => {
     if (!projectId) return;
@@ -58,15 +94,29 @@ export default function ProjectDetail() {
         await Promise.all([
           ProjectService.getProjectById(projectId),
           ProjectService.getProjectSummary(projectId),
-          ProjectService.getProjectFinancials(projectId),
+          ProjectService.getProjectFinancials(projectId).catch((err) => {
+            console.error("Error fetching financial data:", err);
+            // Return null if financials fail, but don't block other data
+            return null;
+          }),
           InvoiceService.getInvoicesByProject(projectId),
         ]);
 
       setProject(projectData);
       setSummary(summaryData);
       setFinancials(financialData);
+
+      // Fetch budget for each milestone
+      if (projectData.milestones && projectData.milestones.length > 0) {
+        const budgetPromises = projectData.milestones.map((milestone) =>
+          fetchMilestoneBudget(milestone.id)
+        );
+        // Wait for all budgets to be fetched to calculate total
+        await Promise.all(budgetPromises);
+      }
       setInvoices(invoicesData);
     } catch (error: any) {
+      console.error("Error fetching project details:", error);
       toast.error(error.message || "Failed to fetch project details");
     } finally {
       setLoading(false);
@@ -253,8 +303,13 @@ export default function ProjectDetail() {
                   Spent (Wages)
                 </p>
                 <p className="text-lg font-bold text-orange-600">
-                  {formatCurrency(financials.total_spent || 0)}
+                  {formatCurrency(
+                    totalSpentFromBudgets || financials.total_spent || 0
+                  )}
                 </p>
+                {totalSpentFromBudgets > 0 && (
+                  <p className="text-xs text-muted-foreground mt-1"></p>
+                )}
               </div>
               <div>
                 <p className="text-lg text-muted-foreground mb-1">Expenses</p>
@@ -279,22 +334,56 @@ export default function ProjectDetail() {
                   Profit/Loss
                 </p>
                 <p
-                  className={`text-lg font-bold ${
-                    (financials.profit_loss || 0) >= 0
+                  className={`text-lg font-bold ${(() => {
+                    const spent =
+                      totalSpentFromBudgets || financials.total_spent || 0;
+                    const profitLoss =
+                      financials.received_amount -
+                      spent -
+                      (financials.total_expenses || 0);
+                    return profitLoss >= 0
                       ? "text-success"
-                      : "text-destructive"
-                  }`}
+                      : "text-destructive";
+                  })()}`}
                 >
-                  {formatCurrency(financials.profit_loss || 0)}
+                  {formatCurrency(
+                    (() => {
+                      const spent =
+                        totalSpentFromBudgets || financials.total_spent || 0;
+                      return (
+                        financials.received_amount -
+                        spent -
+                        (financials.total_expenses || 0)
+                      );
+                    })()
+                  )}
                 </p>
               </div>
             </div>
-          ) : (
+          ) : loading ? (
             <div className="text-center py-4 text-muted-foreground">
               <p className="text-lg">Loading financial data...</p>
-              <p className="text-sm mt-2">
-                If this persists, please ensure database migrations are applied
+            </div>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              <DollarSign className="h-12 w-12 mx-auto mb-3 opacity-50" />
+              <p className="text-lg font-semibold mb-2">
+                Financial data unavailable
               </p>
+              <p className="text-lg mb-3">
+                Unable to load financial overview for this project.
+              </p>
+              <p className="text-lg mb-2">
+                Check browser console for error details.
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={fetchProjectDetails}
+                className="mt-2"
+              >
+                Retry
+              </Button>
             </div>
           )}
         </CardContent>
@@ -383,25 +472,76 @@ export default function ProjectDetail() {
 
           {project.milestones && project.milestones.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {project.milestones.map((milestone) => (
-                <Card
-                  key={milestone.id}
-                  className="hover:shadow-lg transition-all cursor-pointer"
-                  onClick={() => navigate(`/milestones/${milestone.id}`)}
-                >
-                  <CardContent className="p-4">
-                    <h4 className="font-semibold mb-2">{milestone.name}</h4>
-                    <div className="flex items-center justify-between">
-                      <Badge variant="outline">
-                        {milestone.status || "pending"}
-                      </Badge>
-                      <Button variant="ghost" size="sm">
+              {project.milestones.map((milestone) => {
+                const budget = milestoneBudgets.get(milestone.id);
+                return (
+                  <Card
+                    key={milestone.id}
+                    className="hover:shadow-lg transition-all cursor-pointer"
+                    onClick={() => navigate(`/milestones/${milestone.id}`)}
+                  >
+                    <CardContent className="p-4 space-y-3">
+                      <div>
+                        <h4 className="font-semibold mb-2">{milestone.name}</h4>
+                        <Badge variant="outline">
+                          {milestone.status || "pending"}
+                        </Badge>
+                      </div>
+
+                      {/* Budget Information */}
+                      {budget ? (
+                        <div className="border-t pt-3 space-y-2">
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-muted-foreground">
+                              Allocated:
+                            </span>
+                            <span className="font-medium">
+                              {formatCurrency(budget.total_budget_allocated)}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-muted-foreground">
+                              Spent:
+                            </span>
+                            <span className="font-medium text-primary">
+                              {formatCurrency(budget.total_budget_spent)}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-muted-foreground">
+                              Remaining:
+                            </span>
+                            <span className="font-medium text-success">
+                              {formatCurrency(
+                                budget.total_budget_allocated -
+                                  budget.total_budget_spent
+                              )}
+                            </span>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="border-t pt-3">
+                          <p className="text-sm text-muted-foreground">
+                            Loading budget...
+                          </p>
+                        </div>
+                      )}
+
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="w-full"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/milestones/${milestone.id}`);
+                        }}
+                      >
                         View Details
                       </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
           ) : (
             <Card>
