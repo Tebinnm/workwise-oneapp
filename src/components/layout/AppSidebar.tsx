@@ -42,6 +42,7 @@ import { toast } from "sonner";
 import { CreateMilestoneDialog } from "@/components/dialogs/CreateMilestoneDialog";
 import { ProjectDialog } from "@/components/dialogs/ProjectDialog";
 import { usePermissions } from "@/hooks/usePermissions";
+import { PermissionService } from "@/services/permissionService";
 
 interface Milestone {
   id: string;
@@ -70,46 +71,54 @@ export function AppSidebar() {
     null
   );
   const navigate = useNavigate();
-  const { canManageUsers, canManageProjects, canApproveAttendance } =
-    usePermissions();
+  const {
+    profile,
+    canManageSystemUsers,
+    canManageProjects,
+    canApproveAttendance,
+  } = usePermissions();
 
   useEffect(() => {
-    fetchMilestones();
-    fetchProjects();
+    if (profile) {
+      fetchMilestones();
+      fetchProjects();
 
-    const channel = supabase
-      .channel("milestones-changes")
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "milestones",
-        },
-        () => {
-          fetchMilestones();
-          fetchProjects();
-        }
-      )
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "projects",
-        },
-        () => {
-          fetchProjects();
-        }
-      )
-      .subscribe();
+      const channel = supabase
+        .channel("milestones-changes")
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "milestones",
+          },
+          () => {
+            fetchMilestones();
+            fetchProjects();
+          }
+        )
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "projects",
+          },
+          () => {
+            fetchProjects();
+          }
+        )
+        .subscribe();
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, []);
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    }
+  }, [profile]);
 
   const fetchMilestones = async () => {
+    if (!profile) return;
+
     const { data, error } = await supabase
       .from("milestones")
       .select("id, name, project_id")
@@ -120,10 +129,19 @@ export function AppSidebar() {
       return;
     }
 
-    setMilestones(data || []);
+    // Filter milestones based on user's role and access
+    const filteredMilestones = await PermissionService.filterMilestonesByAccess(
+      data || [],
+      profile.id,
+      profile.role
+    );
+
+    setMilestones(filteredMilestones);
   };
 
   const fetchProjects = async () => {
+    if (!profile) return;
+
     const { data, error } = await supabase
       .from("projects")
       .select(
@@ -139,7 +157,30 @@ export function AppSidebar() {
       return;
     }
 
-    setProjects(data || []);
+    // Filter projects based on user's role and access
+    const filteredProjects = await PermissionService.filterProjectsByAccess(
+      data || [],
+      profile.id,
+      profile.role
+    );
+
+    // Also filter milestones within each project
+    const projectsWithFilteredMilestones = await Promise.all(
+      filteredProjects.map(async (project) => {
+        const filteredMilestones =
+          await PermissionService.filterMilestonesByAccess(
+            project.milestones || [],
+            profile.id,
+            profile.role
+          );
+        return {
+          ...project,
+          milestones: filteredMilestones,
+        };
+      })
+    );
+
+    setProjects(projectsWithFilteredMilestones);
   };
 
   const toggleProjectExpansion = (projectId: string) => {
@@ -264,7 +305,7 @@ export function AppSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               )}
-              {canManageUsers() && (
+              {canManageSystemUsers() && (
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
                     <NavLink

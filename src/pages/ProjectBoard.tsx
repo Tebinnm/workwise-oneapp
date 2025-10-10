@@ -17,6 +17,7 @@ import { NotificationSystem } from "@/components/NotificationSystem";
 import { GanttChart } from "@/components/GanttChart";
 import { KanbanBoard } from "@/components/KanbanBoard";
 import { BudgetService } from "@/services/budgetService";
+import { usePermissions } from "@/hooks/usePermissions";
 
 interface Task {
   id: string;
@@ -37,6 +38,7 @@ interface Task {
 export default function ProjectBoard() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { canCreateTasks } = usePermissions();
   const [project, setProject] = useState<any>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [view, setView] = useState<"kanban" | "gantt" | "notifications">(
@@ -194,12 +196,14 @@ export default function ProjectBoard() {
             <DollarSign className="h-4 w-4 sm:mr-2" />
             <span className="hidden sm:inline">Budget</span>
           </Button>
-          <TaskDialog projectId={id!} onSuccess={handleTaskUpdate}>
-            <Button size="sm" className="shadow-glow flex-1 sm:flex-none">
-              <Plus className="h-4 w-4 sm:mr-2" />
-              <span className="hidden sm:inline">Add Task</span>
-            </Button>
-          </TaskDialog>
+          {canCreateTasks() && (
+            <TaskDialog projectId={id!} onSuccess={handleTaskUpdate}>
+              <Button size="sm" className="shadow-glow flex-1 sm:flex-none">
+                <Plus className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Add Task</span>
+              </Button>
+            </TaskDialog>
+          )}
           {/* <RecurringTaskDialog milestoneId={id!} onSuccess={handleTaskUpdate}>
             <Button size="sm" variant="outline" className="flex-1 sm:flex-none">
               <Plus className="h-4 w-4 sm:mr-2" />

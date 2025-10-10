@@ -24,6 +24,8 @@ import {
 import { toast } from "sonner";
 import { ProjectDialog } from "@/components/dialogs/ProjectDialog";
 import { format } from "date-fns";
+import { usePermissions } from "@/hooks/usePermissions";
+import { PermissionService } from "@/services/permissionService";
 
 interface Project {
   id: string;
@@ -51,19 +53,35 @@ export default function Projects() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const navigate = useNavigate();
+  const {
+    profile,
+    canCreateProjects,
+    loading: profileLoading,
+  } = usePermissions();
 
   useEffect(() => {
-    fetchProjects();
-  }, []);
+    // Wait for profile to load before fetching projects
+    if (!profileLoading && profile) {
+      fetchProjects();
+    } else if (!profileLoading && !profile) {
+      // If profile loading is done but no profile, stop loading
+      setLoading(false);
+    }
+  }, [profile, profileLoading]);
 
   const fetchProjects = async () => {
+    if (!profile) return; // Safety check
+
     try {
       setLoading(true);
       const {
         data: { user },
       } = await supabase.auth.getUser();
 
-      if (!user) return;
+      if (!user) {
+        setLoading(false);
+        return;
+      }
 
       const { data, error } = await supabase
         .from("projects")
@@ -79,8 +97,17 @@ export default function Projects() {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      setProjects(data as Project[]);
+
+      // Filter projects based on user's role and access
+      const filteredProjects = await PermissionService.filterProjectsByAccess(
+        data as Project[],
+        profile.id,
+        profile.role
+      );
+
+      setProjects(filteredProjects);
     } catch (error: any) {
+      console.error("Error fetching projects:", error);
       toast.error(error.message || "Failed to fetch projects");
     } finally {
       setLoading(false);
@@ -142,12 +169,14 @@ export default function Projects() {
             Manage and monitor all your projects
           </p>
         </div>
-        <ProjectDialog onProjectCreated={fetchProjects}>
-          <Button className="shadow-glow">
-            <Plus className="h-4 w-4 mr-2" />
-            New Project
-          </Button>
-        </ProjectDialog>
+        {canCreateProjects() && (
+          <ProjectDialog onProjectCreated={fetchProjects}>
+            <Button className="shadow-glow">
+              <Plus className="h-4 w-4 mr-2" />
+              New Project
+            </Button>
+          </ProjectDialog>
+        )}
       </div>
 
       {/* Filters */}
@@ -188,7 +217,7 @@ export default function Projects() {
                 ? "Try adjusting your filters"
                 : "Get started by creating your first project"}
             </p>
-            {!searchQuery && statusFilter === "all" && (
+            {!searchQuery && statusFilter === "all" && canCreateProjects() && (
               <ProjectDialog onProjectCreated={fetchProjects}>
                 <Button>
                   <Plus className="h-4 w-4 mr-2" />
@@ -309,5 +338,3 @@ export default function Projects() {
     </div>
   );
 }
-
-

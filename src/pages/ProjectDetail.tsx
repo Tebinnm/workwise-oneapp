@@ -25,10 +25,12 @@ import {
 import { format } from "date-fns";
 import { ProjectDialog } from "@/components/dialogs/ProjectDialog";
 import { CreateMilestoneDialog } from "@/components/dialogs/CreateMilestoneDialog";
+import { usePermissions } from "@/hooks/usePermissions";
 
 export default function ProjectDetail() {
   const { projectId } = useParams<{ projectId: string }>();
   const navigate = useNavigate();
+  const { canCreateMilestones, canCreateProjects } = usePermissions();
   const [project, setProject] = useState<ProjectWithDetails | null>(null);
   const [summary, setSummary] = useState<any>(null);
   const [financials, setFinancials] = useState<any>(null);
@@ -129,12 +131,14 @@ export default function ProjectDetail() {
               <p className="text-muted-foreground">{project.description}</p>
             )}
           </div>
-          <ProjectDialog onProjectUpdated={fetchProjectDetails}>
-            <Button variant="outline">
-              <Edit className="h-4 w-4 mr-2" />
-              Edit Project
-            </Button>
-          </ProjectDialog>
+          {canCreateProjects() && (
+            <ProjectDialog onProjectUpdated={fetchProjectDetails}>
+              <Button variant="outline">
+                <Edit className="h-4 w-4 mr-2" />
+                Edit Project
+              </Button>
+            </ProjectDialog>
+          )}
         </div>
 
         {/* Project Details Cards */}
@@ -355,12 +359,14 @@ export default function ProjectDetail() {
         <TabsContent value="milestones" className="space-y-4">
           <div className="flex justify-between items-center">
             <h3 className="text-lg font-semibold">Project Milestones</h3>
-            <CreateMilestoneDialog onSuccess={fetchProjectDetails}>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Milestone
-              </Button>
-            </CreateMilestoneDialog>
+            {canCreateMilestones() && (
+              <CreateMilestoneDialog onSuccess={fetchProjectDetails}>
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Milestone
+                </Button>
+              </CreateMilestoneDialog>
+            )}
           </div>
 
           {project.milestones && project.milestones.length > 0 ? (
@@ -395,12 +401,14 @@ export default function ProjectDetail() {
                 <p className="text-muted-foreground mb-4">
                   Create your first milestone to start tracking progress
                 </p>
-                <CreateMilestoneDialog onSuccess={fetchProjectDetails}>
-                  <Button>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Create Milestone
-                  </Button>
-                </CreateMilestoneDialog>
+                {canCreateMilestones() && (
+                  <CreateMilestoneDialog onSuccess={fetchProjectDetails}>
+                    <Button>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Create Milestone
+                    </Button>
+                  </CreateMilestoneDialog>
+                )}
               </CardContent>
             </Card>
           )}

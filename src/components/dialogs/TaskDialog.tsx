@@ -86,7 +86,7 @@ export function TaskDialog({
   onDelete,
 }: TaskDialogProps) {
   const isEditMode = !!task;
-  const { isWorker, isSupervisor, isAdmin } = usePermissions();
+  const { isWorker, isSupervisor, isAdmin, canDeleteTasks } = usePermissions();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [profiles, setProfiles] = useState<Profile[]>([]);
@@ -859,7 +859,7 @@ export function TaskDialog({
   const isWorkerWithStartedTask =
     isWorker() && isEditMode && task?.status === "in_progress";
 
-  // Determine if user can edit task details (supervisor/admin or worker with non-started task)
+  // Determine if user can edit task details (admin/supervisor or worker with non-started task)
   const canEditTaskDetails =
     isAdmin() ||
     isSupervisor() ||
@@ -1703,8 +1703,8 @@ export function TaskDialog({
           <DialogFooter>
             {isEditMode && canEditTaskDetails && (
               <>
-                {/* Only admins and supervisors can delete tasks */}
-                {(isAdmin() || isSupervisor()) && (
+                {/* Only admins and project managers can delete tasks */}
+                {canDeleteTasks() && (
                   <Button
                     type="button"
                     variant="destructive"

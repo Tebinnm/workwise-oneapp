@@ -37,6 +37,8 @@ import {
   eachDayOfInterval,
   isWeekend,
 } from "date-fns";
+import { usePermissions } from "@/hooks/usePermissions";
+import { PermissionService } from "@/services/permissionService";
 
 interface Employee {
   id: string;
@@ -79,6 +81,7 @@ export default function AttendanceManagement() {
   );
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("daily");
+  const { profile } = usePermissions();
 
   useEffect(() => {
     fetchMilestones();
@@ -96,6 +99,8 @@ export default function AttendanceManagement() {
   }, [selectedMilestone, selectedDate, activeTab]);
 
   const fetchMilestones = async () => {
+    if (!profile) return;
+
     try {
       const { data, error } = await supabase
         .from("milestones")
@@ -103,10 +108,23 @@ export default function AttendanceManagement() {
         .order("name");
 
       if (error) throw error;
-      setMilestones(data || []);
 
-      if (data && data.length > 0 && selectedMilestone === "all") {
-        setSelectedMilestone(data[0].id);
+      // Filter milestones based on user's role and access
+      const filteredMilestones =
+        await PermissionService.filterMilestonesByAccess(
+          data || [],
+          profile.id,
+          profile.role
+        );
+
+      setMilestones(filteredMilestones);
+
+      if (
+        filteredMilestones &&
+        filteredMilestones.length > 0 &&
+        selectedMilestone === "all"
+      ) {
+        setSelectedMilestone(filteredMilestones[0].id);
       }
     } catch (error: any) {
       toast.error("Failed to fetch milestones");

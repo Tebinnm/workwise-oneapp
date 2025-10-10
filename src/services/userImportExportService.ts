@@ -237,8 +237,13 @@ export class UserImportExportService {
       }
 
       // Role validation
-      if (user.role && !["admin", "supervisor", "worker"].includes(user.role)) {
-        errors.push("Invalid role. Must be admin, supervisor, or worker");
+      if (
+        user.role &&
+        !["admin", "supervisor", "worker", "client"].includes(user.role)
+      ) {
+        errors.push(
+          "Invalid role. Must be admin, supervisor, worker, or client"
+        );
       }
 
       // Status validation

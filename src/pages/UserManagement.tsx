@@ -50,6 +50,8 @@ import { format } from "date-fns";
 import { MemberWageConfigDialog } from "@/components/dialogs/MemberWageConfigDialog";
 import { ProjectAssignmentDialog } from "@/components/dialogs/ProjectAssignmentDialog";
 import { UserImportExportService } from "@/services/userImportExportService";
+import { usePermissions } from "@/hooks/usePermissions";
+import { useNavigate } from "react-router-dom";
 
 interface User {
   id: string;
@@ -77,6 +79,8 @@ interface Project {
 }
 
 export default function UserManagement() {
+  const navigate = useNavigate();
+  const { isAdmin, loading: permissionLoading } = usePermissions();
   const [users, setUsers] = useState<User[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(false);
@@ -84,6 +88,14 @@ export default function UserManagement() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [roleFilter, setRoleFilter] = useState<string>("all");
   const [activeTab, setActiveTab] = useState("users");
+
+  // Redirect non-admins
+  useEffect(() => {
+    if (!permissionLoading && !isAdmin()) {
+      toast.error("Access denied. Admin privileges required.");
+      navigate("/dashboard");
+    }
+  }, [isAdmin, permissionLoading, navigate]);
 
   // New user form state
   const [newUser, setNewUser] = useState({
@@ -365,6 +377,7 @@ export default function UserManagement() {
       admin: "bg-purple-100 text-purple-800",
       supervisor: "bg-blue-100 text-blue-800",
       worker: "bg-gray-100 text-gray-800",
+      client: "bg-green-100 text-green-800",
     };
     return colors[role] || "bg-gray-100 text-gray-800";
   };
@@ -454,6 +467,7 @@ export default function UserManagement() {
                         <SelectItem value="admin">Admin</SelectItem>
                         <SelectItem value="supervisor">Supervisor</SelectItem>
                         <SelectItem value="worker">Worker</SelectItem>
+                        <SelectItem value="client">Client</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -607,6 +621,7 @@ export default function UserManagement() {
                       <SelectItem value="admin">Admin</SelectItem>
                       <SelectItem value="supervisor">Supervisor</SelectItem>
                       <SelectItem value="worker">Worker</SelectItem>
+                      <SelectItem value="client">Client</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

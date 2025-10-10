@@ -76,28 +76,59 @@ export function usePermissions() {
     return profile?.role === "client";
   };
 
-  const canManageUsers = (): boolean => {
+  // System-level user management (only admins)
+  const canManageSystemUsers = (): boolean => {
     return isAdmin();
   };
 
+  // Can manage users within their scope (admins = all, Supervisor = team)
+  const canManageUsers = (): boolean => {
+    return isAdmin() || isSupervisor();
+  };
+
+  // Can manage projects (scoped for Supervisor)
   const canManageProjects = (): boolean => {
     return isAdmin() || isSupervisor();
   };
 
-  const canManageFinancials = (): boolean => {
+  // Can create tasks
+  const canCreateTasks = (): boolean => {
     return isAdmin() || isSupervisor();
   };
 
+  // Can manage financials (admin only)
+  const canManageFinancials = (): boolean => {
+    return isAdmin();
+  };
+
+  // Can approve attendance
   const canApproveAttendance = (): boolean => {
     return isAdmin() || isSupervisor();
   };
 
+  // Can view reports
   const canViewReports = (): boolean => {
     return isAdmin() || isSupervisor();
   };
 
+  // Can manage tasks (scoped for Supervisor)
   const canManageTasks = (): boolean => {
     return isAdmin() || isSupervisor();
+  };
+
+  // Can delete tasks (admin only)
+  const canDeleteTasks = (): boolean => {
+    return isAdmin();
+  };
+
+  // Can create milestones
+  const canCreateMilestones = (): boolean => {
+    return isAdmin() || isSupervisor();
+  };
+
+  // Can create projects (admin only)
+  const canCreateProjects = (): boolean => {
+    return isAdmin();
   };
 
   return {
@@ -108,11 +139,16 @@ export function usePermissions() {
     isSupervisor,
     isWorker,
     isClient,
+    canManageSystemUsers,
     canManageUsers,
     canManageProjects,
+    canCreateProjects,
+    canCreateMilestones,
+    canCreateTasks,
+    canManageTasks,
+    canDeleteTasks,
     canManageFinancials,
     canApproveAttendance,
     canViewReports,
-    canManageTasks,
   };
 }
