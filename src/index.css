@@ -152,6 +152,37 @@ All colors MUST be HSL.
       scroll-behavior: smooth;
     }
   }
+
+  /* Custom scrollbar styling - thin and simple */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--muted-foreground) / 0.3) transparent;
+  }
+
+  /* Webkit browsers (Chrome, Safari, Edge) */
+  *::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--muted-foreground) / 0.3);
+    border-radius: 4px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+
+  *::-webkit-scrollbar-thumb:hover {
+    background-color: hsl(var(--muted-foreground) / 0.5);
+  }
+
+  *::-webkit-scrollbar-thumb:active {
+    background-color: hsl(var(--muted-foreground) / 0.6);
+  }
 }
 
 @layer utilities {
