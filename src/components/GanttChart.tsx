@@ -85,6 +85,12 @@ export function GanttChart({
     end: Date;
   } | null>(null);
 
+  // Click detection state
+  const [mouseDownTime, setMouseDownTime] = useState(0);
+  const [mouseDownX, setMouseDownX] = useState(0);
+  const [mouseDownY, setMouseDownY] = useState(0);
+  const [clickedTask, setClickedTask] = useState<Task | null>(null);
+
   const ganttRef = useRef<HTMLDivElement>(null);
 
   // Handle window resize for responsive recalculation
@@ -269,8 +275,8 @@ export function GanttChart({
     [dateRange, zoomLevel, columnWidth]
   );
 
-  // Handle drag start
-  const handleDragStart = useCallback(
+  // Handle mouse down (for click detection)
+  const handleMouseDown = useCallback(
     (
       e: React.MouseEvent,
       task: Task,
@@ -279,6 +285,19 @@ export function GanttChart({
       e.preventDefault();
       e.stopPropagation();
 
+      // Track mouse down for click detection
+      setMouseDownTime(Date.now());
+      setMouseDownX(e.clientX);
+      setMouseDownY(e.clientY);
+      setClickedTask(task);
+
+      // Only start drag if it's not a resize handle (those should always drag)
+      if (type === "move") {
+        // For move, we'll wait to see if it's a click or drag
+        return;
+      }
+
+      // For resize handles, start drag immediately
       if (!task.start_datetime || !task.end_datetime) return;
 
       setIsDragging(true);
@@ -300,9 +319,46 @@ export function GanttChart({
     [pixelToDate, taskColumnWidth]
   );
 
+  // Handle drag start (called when we determine it's actually a drag)
+  const handleDragStart = useCallback(
+    (task: Task, type: "move" | "resize-start" | "resize-end") => {
+      if (!task.start_datetime || !task.end_datetime) return;
+
+      setIsDragging(true);
+      setDragType(type);
+      setDraggedTask(task);
+      setOriginalTaskDates({
+        start: new Date(task.start_datetime),
+        end: new Date(task.end_datetime),
+      });
+
+      // Set initial drag date based on type
+      const rect = ganttRef.current?.getBoundingClientRect();
+      if (rect) {
+        const relativeX = mouseDownX - rect.left - taskColumnWidth;
+        setDragStartDate(pixelToDate(relativeX));
+      }
+    },
+    [pixelToDate, taskColumnWidth, mouseDownX]
+  );
+
   // Handle drag move
   const handleDragMove = useCallback(
     (e: MouseEvent) => {
+      // If we're not dragging yet, check if we should start dragging
+      if (!isDragging && clickedTask) {
+        const deltaX = Math.abs(e.clientX - mouseDownX);
+        const deltaY = Math.abs(e.clientY - mouseDownY);
+        const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+
+        // Start dragging if mouse moved more than 5 pixels
+        if (distance > 5) {
+          handleDragStart(clickedTask, "move");
+          setDragStartX(mouseDownX);
+        }
+        return;
+      }
+
       if (!isDragging || !draggedTask || !originalTaskDates || !dragStartDate)
         return;
 
@@ -360,41 +416,12 @@ export function GanttChart({
       taskColumnWidth,
       columnWidth,
       zoomLevel,
+      clickedTask,
+      mouseDownX,
+      mouseDownY,
+      handleDragStart,
     ]
   );
-
-  // Handle drag end
-  const handleDragEnd = useCallback(async () => {
-    if (!isDragging || !draggedTask || !onTaskUpdate) {
-      resetDragState();
-      return;
-    }
-
-    try {
-      // Update task in database
-      await onTaskUpdate(draggedTask.id, {
-        start_datetime: draggedTask.start_datetime,
-        end_datetime: draggedTask.end_datetime,
-      });
-
-      toast.success("Task dates updated successfully");
-    } catch (error) {
-      console.error("Error updating task dates:", error);
-      toast.error("Failed to update task dates");
-    } finally {
-      resetDragState();
-    }
-  }, [isDragging, draggedTask, onTaskUpdate]);
-
-  // Reset drag state
-  const resetDragState = useCallback(() => {
-    setIsDragging(false);
-    setDragType(null);
-    setDragStartX(0);
-    setDragStartDate(null);
-    setDraggedTask(null);
-    setOriginalTaskDates(null);
-  }, []);
 
   // Handle task click
   const handleTaskClick = useCallback(
@@ -411,11 +438,77 @@ export function GanttChart({
     [isDragging, onTaskClick, hoveredTask]
   );
 
+  // Handle drag end
+  const handleDragEnd = useCallback(
+    async (e?: MouseEvent) => {
+      // If we were dragging, handle the drag end
+      if (isDragging && draggedTask && onTaskUpdate) {
+        try {
+          // Update task in database
+          await onTaskUpdate(draggedTask.id, {
+            start_datetime: draggedTask.start_datetime,
+            end_datetime: draggedTask.end_datetime,
+          });
+
+          toast.success("Task dates updated successfully");
+        } catch (error) {
+          console.error("Error updating task dates:", error);
+          toast.error("Failed to update task dates");
+        }
+      }
+
+      // If we weren't dragging but had a clicked task, it was a click
+      if (!isDragging && clickedTask) {
+        const clickDuration = Date.now() - mouseDownTime;
+        let distance = 0;
+
+        if (e) {
+          const deltaX = Math.abs(mouseDownX - e.clientX);
+          const deltaY = Math.abs(mouseDownY - e.clientY);
+          distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+        }
+
+        // Consider it a click if it was quick and didn't move much
+        if (clickDuration < 300 && distance < 5) {
+          handleTaskClick(clickedTask);
+        }
+      }
+
+      resetDragState();
+    },
+    [
+      isDragging,
+      draggedTask,
+      onTaskUpdate,
+      clickedTask,
+      mouseDownTime,
+      mouseDownX,
+      mouseDownY,
+      handleTaskClick,
+    ]
+  );
+
+  // Reset drag state
+  const resetDragState = useCallback(() => {
+    setIsDragging(false);
+    setDragType(null);
+    setDragStartX(0);
+    setDragStartDate(null);
+    setDraggedTask(null);
+    setOriginalTaskDates(null);
+
+    // Reset click detection state
+    setMouseDownTime(0);
+    setMouseDownX(0);
+    setMouseDownY(0);
+    setClickedTask(null);
+  }, []);
+
   // Add global mouse event listeners for drag
   useEffect(() => {
-    if (isDragging) {
+    if (clickedTask || isDragging) {
       const handleMouseMove = (e: MouseEvent) => handleDragMove(e);
-      const handleMouseUp = () => handleDragEnd();
+      const handleMouseUp = (e: MouseEvent) => handleDragEnd(e);
 
       document.addEventListener("mousemove", handleMouseMove);
       document.addEventListener("mouseup", handleMouseUp);
@@ -425,7 +518,7 @@ export function GanttChart({
         document.removeEventListener("mouseup", handleMouseUp);
       };
     }
-  }, [isDragging, handleDragMove, handleDragEnd]);
+  }, [clickedTask, isDragging, handleDragMove, handleDragEnd]);
 
   const handleZoomIn = () => {
     if (zoomLevel === "month") setZoomLevel("week");
@@ -664,22 +757,21 @@ export function GanttChart({
                           style={barStyle}
                           onMouseEnter={() => setHoveredTask(task.id)}
                           onMouseLeave={() => setHoveredTask(null)}
-                          onClick={() => handleTaskClick(task)}
-                          onMouseDown={(e) => handleDragStart(e, task, "move")}
+                          onMouseDown={(e) => handleMouseDown(e, task, "move")}
                         >
                           {/* Resize handles */}
                           <div
                             className="absolute left-0 top-0 bottom-0 w-2 cursor-ew-resize opacity-0 group-hover:opacity-100 transition-opacity bg-white/20 hover:bg-white/40"
                             onMouseDown={(e) => {
                               e.stopPropagation();
-                              handleDragStart(e, task, "resize-start");
+                              handleMouseDown(e, task, "resize-start");
                             }}
                           />
                           <div
                             className="absolute right-0 top-0 bottom-0 w-2 cursor-ew-resize opacity-0 group-hover:opacity-100 transition-opacity bg-white/20 hover:bg-white/40"
                             onMouseDown={(e) => {
                               e.stopPropagation();
-                              handleDragStart(e, task, "resize-end");
+                              handleMouseDown(e, task, "resize-end");
                             }}
                           />
 

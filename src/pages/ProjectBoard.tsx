@@ -45,6 +45,8 @@ export default function ProjectBoard() {
     "kanban"
   );
   const [budgetSummary, setBudgetSummary] = useState<any>(null);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [taskDialogOpen, setTaskDialogOpen] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -132,8 +134,9 @@ export default function ProjectBoard() {
   };
 
   const handleTaskClick = (task: Task) => {
-    // Show tasks updated snackbar when clicking on a task
-    toast.success("Tasks updated");
+    // Open TaskDialog for the clicked task
+    setSelectedTask(task);
+    setTaskDialogOpen(true);
   };
 
   const fetchBudgetSummary = async () => {
@@ -288,6 +291,33 @@ export default function ProjectBoard() {
 
       {/* Notifications View */}
       {view === "notifications" && <NotificationSystem />}
+
+      {/* Task Dialog */}
+      <TaskDialog
+        projectId={id!}
+        task={selectedTask}
+        open={taskDialogOpen}
+        onOpenChange={(open) => {
+          setTaskDialogOpen(open);
+          if (!open) {
+            setSelectedTask(null);
+          }
+        }}
+        onSuccess={() => {
+          fetchTasks();
+          fetchBudgetSummary();
+          setTaskDialogOpen(false);
+          setSelectedTask(null);
+        }}
+        onDelete={() => {
+          fetchTasks();
+          fetchBudgetSummary();
+          setTaskDialogOpen(false);
+          setSelectedTask(null);
+        }}
+      >
+        <div />
+      </TaskDialog>
     </div>
   );
 }
