@@ -20,15 +20,21 @@ import {
   LogOut,
   Settings,
   BarChart3,
+  Palette,
+  Image,
+  Check,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { User as SupabaseUser } from "@supabase/supabase-js";
+import { useTheme } from "@/hooks/useTheme";
+import { backgroundOptions } from "@/contexts/ThemeContext";
 
 export function AppLayout() {
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [profile, setProfile] = useState<any>(null);
   const navigate = useNavigate();
+  const { themeColor, setThemeColor, background, setBackground } = useTheme();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -124,6 +130,65 @@ export function AppLayout() {
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
+
+                  <div className="px-2 py-1.5">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <Palette className="h-4 w-4" />
+                      <span className="text-sm">Theme Color</span>
+                      <input
+                        type="color"
+                        value={themeColor}
+                        onChange={(e) => setThemeColor(e.target.value)}
+                        className="ml-auto h-8 w-16 cursor-pointer rounded border border-border"
+                      />
+                    </label>
+                  </div>
+
+                  <DropdownMenuSeparator />
+
+                  <div className="px-2 py-1.5">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Image className="h-4 w-4" />
+                      <span className="text-sm font-medium">Background</span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      {backgroundOptions.map((bg) => (
+                        <button
+                          key={bg.id}
+                          onClick={() => setBackground(bg.id)}
+                          className={`relative h-16 rounded border-2 overflow-hidden transition-all ${
+                            background === bg.id
+                              ? "border-primary ring-2 ring-primary/20"
+                              : "border-border hover:border-primary/50"
+                          }`}
+                        >
+                          {bg.url ? (
+                            <img
+                              src={bg.url}
+                              alt={bg.label}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-muted flex items-center justify-center">
+                              <span className="text-xs text-muted-foreground">
+                                None
+                              </span>
+                            </div>
+                          )}
+                          {background === bg.id && (
+                            <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
+                              <Check className="h-6 w-6 text-primary-foreground drop-shadow-md" />
+                            </div>
+                          )}
+                          {/* <div className="absolute bottom-0 left-0 right-0 bg-background/90 backdrop-blur-sm px-1 py-0.5">
+                            <span className="text-xs truncate block">
+                              {bg.label}
+                            </span>
+                          </div> */}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
 
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
