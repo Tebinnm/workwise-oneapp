@@ -1,9 +1,9 @@
+/* Import print styles */
+@import "./styles/print.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-/* Import print styles */
-@import "./styles/print.css";
 
 /* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
 All colors MUST be HSL.
