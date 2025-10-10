@@ -7,7 +7,7 @@ interface Profile {
   id: string;
   role: UserRole;
   full_name: string | null;
-  email: string;
+  email: string | null;
 }
 
 export function usePermissions() {
@@ -40,12 +40,17 @@ export function usePermissions() {
 
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, role, full_name, email")
+        .select("id, role, full_name")
         .eq("id", user.id)
         .single();
 
       if (error) throw error;
-      setProfile(data as Profile);
+
+      // Combine profile data with email from auth user
+      setProfile({
+        ...data,
+        email: user.email || null,
+      } as Profile);
     } catch (error) {
       console.error("Error fetching profile:", error);
       setProfile(null);
@@ -101,6 +106,11 @@ export function usePermissions() {
     return isAdmin();
   };
 
+  // Can view financials (admin and supervisor)
+  const canViewFinancials = (): boolean => {
+    return isAdmin() || isSupervisor();
+  };
+
   // Can approve attendance
   const canApproveAttendance = (): boolean => {
     return isAdmin() || isSupervisor();
@@ -148,6 +158,7 @@ export function usePermissions() {
     canManageTasks,
     canDeleteTasks,
     canManageFinancials,
+    canViewFinancials,
     canApproveAttendance,
     canViewReports,
   };
