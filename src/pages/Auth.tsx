@@ -67,12 +67,21 @@ export default function Auth() {
         data: { user },
       } = await supabase.auth.getUser();
       if (user) {
-        // Direct insert without any RLS or functions
-        await supabase.from("profiles").upsert({
-          id: user.id,
-          full_name: user.user_metadata?.full_name || "",
-          role: "worker",
-        });
+        // Check if profile already exists
+        const { data: existingProfile } = await supabase
+          .from("profiles")
+          .select("id")
+          .eq("id", user.id)
+          .single();
+
+        // Only create profile if it doesn't exist
+        if (!existingProfile) {
+          await supabase.from("profiles").insert({
+            id: user.id,
+            full_name: user.user_metadata?.full_name || "",
+            role: "worker",
+          });
+        }
       }
     } catch (error) {
       console.error("Error ensuring user profile:", error);
@@ -85,8 +94,8 @@ export default function Auth() {
         data: { user },
       } = await supabase.auth.getUser();
       if (user) {
-        // Direct insert without any RLS or functions
-        await supabase.from("profiles").upsert({
+        // Create new profile with worker role (default for new users)
+        await supabase.from("profiles").insert({
           id: user.id,
           full_name: fullName,
           role: "worker",
