@@ -415,7 +415,9 @@ export function AppSidebar() {
                               }
                             >
                               <Folder className="h-4 w-4" />
-                              <span className="truncate">{milestone.name}</span>
+                              <span className="break-words leading-tight">
+                                {milestone.name}
+                              </span>
                             </NavLink>
                           </SidebarMenuButton>
                           {hoveredMilestone === milestone.id && (
@@ -462,7 +464,9 @@ export function AppSidebar() {
                                 {getIconComponent(project.icon, 14)}
                               </div>
                             </div>
-                            <span className="truncate">{project.name}</span>
+                            <span className="break-words leading-tight">
+                              {project.name}
+                            </span>
                             <span className="text-xs text-muted-foreground">
                               ({project.milestones?.length || 0})
                             </span>
@@ -517,7 +521,7 @@ export function AppSidebar() {
                                     }
                                   >
                                     <Folder className="h-4 w-4" />
-                                    <span className="truncate">
+                                    <span className="break-words leading-tight">
                                       {milestone.name}
                                     </span>
                                   </NavLink>
