@@ -12,16 +12,19 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { ArrowLeft, Edit, Printer, Download, Loader2 } from "lucide-react";
 import { InvoiceDialog } from "@/components/dialogs/InvoiceDialog";
+import { formatCurrency } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function InvoiceDetail() {
   const { invoiceId } = useParams<{ invoiceId: string }>();
   const navigate = useNavigate();
-  const { canCreateProjects } = usePermissions();
+  const { canManageInvoices } = usePermissions();
   const [invoice, setInvoice] = useState<InvoiceWithItems | null>(null);
   const [loading, setLoading] = useState(true);
   const [editingInvoice, setEditingInvoice] = useState<InvoiceWithItems | null>(
     null
   );
+  const [projectCurrency, setProjectCurrency] = useState<string>("USD");
 
   useEffect(() => {
     if (invoiceId) {
@@ -36,19 +39,17 @@ export default function InvoiceDetail() {
       setLoading(true);
       const invoiceData = await InvoiceService.getInvoiceById(invoiceId);
       setInvoice(invoiceData);
+
+      // Set project currency from the invoice's milestone data
+      if (invoiceData.milestones?.projects?.currency) {
+        setProjectCurrency(invoiceData.milestones.projects.currency);
+      }
     } catch (error: any) {
       toast.error(error.message || "Failed to fetch invoice details");
       navigate("/projects");
     } finally {
       setLoading(false);
     }
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-    }).format(amount);
   };
 
   const getStatusColor = (status: string) => {
@@ -133,7 +134,7 @@ export default function InvoiceDetail() {
             </p>
           </div>
           <div className="flex gap-2">
-            {canCreateProjects() && projectId && (
+            {canManageInvoices() && projectId && (
               <Button variant="outline" onClick={handleEdit}>
                 <Edit className="h-4 w-4 mr-2" />
                 Edit Invoice
@@ -254,10 +255,10 @@ export default function InvoiceDetail() {
                       {item.quantity || 1}
                     </td>
                     <td className="py-3 px-4 text-right">
-                      {formatCurrency(item.rate)}
+                      {formatCurrency(item.rate, projectCurrency)}
                     </td>
                     <td className="py-3 px-4 text-right font-medium">
-                      {formatCurrency(item.amount)}
+                      {formatCurrency(item.amount, projectCurrency)}
                     </td>
                   </tr>
                 ))}
@@ -272,30 +273,36 @@ export default function InvoiceDetail() {
                 <span className="text-muted-foreground print:text-gray-600">
                   Subtotal:
                 </span>
-                <span>{formatCurrency(invoice.subtotal)}</span>
+                <span>{formatCurrency(invoice.subtotal, projectCurrency)}</span>
               </div>
               {invoice.tax_rate && invoice.tax_rate > 0 && (
                 <div className="flex justify-between">
                   <span className="text-muted-foreground print:text-gray-600">
                     Tax ({invoice.tax_rate}%):
                   </span>
-                  <span>{formatCurrency(invoice.tax_amount || 0)}</span>
+                  <span>
+                    {formatCurrency(invoice.tax_amount || 0, projectCurrency)}
+                  </span>
                 </div>
               )}
               <div className="flex justify-between text-lg font-semibold border-t pt-2 print:border-black">
                 <span>Total:</span>
-                <span>{formatCurrency(invoice.total)}</span>
+                <span>{formatCurrency(invoice.total, projectCurrency)}</span>
               </div>
               {invoice.amount_paid && invoice.amount_paid > 0 && (
                 <div className="flex justify-between text-green-600 print:text-green-800">
                   <span>Amount Paid:</span>
-                  <span>{formatCurrency(invoice.amount_paid)}</span>
+                  <span>
+                    {formatCurrency(invoice.amount_paid, projectCurrency)}
+                  </span>
                 </div>
               )}
               {invoice.balance_due > 0 && (
                 <div className="flex justify-between text-red-600 print:text-red-800 font-semibold">
                   <span>Balance Due:</span>
-                  <span>{formatCurrency(invoice.balance_due)}</span>
+                  <span>
+                    {formatCurrency(invoice.balance_due, projectCurrency)}
+                  </span>
                 </div>
               )}
             </div>
@@ -329,6 +336,7 @@ export default function InvoiceDetail() {
           open={!!editingInvoice}
           onOpenChange={(open) => !open && setEditingInvoice(null)}
           onSuccess={handleEditSuccess}
+          currency={projectCurrency}
         >
           <div style={{ display: "none" }} />
         </InvoiceDialog>

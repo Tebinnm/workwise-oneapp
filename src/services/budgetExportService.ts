@@ -9,11 +9,13 @@
  * - Add company branding and headers
  */
 
+import { formatCurrency } from "@/lib/utils";
+
 export class BudgetExportService {
   /**
    * Export budget report to CSV (basic implementation)
    */
-  static exportToCSV(budgetReport: any): void {
+  static exportToCSV(budgetReport: any, currency: string = "USD"): void {
     try {
       const csvRows = [];
 
@@ -25,12 +27,16 @@ export class BudgetExportService {
       csvRows.push(`Start Date,${budgetReport.project_start_date || "N/A"}`);
       csvRows.push(`End Date,${budgetReport.project_end_date || "N/A"}`);
       csvRows.push(
-        `Total Budget Allocated,$${budgetReport.total_budget_allocated.toFixed(
-          2
+        `Total Budget Allocated,${formatCurrency(
+          budgetReport.total_budget_allocated,
+          currency
         )}`
       );
       csvRows.push(
-        `Total Budget Spent,$${budgetReport.total_budget_spent.toFixed(2)}`
+        `Total Budget Spent,${formatCurrency(
+          budgetReport.total_budget_spent,
+          currency
+        )}`
       );
       csvRows.push("");
 
@@ -45,16 +51,18 @@ export class BudgetExportService {
           [
             member.user_name,
             member.wage_type,
-            member.daily_rate ? `$${member.daily_rate.toFixed(2)}` : "-",
+            member.daily_rate
+              ? formatCurrency(member.daily_rate, currency)
+              : "-",
             member.monthly_salary
-              ? `$${member.monthly_salary.toFixed(2)}`
+              ? formatCurrency(member.monthly_salary, currency)
               : "-",
             member.total_full_days,
             member.total_half_days,
             member.total_absent_days,
-            `$${member.total_task_budget.toFixed(2)}`,
-            `$${member.monthly_budget.toFixed(2)}`,
-            `$${member.final_budget.toFixed(2)}`,
+            formatCurrency(member.total_task_budget, currency),
+            formatCurrency(member.monthly_budget, currency),
+            formatCurrency(member.final_budget, currency),
             member.has_attendance_data ? "Attendance-based" : "Monthly-based",
           ].join(",")
         );
@@ -76,8 +84,8 @@ export class BudgetExportService {
               taskBudget.task_title,
               taskBudget.user_name,
               taskBudget.attendance_status?.replace("_", " ") || "-",
-              `$${taskBudget.daily_rate.toFixed(2)}`,
-              `$${taskBudget.calculated_amount.toFixed(2)}`,
+              formatCurrency(taskBudget.daily_rate, currency),
+              formatCurrency(taskBudget.calculated_amount, currency),
             ].join(",")
           );
         });
@@ -111,27 +119,36 @@ export class BudgetExportService {
    * Export budget report to Excel (placeholder for future implementation)
    * In production, use libraries like 'xlsx' or 'exceljs'
    */
-  static async exportToExcel(budgetReport: any): Promise<void> {
+  static async exportToExcel(
+    budgetReport: any,
+    currency: string = "USD"
+  ): Promise<void> {
     // For now, export as CSV
     // TODO: Implement proper Excel export with formatting using xlsx library
     console.log("Excel export - using CSV for now");
-    this.exportToCSV(budgetReport);
+    this.exportToCSV(budgetReport, currency);
   }
 
   /**
    * Export budget report to PDF (placeholder for future implementation)
    * In production, use libraries like 'jspdf' or 'pdfmake'
    */
-  static async exportToPDF(budgetReport: any): Promise<void> {
+  static async exportToPDF(
+    budgetReport: any,
+    currency: string = "USD"
+  ): Promise<void> {
     // TODO: Implement PDF export using jsPDF or pdfmake
     console.log("PDF export - not yet implemented, using CSV for now");
-    this.exportToCSV(budgetReport);
+    this.exportToCSV(budgetReport, currency);
   }
 
   /**
    * Generate print-friendly HTML version
    */
-  static generatePrintableHTML(budgetReport: any): string {
+  static generatePrintableHTML(
+    budgetReport: any,
+    currency: string = "USD"
+  ): string {
     const html = `
       <!DOCTYPE html>
       <html>
@@ -159,11 +176,13 @@ export class BudgetExportService {
           <div class="summary-item"><strong>End Date:</strong> ${
             budgetReport.project_end_date || "N/A"
           }</div>
-          <div class="summary-item"><strong>Total Budget Allocated:</strong> $${budgetReport.total_budget_allocated.toFixed(
-            2
+          <div class="summary-item"><strong>Total Budget Allocated:</strong> ${formatCurrency(
+            budgetReport.total_budget_allocated,
+            currency
           )}</div>
-          <div class="summary-item"><strong>Total Budget Spent:</strong> $${budgetReport.total_budget_spent.toFixed(
-            2
+          <div class="summary-item"><strong>Total Budget Spent:</strong> ${formatCurrency(
+            budgetReport.total_budget_spent,
+            currency
           )}</div>
           <div class="summary-item"><strong>Report Generated:</strong> ${new Date().toLocaleString()}</div>
         </div>
@@ -190,17 +209,19 @@ export class BudgetExportService {
                 <td>${member.user_name}</td>
                 <td>${member.wage_type}</td>
                 <td>${
-                  member.daily_rate ? `$${member.daily_rate.toFixed(2)}` : "-"
+                  member.daily_rate
+                    ? formatCurrency(member.daily_rate, currency)
+                    : "-"
                 }</td>
                 <td>${
                   member.monthly_salary
-                    ? `$${member.monthly_salary.toFixed(2)}`
+                    ? formatCurrency(member.monthly_salary, currency)
                     : "-"
                 }</td>
                 <td>${member.total_full_days}</td>
                 <td>${member.total_half_days}</td>
                 <td>${member.total_absent_days}</td>
-                <td>$${member.final_budget.toFixed(2)}</td>
+                <td>${formatCurrency(member.final_budget, currency)}</td>
               </tr>
             `
               )
@@ -232,8 +253,8 @@ export class BudgetExportService {
                   <td>${task.task_title}</td>
                   <td>${task.user_name}</td>
                   <td>${task.attendance_status?.replace("_", " ") || "-"}</td>
-                  <td>$${task.daily_rate.toFixed(2)}</td>
-                  <td>$${task.calculated_amount.toFixed(2)}</td>
+                  <td>${formatCurrency(task.daily_rate, currency)}</td>
+                  <td>${formatCurrency(task.calculated_amount, currency)}</td>
                 </tr>
               `
                 )
@@ -255,8 +276,8 @@ export class BudgetExportService {
   /**
    * Open print dialog with formatted report
    */
-  static printReport(budgetReport: any): void {
-    const html = this.generatePrintableHTML(budgetReport);
+  static printReport(budgetReport: any, currency: string = "USD"): void {
+    const html = this.generatePrintableHTML(budgetReport, currency);
     const printWindow = window.open("", "_blank");
 
     if (printWindow) {

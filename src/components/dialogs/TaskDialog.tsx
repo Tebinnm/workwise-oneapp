@@ -46,7 +46,7 @@ import {
   Pause,
   Square,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 
 interface TaskDialogProps {
   children: React.ReactNode;
@@ -98,6 +98,7 @@ export function TaskDialog({
   const setOpen = externalOnOpenChange || setInternalOpen;
   const [loading, setLoading] = useState(false);
   const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [projectCurrency, setProjectCurrency] = useState<string>("USD");
   const [teamAssignments, setTeamAssignments] = useState<
     TeamMemberAssignment[]
   >([]);
@@ -140,6 +141,7 @@ export function TaskDialog({
   useEffect(() => {
     if (open) {
       fetchProfiles();
+      fetchProjectCurrency();
       if (isEditMode && task) {
         populateFormFromTask();
       } else {
@@ -147,6 +149,22 @@ export function TaskDialog({
       }
     }
   }, [open, isEditMode, task]);
+
+  const fetchProjectCurrency = async () => {
+    try {
+      const { data: milestone } = await supabase
+        .from("milestones")
+        .select("project_id, projects(currency)")
+        .eq("id", projectId)
+        .single();
+
+      if (milestone && (milestone as any).projects?.currency) {
+        setProjectCurrency((milestone as any).projects.currency);
+      }
+    } catch (error) {
+      console.error("Error fetching project currency:", error);
+    }
+  };
 
   // Timer effect - calculates elapsed time from start time
   useEffect(() => {
@@ -796,13 +814,6 @@ export function TaskDialog({
     );
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-    }).format(amount);
-  };
-
   const getAssignmentForUser = (
     userId: string
   ): TeamMemberAssignment | undefined => {
@@ -830,7 +841,7 @@ export function TaskDialog({
       .padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
   };
 
-  const handleStartTimer = () => {
+  const handleStartTimer = async () => {
     console.log("▶️ Starting/Resuming timer");
 
     // If no start time exists, set it now
@@ -851,6 +862,27 @@ export function TaskDialog({
           isRunning: true,
         })
       );
+
+      // If task is in "todo" status, update it to "in_progress"
+      if (task.status === "todo") {
+        try {
+          const { error } = await supabase
+            .from("tasks")
+            .update({ status: "in_progress" })
+            .eq("id", task.id);
+
+          if (error) {
+            console.error("Error updating task status:", error);
+            toast.error("Failed to update task status");
+          } else {
+            // Update local task status
+            setStatus("in_progress");
+            toast.success("Timer started and task moved to in progress");
+          }
+        } catch (error) {
+          console.error("Error updating task status:", error);
+        }
+      }
     }
   };
 
@@ -884,15 +916,15 @@ export function TaskDialog({
     }
   };
 
-  // Determine if user can only pause timer (worker with started task)
-  const isWorkerWithStartedTask =
-    isWorker() && isEditMode && task?.status === "in_progress";
+  // Determine if worker can manage timer (on assigned tasks with todo or in_progress status)
+  const isWorkerWithAssignedTask =
+    isWorker() &&
+    isEditMode &&
+    (task?.status === "in_progress" || task?.status === "todo");
 
-  // Determine if user can edit task details (admin/supervisor or worker with non-started task)
+  // Determine if user can edit task details (admin/supervisor, but NOT worker with assigned task)
   const canEditTaskDetails =
-    isAdmin() ||
-    isSupervisor() ||
-    (isWorker() && (!isEditMode || task?.status !== "in_progress"));
+    isAdmin() || isSupervisor() || (isWorker() && !isWorkerWithAssignedTask);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -900,18 +932,18 @@ export function TaskDialog({
       <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto">
         <DialogHeader className="relative">
           <DialogTitle>
-            {isWorkerWithStartedTask
+            {isWorkerWithAssignedTask
               ? "Task Timer"
               : isEditMode
               ? "Edit Task"
-              : "Start New Task"}
+              : "Create New Task"}
           </DialogTitle>
           <DialogDescription className="text-lg">
-            {isWorkerWithStartedTask
-              ? "This task is currently running. You can only pause or stop the timer."
+            {isWorkerWithAssignedTask
+              ? "Manage your task timer: start, pause, or stop as needed."
               : isEditMode
               ? "Update task details, assignments, and scheduling."
-              : "Start a new task with automatic timer and advanced features including recurrence, multi-assignment, and attendance integration."}
+              : "Create a new task with automatic timer and advanced features including recurrence, multi-assignment, and attendance integration."}
           </DialogDescription>
         </DialogHeader>
 
@@ -1351,7 +1383,8 @@ export function TaskDialog({
                                           </span>
                                           <span className="text-sm font-bold text-green-900">
                                             {formatCurrency(
-                                              assignment.calculatedBudget
+                                              assignment.calculatedBudget,
+                                              projectCurrency
                                             )}
                                           </span>
                                         </div>
@@ -1426,7 +1459,10 @@ export function TaskDialog({
                               </p>
                             </div>
                             <p className="text-2xl font-bold text-primary">
-                              {formatCurrency(getTotalTaskBudget())}
+                              {formatCurrency(
+                                getTotalTaskBudget(),
+                                projectCurrency
+                              )}
                             </p>
                           </div>
                         </div>
@@ -1518,68 +1554,75 @@ export function TaskDialog({
                           </div>
                         )}
 
-                        {/* Live Running Timer Display */}
-                        {isEditMode &&
-                          task?.status === "in_progress" &&
-                          timerStartTime && (
-                            <div className="p-6 bg-gradient-to-br from-blue-500 via-indigo-600 to-purple-600 rounded-lg shadow-xl">
-                              <div className="space-y-4">
-                                <div className="flex items-center gap-3">
-                                  <div
-                                    className={cn(
-                                      "h-4 w-4 rounded-full",
-                                      timerRunning
-                                        ? "bg-green-400 animate-pulse shadow-lg shadow-green-400/50"
-                                        : "bg-yellow-400 shadow-lg shadow-yellow-400/50"
-                                    )}
-                                  ></div>
-                                  <div>
-                                    <p className="text-sm font-medium text-white/90">
-                                      Task Timer
-                                    </p>
-                                    <p className="text-xs text-white/70">
-                                      {timerRunning ? "Running" : "Paused"}
-                                    </p>
-                                  </div>
-                                </div>
-
-                                <div className="text-center ">
-                                  <p className="text-2xl   font-bold font-mono text-white tracking-wider drop-shadow-lg">
-                                    {formatTimer(timerElapsed)}
+                        {/* Timer Controls for Workers */}
+                        {isWorkerWithAssignedTask && (
+                          <div className="p-6 bg-gradient-to-br from-blue-500 via-indigo-600 to-purple-600 rounded-lg shadow-xl">
+                            <div className="space-y-4">
+                              <div className="flex items-center gap-3">
+                                <div
+                                  className={cn(
+                                    "h-4 w-4 rounded-full",
+                                    timerRunning
+                                      ? "bg-green-400 animate-pulse shadow-lg shadow-green-400/50"
+                                      : timerStartTime
+                                      ? "bg-yellow-400 shadow-lg shadow-yellow-400/50"
+                                      : "bg-gray-400 shadow-lg shadow-gray-400/50"
+                                  )}
+                                ></div>
+                                <div>
+                                  <p className="text-sm font-medium text-white/90">
+                                    Task Timer
+                                  </p>
+                                  <p className="text-xs text-white/70">
+                                    {timerRunning
+                                      ? "Running"
+                                      : timerStartTime
+                                      ? "Paused"
+                                      : "Not Started"}
                                   </p>
                                 </div>
+                              </div>
 
-                                <div className="flex  gap-2">
-                                  {timerRunning ? (
-                                    <>
-                                      <Button
-                                        type="button"
-                                        onClick={handlePauseTimer}
-                                        className="w-full bg-white/20 hover:bg-white/30 text-white border-white/30 backdrop-blur-sm"
-                                      >
-                                        <Pause className="h-4 w-4 mr-2" />
-                                        Pause Timer
-                                      </Button>
-                                      <Button
-                                        type="button"
-                                        onClick={handleStopTimer}
-                                        variant="destructive"
-                                        className="w-full bg-red-500/90 hover:bg-red-600 text-white"
-                                      >
-                                        <Square className="h-4 w-4 mr-2" />
-                                        Stop & Reset
-                                      </Button>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <Button
-                                        type="button"
-                                        onClick={handleStartTimer}
-                                        className="w-full bg-green-500 hover:bg-green-600 text-white"
-                                      >
-                                        <Play className="h-4 w-4 mr-2" />
-                                        Resume Timer
-                                      </Button>
+                              <div className="text-center">
+                                <p className="text-2xl font-bold font-mono text-white tracking-wider drop-shadow-lg">
+                                  {formatTimer(timerElapsed)}
+                                </p>
+                              </div>
+
+                              <div className="flex gap-2">
+                                {timerRunning ? (
+                                  <>
+                                    <Button
+                                      type="button"
+                                      onClick={handlePauseTimer}
+                                      className="w-full bg-white/20 hover:bg-white/30 text-white border-white/30 backdrop-blur-sm"
+                                    >
+                                      <Pause className="h-4 w-4 mr-2" />
+                                      Pause Timer
+                                    </Button>
+                                    <Button
+                                      type="button"
+                                      onClick={handleStopTimer}
+                                      variant="destructive"
+                                      className="w-full bg-red-500/90 hover:bg-red-600 text-white"
+                                    >
+                                      <Square className="h-4 w-4 mr-2" />
+                                      Stop & Reset
+                                    </Button>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Button
+                                      type="button"
+                                      onClick={handleStartTimer}
+                                      className="w-full bg-green-500 hover:bg-green-600 text-white"
+                                    >
+                                      <Play className="h-4 w-4 mr-2" />
+                                      {timerStartTime
+                                        ? "Resume Timer"
+                                        : "Start Timer"}
+                                    </Button>
+                                    {timerStartTime && (
                                       <Button
                                         type="button"
                                         onClick={handleStopTimer}
@@ -1589,12 +1632,13 @@ export function TaskDialog({
                                         <Square className="h-4 w-4 mr-2" />
                                         Stop & Reset
                                       </Button>
-                                    </>
-                                  )}
-                                </div>
+                                    )}
+                                  </>
+                                )}
                               </div>
                             </div>
-                          )}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>

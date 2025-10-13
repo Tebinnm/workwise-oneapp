@@ -270,7 +270,8 @@ export class InvoiceService {
           projects (
             id,
             name,
-            site_location
+            site_location,
+            currency
           )
         )
       `
@@ -298,7 +299,8 @@ export class InvoiceService {
           name,
           projects (
             name,
-            site_location
+            site_location,
+            currency
           )
         )
       `
@@ -423,7 +425,8 @@ export class InvoiceService {
           project_id,
           projects (
             name,
-            site_location
+            site_location,
+            currency
           )
         )
       `

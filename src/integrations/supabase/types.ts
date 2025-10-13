@@ -259,6 +259,7 @@ export type Database = {
           color: string;
           created_at: string | null;
           created_by: string | null;
+          currency: string | null;
           description: string | null;
           end_date: string | null;
           icon: string;
@@ -275,6 +276,7 @@ export type Database = {
           color: string;
           created_at?: string | null;
           created_by?: string | null;
+          currency?: string | null;
           description?: string | null;
           end_date?: string | null;
           icon: string;
@@ -291,6 +293,7 @@ export type Database = {
           color?: string;
           created_at?: string | null;
           created_by?: string | null;
+          currency?: string | null;
           description?: string | null;
           end_date?: string | null;
           icon?: string;

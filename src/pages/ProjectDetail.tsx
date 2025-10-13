@@ -38,6 +38,7 @@ import {
   type ProjectExpenseWithDetails,
 } from "@/services/financialService";
 import { Loader } from "@/components/ui/loader";
+import { formatCurrency } from "@/lib/utils";
 
 export default function ProjectDetail() {
   const { projectId } = useParams<{ projectId: string }>();
@@ -56,6 +57,7 @@ export default function ProjectDetail() {
   const [totalSpentFromBudgets, setTotalSpentFromBudgets] = useState<number>(0);
   const [totalExpensesAmount, setTotalExpensesAmount] = useState<number>(0);
   const [projectMembers, setProjectMembers] = useState<any[]>([]);
+  const [projectCurrency, setProjectCurrency] = useState<string>("USD");
 
   useEffect(() => {
     if (projectId) {
@@ -200,6 +202,11 @@ export default function ProjectDetail() {
       setSummary(summaryData);
       setFinancials(financialData);
 
+      // Set project currency
+      if (projectData?.currency) {
+        setProjectCurrency(projectData.currency);
+      }
+
       // Fetch budget for each milestone
       if (projectData.milestones && projectData.milestones.length > 0) {
         const budgetPromises = projectData.milestones.map((milestone) =>
@@ -216,13 +223,6 @@ export default function ProjectDetail() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-    }).format(amount);
   };
 
   const getStatusColor = (status: string) => {
@@ -349,7 +349,10 @@ export default function ProjectDetail() {
                 <div>
                   <p className="text-sm text-muted-foreground">Total Budget</p>
                   <p className="font-semibold">
-                    {formatCurrency(Number(project.total_budget) || 0)}
+                    {formatCurrency(
+                      Number(project.total_budget) || 0,
+                      projectCurrency
+                    )}
                   </p>
                 </div>
               </div>
@@ -365,7 +368,10 @@ export default function ProjectDetail() {
                 <div>
                   <p className="text-sm text-muted-foreground">Received</p>
                   <p className="font-semibold text-success">
-                    {formatCurrency(Number(project.received_amount) || 0)}
+                    {formatCurrency(
+                      Number(project.received_amount) || 0,
+                      projectCurrency
+                    )}
                   </p>
                 </div>
               </div>
@@ -390,7 +396,10 @@ export default function ProjectDetail() {
                   Total Budget
                 </p>
                 <p className="text-lg font-bold">
-                  {formatCurrency(financials.total_budget || 0)}
+                  {formatCurrency(
+                    financials.total_budget || 0,
+                    projectCurrency
+                  )}
                 </p>
               </div>
               <div>
@@ -399,7 +408,8 @@ export default function ProjectDetail() {
                 </p>
                 <p className="text-lg font-bold text-orange-600">
                   {formatCurrency(
-                    totalSpentFromBudgets || financials.total_spent || 0
+                    totalSpentFromBudgets || financials.total_spent || 0,
+                    projectCurrency
                   )}
                 </p>
                 {totalSpentFromBudgets > 0 && (
@@ -410,20 +420,27 @@ export default function ProjectDetail() {
                 <p className="text-lg text-muted-foreground mb-1">Expenses</p>
                 <p className="text-lg font-bold text-red-600">
                   {formatCurrency(
-                    totalExpensesAmount || financials.total_expenses || 0
+                    totalExpensesAmount || financials.total_expenses || 0,
+                    projectCurrency
                   )}
                 </p>
               </div>
               <div>
                 <p className="text-lg text-muted-foreground mb-1">Invoiced</p>
                 <p className="text-lg font-bold text-blue-600">
-                  {formatCurrency(financials.total_invoiced || 0)}
+                  {formatCurrency(
+                    financials.total_invoiced || 0,
+                    projectCurrency
+                  )}
                 </p>
               </div>
               <div>
                 <p className="text-lg text-muted-foreground mb-1">Received</p>
                 <p className="text-lg font-bold text-success">
-                  {formatCurrency(financials.received_amount || 0)}
+                  {formatCurrency(
+                    financials.received_amount || 0,
+                    projectCurrency
+                  )}
                 </p>
               </div>
               <div>
@@ -450,7 +467,8 @@ export default function ProjectDetail() {
                       const expenses =
                         totalExpensesAmount || financials.total_expenses || 0;
                       return financials.received_amount - spent - expenses;
-                    })()
+                    })(),
+                    projectCurrency
                   )}
                 </p>
               </div>
@@ -516,7 +534,10 @@ export default function ProjectDetail() {
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold mb-2">
-                  {formatCurrency(summary?.outstanding_amount || 0)}
+                  {formatCurrency(
+                    summary?.outstanding_amount || 0,
+                    projectCurrency
+                  )}
                 </div>
                 <p className="text-lg text-muted-foreground">Amount pending</p>
               </CardContent>
@@ -530,7 +551,8 @@ export default function ProjectDetail() {
                 <div className="text-3xl font-bold mb-2">
                   {formatCurrency(
                     (summary?.total_spent || 0) +
-                      (totalExpensesAmount || summary?.total_expenses || 0)
+                      (totalExpensesAmount || summary?.total_expenses || 0),
+                    projectCurrency
                   )}
                 </div>
                 <p className="text-lg text-muted-foreground">
@@ -664,7 +686,10 @@ export default function ProjectDetail() {
                               Allocated:
                             </span>
                             <span className="font-medium">
-                              {formatCurrency(budget.total_budget_allocated)}
+                              {formatCurrency(
+                                budget.total_budget_allocated,
+                                projectCurrency
+                              )}
                             </span>
                           </div>
                           <div className="flex items-center justify-between text-sm">
@@ -672,7 +697,10 @@ export default function ProjectDetail() {
                               Spent:
                             </span>
                             <span className="font-medium text-primary">
-                              {formatCurrency(budget.total_budget_spent)}
+                              {formatCurrency(
+                                budget.total_budget_spent,
+                                projectCurrency
+                              )}
                             </span>
                           </div>
                           <div className="flex items-center justify-between text-sm">
@@ -682,7 +710,8 @@ export default function ProjectDetail() {
                             <span className="font-medium text-success">
                               {formatCurrency(
                                 budget.total_budget_allocated -
-                                  budget.total_budget_spent
+                                  budget.total_budget_spent,
+                                projectCurrency
                               )}
                             </span>
                           </div>
@@ -738,6 +767,7 @@ export default function ProjectDetail() {
             invoices={invoices}
             projectId={projectId!}
             onRefresh={fetchProjectDetails}
+            currency={projectCurrency}
           />
         </TabsContent>
 
@@ -747,6 +777,7 @@ export default function ProjectDetail() {
             expenses={expenses}
             projectId={projectId!}
             onRefresh={fetchProjectDetails}
+            currency={projectCurrency}
           />
         </TabsContent>
       </Tabs>

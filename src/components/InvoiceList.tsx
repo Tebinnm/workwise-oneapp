@@ -36,31 +36,27 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Receipt, MoreHorizontal, Edit, Trash2, Eye, Plus } from "lucide-react";
 import { InvoiceDialog } from "./dialogs/InvoiceDialog";
+import { formatCurrency } from "@/lib/utils";
 
 interface InvoiceListProps {
   invoices: InvoiceWithItems[];
   projectId: string;
   onRefresh: () => void;
+  currency?: string;
 }
 
 export function InvoiceList({
   invoices,
   projectId,
   onRefresh,
+  currency = "USD",
 }: InvoiceListProps) {
   const navigate = useNavigate();
-  const { canCreateProjects } = usePermissions();
+  const { canManageInvoices } = usePermissions();
   const [deleteInvoiceId, setDeleteInvoiceId] = useState<string | null>(null);
   const [editingInvoice, setEditingInvoice] = useState<InvoiceWithItems | null>(
     null
   );
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-    }).format(amount);
-  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -106,8 +102,12 @@ export function InvoiceList({
           <p className="text-muted-foreground mb-4">
             Create your first invoice to start tracking payments
           </p>
-          {canCreateProjects() && (
-            <InvoiceDialog projectId={projectId} onSuccess={onRefresh}>
+          {canManageInvoices() && (
+            <InvoiceDialog
+              projectId={projectId}
+              onSuccess={onRefresh}
+              currency={currency}
+            >
               <Button>
                 <Plus className="h-4 w-4 mr-2" />
                 Create Invoice
@@ -123,8 +123,12 @@ export function InvoiceList({
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-semibold">Invoices ({invoices.length})</h3>
-        {canCreateProjects() && (
-          <InvoiceDialog projectId={projectId} onSuccess={onRefresh}>
+        {canManageInvoices() && (
+          <InvoiceDialog
+            projectId={projectId}
+            onSuccess={onRefresh}
+            currency={currency}
+          >
             <Button>
               <Plus className="h-4 w-4 mr-2" />
               Create Invoice
@@ -185,16 +189,16 @@ export function InvoiceList({
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right">
-                    {formatCurrency(invoice.subtotal)}
+                    {formatCurrency(invoice.subtotal, currency)}
                   </TableCell>
                   <TableCell className="text-right">
-                    {formatCurrency(invoice.tax_amount || 0)}
+                    {formatCurrency(invoice.tax_amount || 0, currency)}
                   </TableCell>
                   <TableCell className="text-right font-medium">
-                    {formatCurrency(invoice.total)}
+                    {formatCurrency(invoice.total, currency)}
                   </TableCell>
                   <TableCell className="text-right">
-                    {formatCurrency(invoice.amount_paid || 0)}
+                    {formatCurrency(invoice.amount_paid || 0, currency)}
                   </TableCell>
                   <TableCell className="text-right">
                     <span
@@ -204,7 +208,7 @@ export function InvoiceList({
                           : "text-green-600 font-medium"
                       }
                     >
-                      {formatCurrency(invoice.balance_due)}
+                      {formatCurrency(invoice.balance_due, currency)}
                     </span>
                   </TableCell>
                   <TableCell>
@@ -220,21 +224,30 @@ export function InvoiceList({
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem
-                          onClick={() => handleViewInvoice(invoice)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleViewInvoice(invoice);
+                          }}
                         >
                           <Eye className="h-4 w-4 mr-2" />
                           View Details
                         </DropdownMenuItem>
-                        {canCreateProjects() && (
+                        {canManageInvoices() && (
                           <>
                             <DropdownMenuItem
-                              onClick={() => setEditingInvoice(invoice)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setEditingInvoice(invoice);
+                              }}
                             >
                               <Edit className="h-4 w-4 mr-2" />
                               Edit
                             </DropdownMenuItem>
                             <DropdownMenuItem
-                              onClick={() => setDeleteInvoiceId(invoice.id)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDeleteInvoiceId(invoice.id);
+                              }}
                               className="text-red-600"
                             >
                               <Trash2 className="h-4 w-4 mr-2" />
@@ -262,6 +275,7 @@ export function InvoiceList({
           setEditingInvoice(null);
           onRefresh();
         }}
+        currency={currency}
       >
         <div style={{ display: "none" }} />
       </InvoiceDialog>

@@ -141,6 +141,16 @@ export function usePermissions() {
     return isAdmin();
   };
 
+  // Can manage invoices (admin and supervisor)
+  const canManageInvoices = (): boolean => {
+    return isAdmin() || isSupervisor();
+  };
+
+  // Can manage expenses (admin and supervisor)
+  const canManageExpenses = (): boolean => {
+    return isAdmin() || isSupervisor();
+  };
+
   return {
     profile,
     loading,
@@ -161,5 +171,7 @@ export function usePermissions() {
     canViewFinancials,
     canApproveAttendance,
     canViewReports,
+    canManageInvoices,
+    canManageExpenses,
   };
 }

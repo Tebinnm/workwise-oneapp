@@ -35,7 +35,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { CalendarIcon, Plus, Trash2, Loader2, Receipt } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 
 interface InvoiceItem {
   id?: string;
@@ -54,6 +54,7 @@ interface InvoiceDialogProps {
   onSuccess?: () => void;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+  currency?: string;
 }
 
 export function InvoiceDialog({
@@ -64,8 +65,9 @@ export function InvoiceDialog({
   onSuccess,
   open: controlledOpen,
   onOpenChange: controlledOnOpenChange,
+  currency = "USD",
 }: InvoiceDialogProps) {
-  const { canCreateProjects } = usePermissions();
+  const { canManageInvoices } = usePermissions();
   const [internalOpen, setInternalOpen] = useState(false);
 
   const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
@@ -233,7 +235,7 @@ export function InvoiceDialog({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!canCreateProjects()) {
+    if (!canManageInvoices()) {
       toast.error("You don't have permission to create invoices");
       return;
     }
@@ -688,15 +690,15 @@ export function InvoiceDialog({
               <div className="space-y-2 text-right">
                 <div className="flex justify-between">
                   <span>Subtotal:</span>
-                  <span>${subtotal.toFixed(2)}</span>
+                  <span>{formatCurrency(subtotal, currency)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Tax ({formData.tax_rate}%):</span>
-                  <span>${taxAmount.toFixed(2)}</span>
+                  <span>{formatCurrency(taxAmount, currency)}</span>
                 </div>
                 <div className="flex justify-between text-lg font-semibold border-t pt-2">
                   <span>Total:</span>
-                  <span>${total.toFixed(2)}</span>
+                  <span>{formatCurrency(total, currency)}</span>
                 </div>
               </div>
             </CardContent>

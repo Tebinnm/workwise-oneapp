@@ -4,6 +4,7 @@ import { BudgetService, WageType } from "@/services/budgetService";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { formatCurrency } from "@/lib/utils";
 import {
   Select,
   SelectContent,
@@ -56,13 +57,31 @@ export default function BudgetReport() {
   const [filters, setFilters] = useState<BudgetFilters>({});
   const [members, setMembers] = useState<any[]>([]);
   const [showFilters, setShowFilters] = useState(false);
+  const [projectCurrency, setProjectCurrency] = useState<string>("USD");
 
   useEffect(() => {
     if (id) {
+      fetchProjectCurrency();
       fetchMembers();
       fetchBudgetReport();
     }
   }, [id]);
+
+  const fetchProjectCurrency = async () => {
+    try {
+      const { data: milestone } = await supabase
+        .from("milestones")
+        .select("project_id, projects(currency)")
+        .eq("id", id)
+        .single();
+
+      if (milestone && (milestone as any).projects?.currency) {
+        setProjectCurrency((milestone as any).projects.currency);
+      }
+    } catch (error) {
+      console.error("Error fetching project currency:", error);
+    }
+  };
 
   const fetchMembers = async () => {
     try {
@@ -122,7 +141,7 @@ export default function BudgetReport() {
     }
 
     try {
-      BudgetExportService.printReport(budgetReport);
+      BudgetExportService.printReport(budgetReport, projectCurrency);
       toast.success("Opening print dialog...");
     } catch (error) {
       toast.error("Failed to export to PDF");
@@ -136,18 +155,11 @@ export default function BudgetReport() {
     }
 
     try {
-      await BudgetExportService.exportToCSV(budgetReport);
+      await BudgetExportService.exportToCSV(budgetReport, projectCurrency);
       toast.success("Budget report exported successfully");
     } catch (error) {
       toast.error("Failed to export to Excel");
     }
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-    }).format(amount);
   };
 
   if (loading && !budgetReport) {
@@ -344,7 +356,10 @@ export default function BudgetReport() {
               <div>
                 <p className="text-sm text-muted-foreground">Total Budget</p>
                 <p className="text-2xl font-bold">
-                  {formatCurrency(budgetReport.total_budget_allocated)}
+                  {formatCurrency(
+                    budgetReport.total_budget_allocated,
+                    projectCurrency
+                  )}
                 </p>
               </div>
             </div>
@@ -360,7 +375,10 @@ export default function BudgetReport() {
               <div>
                 <p className="text-sm text-muted-foreground">Budget Spent</p>
                 <p className="text-2xl font-bold">
-                  {formatCurrency(budgetReport.total_budget_spent)}
+                  {formatCurrency(
+                    budgetReport.total_budget_spent,
+                    projectCurrency
+                  )}
                 </p>
               </div>
             </div>
@@ -452,12 +470,15 @@ export default function BudgetReport() {
                       </TableCell>
                       <TableCell className="text-right">
                         {member.daily_rate
-                          ? formatCurrency(member.daily_rate)
+                          ? formatCurrency(member.daily_rate, projectCurrency)
                           : "-"}
                       </TableCell>
                       <TableCell className="text-right">
                         {member.monthly_salary
-                          ? formatCurrency(member.monthly_salary)
+                          ? formatCurrency(
+                              member.monthly_salary,
+                              projectCurrency
+                            )
                           : "-"}
                       </TableCell>
                       <TableCell className="text-center">
@@ -470,13 +491,16 @@ export default function BudgetReport() {
                         {member.total_absent_days}
                       </TableCell>
                       <TableCell className="text-right">
-                        {formatCurrency(member.total_task_budget)}
+                        {formatCurrency(
+                          member.total_task_budget,
+                          projectCurrency
+                        )}
                       </TableCell>
                       <TableCell className="text-right">
-                        {formatCurrency(member.monthly_budget)}
+                        {formatCurrency(member.monthly_budget, projectCurrency)}
                       </TableCell>
                       <TableCell className="text-right font-bold">
-                        {formatCurrency(member.final_budget)}
+                        {formatCurrency(member.final_budget, projectCurrency)}
                       </TableCell>
                       <TableCell>
                         <Badge
@@ -544,10 +568,16 @@ export default function BudgetReport() {
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
-                          {formatCurrency(taskBudget.daily_rate)}
+                          {formatCurrency(
+                            taskBudget.daily_rate,
+                            projectCurrency
+                          )}
                         </TableCell>
                         <TableCell className="text-right font-medium">
-                          {formatCurrency(taskBudget.calculated_amount)}
+                          {formatCurrency(
+                            taskBudget.calculated_amount,
+                            projectCurrency
+                          )}
                         </TableCell>
                       </TableRow>
                     )

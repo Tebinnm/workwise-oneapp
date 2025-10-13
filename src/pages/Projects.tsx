@@ -25,6 +25,7 @@ import { toast } from "sonner";
 import { ProjectDialog } from "@/components/dialogs/ProjectDialog";
 import { format } from "date-fns";
 import { usePermissions } from "@/hooks/usePermissions";
+import { formatCurrency } from "@/lib/utils";
 import { PermissionService } from "@/services/permissionService";
 import { Loader } from "@/components/ui/loader";
 
@@ -40,6 +41,7 @@ interface Project {
   end_date: string | null;
   total_budget: number | null;
   received_amount: number | null;
+  currency: string | null;
   status: string;
   created_at: string;
   milestones?: Array<{
@@ -150,14 +152,6 @@ export default function Projects() {
       default:
         return "bg-gray-100 text-gray-800";
     }
-  };
-
-  const formatCurrency = (amount: number | null) => {
-    if (amount === null) return "N/A";
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-    }).format(amount);
   };
 
   return (
@@ -319,7 +313,12 @@ export default function Projects() {
                         <span>Budget</span>
                       </div>
                       <p className="font-semibold text-sm">
-                        {formatCurrency(project.total_budget)}
+                        {project.total_budget !== null
+                          ? formatCurrency(
+                              project.total_budget,
+                              project.currency || "USD"
+                            )
+                          : "N/A"}
                       </p>
                     </div>
                     <div>
@@ -328,7 +327,12 @@ export default function Projects() {
                         <span>Received</span>
                       </div>
                       <p className="font-semibold text-sm text-success">
-                        {formatCurrency(project.received_amount)}
+                        {project.received_amount !== null
+                          ? formatCurrency(
+                              project.received_amount,
+                              project.currency || "USD"
+                            )
+                          : "N/A"}
                       </p>
                     </div>
                   </div>

@@ -18,6 +18,7 @@ import { GanttChart } from "@/components/GanttChart";
 import { KanbanBoard } from "@/components/KanbanBoard";
 import { BudgetService } from "@/services/budgetService";
 import { usePermissions } from "@/hooks/usePermissions";
+import { formatCurrency } from "@/lib/utils";
 
 interface Task {
   id: string;
@@ -47,6 +48,7 @@ export default function ProjectBoard() {
   const [budgetSummary, setBudgetSummary] = useState<any>(null);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [taskDialogOpen, setTaskDialogOpen] = useState(false);
+  const [projectCurrency, setProjectCurrency] = useState<string>("USD");
 
   useEffect(() => {
     if (id) {
@@ -80,7 +82,7 @@ export default function ProjectBoard() {
   const fetchProject = async () => {
     const { data, error } = await supabase
       .from("milestones")
-      .select("*")
+      .select("*, projects(currency)")
       .eq("id", id)
       .single();
 
@@ -90,6 +92,11 @@ export default function ProjectBoard() {
     }
 
     setProject(data);
+
+    // Set project currency
+    if ((data as any)?.projects?.currency) {
+      setProjectCurrency((data as any).projects.currency);
+    }
   };
 
   const fetchTasks = async () => {
@@ -146,13 +153,6 @@ export default function ProjectBoard() {
     } catch (error) {
       console.error("Error fetching budget summary:", error);
     }
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-    }).format(amount);
   };
 
   const handleTaskUpdate = () => {
@@ -236,13 +236,19 @@ export default function ProjectBoard() {
                     Allocated
                   </p>
                   <p className="text-lg font-bold">
-                    {formatCurrency(budgetSummary.total_budget_allocated)}
+                    {formatCurrency(
+                      budgetSummary.total_budget_allocated,
+                      projectCurrency
+                    )}
                   </p>
                 </div>
                 <div className="text-center">
                   <p className="text-xs text-muted-foreground mb-1">Spent</p>
                   <p className="text-lg font-bold text-primary">
-                    {formatCurrency(budgetSummary.total_budget_spent)}
+                    {formatCurrency(
+                      budgetSummary.total_budget_spent,
+                      projectCurrency
+                    )}
                   </p>
                 </div>
                 <div className="text-center">
@@ -252,7 +258,8 @@ export default function ProjectBoard() {
                   <p className="text-lg font-bold text-success">
                     {formatCurrency(
                       budgetSummary.total_budget_allocated -
-                        budgetSummary.total_budget_spent
+                        budgetSummary.total_budget_spent,
+                      projectCurrency
                     )}
                   </p>
                 </div>

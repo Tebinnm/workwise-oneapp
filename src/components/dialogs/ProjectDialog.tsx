@@ -108,6 +108,7 @@ export function ProjectDialog({
   const [endDate, setEndDate] = useState<Date>();
   const [totalBudget, setTotalBudget] = useState("");
   const [receivedAmount, setReceivedAmount] = useState("");
+  const [currency, setCurrency] = useState("USD");
   const [status, setStatus] = useState("active");
 
   useEffect(() => {
@@ -175,6 +176,7 @@ export function ProjectDialog({
         end_date: endDate ? format(endDate, "yyyy-MM-dd") : null,
         total_budget: totalBudget ? parseFloat(totalBudget) : null,
         received_amount: receivedAmount ? parseFloat(receivedAmount) : 0,
+        currency,
         status,
         created_by: user.id,
       });
@@ -214,6 +216,7 @@ export function ProjectDialog({
           end_date: endDate ? format(endDate, "yyyy-MM-dd") : null,
           total_budget: totalBudget ? parseFloat(totalBudget) : null,
           received_amount: receivedAmount ? parseFloat(receivedAmount) : null,
+          currency,
           status,
         })
         .eq("id", editingProject.id);
@@ -293,6 +296,7 @@ export function ProjectDialog({
     setEndDate(undefined);
     setTotalBudget("");
     setReceivedAmount("");
+    setCurrency("USD");
     setStatus("active");
     setEditingProject(null);
     setShowCreateForm(false);
@@ -310,6 +314,7 @@ export function ProjectDialog({
     setEndDate(project.end_date ? new Date(project.end_date) : undefined);
     setTotalBudget(project.total_budget?.toString() || "");
     setReceivedAmount(project.received_amount?.toString() || "");
+    setCurrency(project.currency || "USD");
     setStatus(project.status || "active");
     setShowCreateForm(true);
   };
@@ -471,7 +476,7 @@ export function ProjectDialog({
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="totalBudget">Total Budget</Label>
                         <Input
@@ -494,6 +499,23 @@ export function ProjectDialog({
                           placeholder="0.00"
                           step="0.01"
                         />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="currency">Currency</Label>
+                        <Select value={currency} onValueChange={setCurrency}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select currency" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="USD">USD - US Dollar</SelectItem>
+                            <SelectItem value="AED">
+                              AED - Arab Emirates Dirham
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
 
                       <div className="space-y-2">

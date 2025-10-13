@@ -33,7 +33,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { CalendarIcon, Loader2 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 
 interface ExpenseDialogProps {
   children: React.ReactNode;
@@ -42,6 +42,7 @@ interface ExpenseDialogProps {
   onSuccess?: () => void;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+  currency?: string;
 }
 
 const EXPENSE_CATEGORIES = [
@@ -70,6 +71,7 @@ export function ExpenseDialog({
   onSuccess,
   open: controlledOpen,
   onOpenChange: controlledOnOpenChange,
+  currency = "USD",
 }: ExpenseDialogProps) {
   const [internalOpen, setInternalOpen] = useState(false);
 
@@ -315,7 +317,7 @@ export function ExpenseDialog({
             {/* Amount */}
             <div className="space-y-2">
               <Label htmlFor="amount">
-                Amount <span className="text-red-500">*</span>
+                Amount ({currency}) <span className="text-red-500">*</span>
               </Label>
               <Input
                 id="amount"

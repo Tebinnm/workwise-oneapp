@@ -42,29 +42,25 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { ExpenseDialog } from "./dialogs/ExpenseDialog";
+import { formatCurrency } from "@/lib/utils";
 
 interface ExpenseListProps {
   expenses: ProjectExpenseWithDetails[];
   projectId: string;
   onRefresh: () => void;
+  currency?: string;
 }
 
 export function ExpenseList({
   expenses,
   projectId,
   onRefresh,
+  currency = "USD",
 }: ExpenseListProps) {
-  const { isAdmin } = usePermissions();
+  const { canManageExpenses } = usePermissions();
   const [deleteExpenseId, setDeleteExpenseId] = useState<string | null>(null);
   const [editingExpense, setEditingExpense] =
     useState<ProjectExpenseWithDetails | null>(null);
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-    }).format(amount);
-  };
 
   const getCategoryColor = (category: string | null) => {
     switch (category) {
@@ -115,7 +111,11 @@ export function ExpenseList({
           <p className="text-muted-foreground mb-4 text-lg">
             Record your first expense to start tracking project costs
           </p>
-          <ExpenseDialog projectId={projectId} onSuccess={onRefresh}>
+          <ExpenseDialog
+            projectId={projectId}
+            onSuccess={onRefresh}
+            currency={currency}
+          >
             <Button>
               <Plus className="h-4 w-4 mr-2" />
               Record Expense
@@ -140,10 +140,14 @@ export function ExpenseList({
             Expenses ({expenses.length})
           </h3>
           <p className="text-lg text-muted-foreground">
-            Total: {formatCurrency(totalExpenses)}
+            Total: {formatCurrency(totalExpenses, currency)}
           </p>
         </div>
-        <ExpenseDialog projectId={projectId} onSuccess={onRefresh}>
+        <ExpenseDialog
+          projectId={projectId}
+          onSuccess={onRefresh}
+          currency={currency}
+        >
           <Button>
             <Plus className="h-4 w-4 mr-2" />
             Record Expense
@@ -214,10 +218,10 @@ export function ExpenseList({
                     </div>
                   </TableCell>
                   <TableCell className="text-right font-medium">
-                    {formatCurrency(expense.amount)}
+                    {formatCurrency(expense.amount, currency)}
                   </TableCell>
                   <TableCell>
-                    {isAdmin() && (
+                    {canManageExpenses() && (
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" size="sm">
@@ -226,13 +230,19 @@ export function ExpenseList({
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem
-                            onClick={() => setEditingExpense(expense)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditingExpense(expense);
+                            }}
                           >
                             <Edit className="h-4 w-4 mr-2" />
                             Edit
                           </DropdownMenuItem>
                           <DropdownMenuItem
-                            onClick={() => setDeleteExpenseId(expense.id)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDeleteExpenseId(expense.id);
+                            }}
                             className="text-red-600"
                           >
                             <Trash2 className="h-4 w-4 mr-2" />
@@ -260,6 +270,7 @@ export function ExpenseList({
             setEditingExpense(null);
             onRefresh();
           }}
+          currency={currency}
         >
           <div style={{ display: "none" }} />
         </ExpenseDialog>
