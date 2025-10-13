@@ -257,18 +257,26 @@ export function TaskDialog({
       const timerKey = `task_timer_${task.id}`;
       const savedTimer = localStorage.getItem(timerKey);
       if (savedTimer) {
-        const { startTime, isRunning } = JSON.parse(savedTimer);
+        const { startTime, isRunning, pausedElapsed } = JSON.parse(savedTimer);
         const timerStart = new Date(startTime);
         setTimerStartTime(timerStart);
         setTimerRunning(isRunning);
 
         // Calculate current elapsed time
-        const elapsed = Math.floor((Date.now() - timerStart.getTime()) / 1000);
+        let elapsed;
+        if (isRunning) {
+          // If running, calculate from start time
+          elapsed = Math.floor((Date.now() - timerStart.getTime()) / 1000);
+        } else {
+          // If paused, use the saved elapsed time
+          elapsed = pausedElapsed || 0;
+        }
         setTimerElapsed(elapsed);
 
         console.log("⏱️ Loaded timer state:", {
           startTime: timerStart,
           isRunning,
+          pausedElapsed,
           elapsed: formatTimer(elapsed),
         });
       }
@@ -541,6 +549,7 @@ export function TaskDialog({
           JSON.stringify({
             startTime: startTime.toISOString(),
             isRunning: true,
+            pausedElapsed: 0,
           })
         );
 
@@ -559,6 +568,7 @@ export function TaskDialog({
             startTime:
               timerStartTime?.toISOString() || new Date().toISOString(),
             isRunning: timerRunning,
+            pausedElapsed: timerRunning ? 0 : timerElapsed, // Save elapsed time if paused
           })
         );
       }
@@ -566,7 +576,9 @@ export function TaskDialog({
       toast.success(
         isEditMode
           ? "Task updated successfully!"
-          : "Task started successfully with timer!"
+          : autoStartTimer
+          ? "Task created and timer started successfully!"
+          : "Task created successfully!"
       );
 
       console.log("🔒 Closing dialog...");
@@ -860,9 +872,14 @@ export function TaskDialog({
     console.log("▶️ Starting/Resuming timer");
 
     // If no start time exists, set it now
+    // If resuming from pause, adjust start time to account for paused duration
     if (!timerStartTime) {
       const startTime = new Date();
       setTimerStartTime(startTime);
+    } else if (!timerRunning && timerElapsed > 0) {
+      // Resuming from pause - adjust start time to maintain elapsed time
+      const adjustedStartTime = new Date(Date.now() - timerElapsed * 1000);
+      setTimerStartTime(adjustedStartTime);
     }
 
     setTimerRunning(true);
@@ -870,11 +887,18 @@ export function TaskDialog({
     // Update localStorage
     if (task?.id) {
       const timerKey = `task_timer_${task.id}`;
+      const startTimeToSave = !timerStartTime
+        ? new Date().toISOString()
+        : timerElapsed > 0 && !timerRunning
+        ? new Date(Date.now() - timerElapsed * 1000).toISOString()
+        : timerStartTime.toISOString();
+
       localStorage.setItem(
         timerKey,
         JSON.stringify({
-          startTime: timerStartTime?.toISOString() || new Date().toISOString(),
+          startTime: startTimeToSave,
           isRunning: true,
+          pausedElapsed: 0, // Clear paused elapsed when running
         })
       );
 
@@ -903,9 +927,16 @@ export function TaskDialog({
 
   const handlePauseTimer = () => {
     console.log("⏸️ Pausing timer");
-    setTimerRunning(false);
 
-    // Update localStorage
+    // Calculate current elapsed time before pausing
+    const currentElapsed = timerStartTime
+      ? Math.floor((Date.now() - timerStartTime.getTime()) / 1000)
+      : timerElapsed;
+
+    setTimerRunning(false);
+    setTimerElapsed(currentElapsed);
+
+    // Update localStorage with paused state and elapsed time
     if (task?.id) {
       const timerKey = `task_timer_${task.id}`;
       localStorage.setItem(
@@ -913,8 +944,14 @@ export function TaskDialog({
         JSON.stringify({
           startTime: timerStartTime?.toISOString() || new Date().toISOString(),
           isRunning: false,
+          pausedElapsed: currentElapsed, // Save the elapsed time when paused
         })
       );
+
+      console.log("💾 Saved paused timer state:", {
+        pausedElapsed: currentElapsed,
+        formattedTime: formatTimer(currentElapsed),
+      });
     }
   };
 
@@ -962,7 +999,7 @@ export function TaskDialog({
               ? "Manage your task timer: start, pause, or stop as needed."
               : isEditMode
               ? "Update task details, assignments, and scheduling."
-              : "Create a new task with automatic timer and advanced features including recurrence, multi-assignment, and attendance integration."}
+              : "Create a new task with advanced features including recurrence, multi-assignment, and attendance integration."}
           </DialogDescription>
         </DialogHeader>
 
@@ -1760,62 +1797,41 @@ export function TaskDialog({
             </div>
           </div>
 
-          {/* Floating Timer/Start Button - Absolute Position */}
-          <div className="sticky bottom-4 right-4 z-[100] flex justify-end">
+          <DialogFooter className="mt-6">
             {!isEditMode ? (
-              <div className="relative">
-                <Button
-                  type="submit"
-                  disabled={
-                    loading ||
-                    !title.trim() ||
-                    teamAssignments.length === 0 ||
-                    !startDate
-                  }
-                  className="h-16 w-16 rounded-full shadow-2xl hover:shadow-3xl transition-all duration-300 bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 border-4 border-white/20 backdrop-blur-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <div className="flex flex-col items-center gap-1">
-                    {loading ? (
-                      <div className="h-6 w-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    ) : (
-                      <Play className="h-6 w-6 text-white" />
-                    )}
-                    <span className="text-xs font-bold text-white drop-shadow-lg">
-                      {loading ? "..." : "START"}
-                    </span>
-                  </div>
-                </Button>
-                {(!title.trim() ||
+              <Button
+                type="submit"
+                disabled={
+                  loading ||
+                  !title.trim() ||
                   teamAssignments.length === 0 ||
-                  !startDate) && (
-                  <div className="absolute top-0 right-0 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center">
-                    <span className="text-white text-xs font-bold">!</span>
-                  </div>
-                )}
-              </div>
-            ) : null}
-          </div>
-
-          <DialogFooter>
-            {isEditMode && canEditTaskDetails && (
-              <>
-                {/* Only admins and project managers can delete tasks */}
-                {canDeleteTasks() && (
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    onClick={handleDelete}
-                    disabled={loading}
-                    className="mr-auto"
-                  >
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Delete Task
+                  !startDate
+                }
+              >
+                {loading ? "Creating Task..." : "Create Task"}
+              </Button>
+            ) : (
+              !viewMode &&
+              canEditTaskDetails && (
+                <>
+                  {/* Only admins and project managers can delete tasks */}
+                  {canDeleteTasks() && (
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      onClick={handleDelete}
+                      disabled={loading}
+                      className="mr-auto"
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Delete Task
+                    </Button>
+                  )}
+                  <Button type="submit" disabled={loading}>
+                    {loading ? "Updating..." : "Update Task"}
                   </Button>
-                )}
-                <Button type="submit" disabled={loading}>
-                  {loading ? "Updating..." : "Update Task"}
-                </Button>
-              </>
+                </>
+              )
             )}
           </DialogFooter>
         </form>
