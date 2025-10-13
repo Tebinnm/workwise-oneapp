@@ -9,8 +9,40 @@ export class PermissionService {
   /**
    * Get project IDs that the user has access to
    */
-  static async getUserAssignedProjectIds(userId: string): Promise<string[]> {
+  static async getUserAssignedProjectIds(
+    userId: string,
+    userRole?: UserRole
+  ): Promise<string[]> {
     try {
+      // For workers, get projects through task assignments
+      if (userRole === "worker") {
+        const { data, error } = await supabase
+          .from("task_assignments")
+          .select(
+            `
+            task_id,
+            tasks!inner(
+              milestone_id,
+              milestones!inner(project_id)
+            )
+          `
+          )
+          .eq("user_id", userId);
+
+        if (error) throw error;
+
+        // Extract unique project IDs
+        const projectIds = new Set<string>();
+        data?.forEach((ta: any) => {
+          if (ta.tasks?.milestones?.project_id) {
+            projectIds.add(ta.tasks.milestones.project_id);
+          }
+        });
+
+        return Array.from(projectIds);
+      }
+
+      // For supervisors, get projects through project_members
       const { data, error } = await supabase
         .from("project_members")
         .select(
@@ -154,8 +186,11 @@ export class PermissionService {
       return projects;
     }
 
-    // Get user's assigned project IDs
-    const assignedProjectIds = await this.getUserAssignedProjectIds(userId);
+    // Get user's assigned project IDs (pass userRole for workers)
+    const assignedProjectIds = await this.getUserAssignedProjectIds(
+      userId,
+      userRole
+    );
 
     // Filter projects
     return projects.filter((project) =>
