@@ -87,6 +87,7 @@ function DroppableColumn({
   isDragging,
   isOverColumn,
 }: DroppableColumnProps) {
+  const [showAddTaskDialog, setShowAddTaskDialog] = useState(false);
   const taskIds = tasks.map((task) => task.id);
   const { setNodeRef } = useDroppable({
     id: column.id,
@@ -110,9 +111,28 @@ function DroppableColumn({
             {tasks.length}
           </Badge>
         </div>
-        <Button variant="ghost" size="icon" className="h-6 w-6">
-          <Plus className="h-4 w-4" />
-        </Button>
+        {/* Only show add button for todo and in_progress columns, not done */}
+        {column.id !== "done" && (
+          <TaskDialog
+            projectId={projectId}
+            onSuccess={() => {
+              onTaskUpdate();
+              setShowAddTaskDialog(false);
+            }}
+            open={showAddTaskDialog}
+            onOpenChange={setShowAddTaskDialog}
+            defaultStatus={column.id as "todo" | "in_progress" | "done"}
+          >
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6"
+              onClick={() => setShowAddTaskDialog(true)}
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+          </TaskDialog>
+        )}
       </div>
       <SortableContext items={taskIds} strategy={verticalListSortingStrategy}>
         <div className="space-y-3 min-h-[300px] md:min-h-[400px]">

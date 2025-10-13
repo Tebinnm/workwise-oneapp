@@ -56,6 +56,7 @@ interface TaskDialogProps {
   onDelete?: () => void;
   open?: boolean; // External control of dialog open state
   onOpenChange?: (open: boolean) => void; // External control of dialog open state
+  defaultStatus?: "todo" | "in_progress" | "done"; // Default status for new tasks
 }
 
 interface Profile {
@@ -88,6 +89,7 @@ export function TaskDialog({
   onDelete,
   open: externalOpen,
   onOpenChange: externalOnOpenChange,
+  defaultStatus,
 }: TaskDialogProps) {
   const isEditMode = !!task;
   const { isWorker, isSupervisor, isAdmin, canDeleteTasks } = usePermissions();
@@ -109,7 +111,7 @@ export function TaskDialog({
   const [taskType, setTaskType] = useState<"attendance" | "general">("general");
   const [status, setStatus] = useState<
     "todo" | "in_progress" | "blocked" | "done" | "cancelled"
-  >("todo");
+  >(defaultStatus || "todo");
   const [priority, setPriority] = useState<"low" | "medium" | "high">("medium");
   const [estimatedHours, setEstimatedHours] = useState("");
   const [billable, setBillable] = useState(true);
@@ -384,7 +386,7 @@ export function TaskDialog({
         title,
         description: description || null,
         type: taskType,
-        status: isEditMode ? status : "in_progress", // Auto-start tasks are in progress
+        status: isEditMode ? status : autoStartTimer ? "in_progress" : status, // Auto-start tasks are in progress, otherwise use selected status
         priority,
         billable,
         estimated_hours: estimatedHours ? parseFloat(estimatedHours) : null,
@@ -692,7 +694,7 @@ export function TaskDialog({
     setTitle("");
     setDescription("");
     setTaskType("general");
-    setStatus("todo");
+    setStatus(defaultStatus || "todo");
     setPriority("medium");
     setEstimatedHours("");
     setBillable(true);
