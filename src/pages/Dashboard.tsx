@@ -44,6 +44,7 @@ import {
   isPast,
   isFuture,
 } from "date-fns";
+import { EditMilestoneDialog } from "@/components/dialogs/EditMilestoneDialog";
 
 interface Task {
   id: string;
@@ -99,6 +100,12 @@ export default function Dashboard() {
   });
   const [checkedIn, setCheckedIn] = useState(false);
   const [checkInTime, setCheckInTime] = useState<Date | null>(null);
+
+  // Edit milestone dialog state
+  const [editMilestoneDialogOpen, setEditMilestoneDialogOpen] = useState(false);
+  const [selectedMilestone, setSelectedMilestone] = useState<Milestone | null>(
+    null
+  );
 
   // Enhanced state for milestone dashboard
   const [milestoneCounts, setMilestoneCounts] = useState({
@@ -365,6 +372,16 @@ export default function Dashboard() {
     return `MS${milestone.id.slice(-9).toUpperCase()}`;
   };
 
+  const handleEditMilestone = (milestone: Milestone) => {
+    setSelectedMilestone(milestone);
+    setEditMilestoneDialogOpen(true);
+  };
+
+  const handleMilestoneUpdate = () => {
+    // Refresh milestones after update
+    fetchMilestones();
+  };
+
   return (
     <div className="flex flex-col lg:flex-row lg:justify-between gap-6">
       <div className="space-y-1 lg:flex-1">
@@ -452,6 +469,7 @@ export default function Dashboard() {
                   onStatusChange={updateMilestoneStatus}
                   getMilestoneId={getMilestoneId}
                   onNavigate={() => navigate(`/milestones/${milestone.id}`)}
+                  onEdit={handleEditMilestone}
                 />
               ))}
               {filteredMilestones.length === 0 && (
@@ -464,6 +482,14 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Edit Milestone Dialog */}
+      <EditMilestoneDialog
+        milestone={selectedMilestone}
+        open={editMilestoneDialogOpen}
+        onOpenChange={setEditMilestoneDialogOpen}
+        onSuccess={handleMilestoneUpdate}
+      />
     </div>
   );
 }
@@ -474,11 +500,13 @@ function MilestoneCard({
   onStatusChange,
   getMilestoneId,
   onNavigate,
+  onEdit,
 }: {
   milestone: Milestone;
   onStatusChange: (milestoneId: string, status: string) => void;
   getMilestoneId: (milestone: Milestone) => string;
   onNavigate: () => void;
+  onEdit: (milestone: Milestone) => void;
 }) {
   const getStatusActions = (currentStatus: string) => {
     switch (currentStatus) {
@@ -571,7 +599,10 @@ function MilestoneCard({
                 variant="ghost"
                 size="icon"
                 className="h-7 w-7 sm:h-8 sm:w-8"
-                onClick={(e) => e.stopPropagation()}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit(milestone);
+                }}
               >
                 <Edit className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               </Button>

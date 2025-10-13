@@ -25,6 +25,7 @@ import {
 import { format } from "date-fns";
 import { ProjectDialog } from "@/components/dialogs/ProjectDialog";
 import { CreateMilestoneDialog } from "@/components/dialogs/CreateMilestoneDialog";
+import { EditMilestoneDialog } from "@/components/dialogs/EditMilestoneDialog";
 import { usePermissions } from "@/hooks/usePermissions";
 import { BudgetService } from "@/services/budgetService";
 import { InvoiceList } from "@/components/InvoiceList";
@@ -58,6 +59,10 @@ export default function ProjectDetail() {
   const [totalExpensesAmount, setTotalExpensesAmount] = useState<number>(0);
   const [projectMembers, setProjectMembers] = useState<any[]>([]);
   const [projectCurrency, setProjectCurrency] = useState<string>("USD");
+
+  // Edit milestone dialog state
+  const [editMilestoneDialogOpen, setEditMilestoneDialogOpen] = useState(false);
+  const [selectedMilestone, setSelectedMilestone] = useState<any>(null);
 
   useEffect(() => {
     if (projectId) {
@@ -238,6 +243,16 @@ export default function ProjectDetail() {
       default:
         return "bg-gray-100 text-gray-800";
     }
+  };
+
+  const handleEditMilestone = (milestone: any) => {
+    setSelectedMilestone(milestone);
+    setEditMilestoneDialogOpen(true);
+  };
+
+  const handleMilestoneUpdate = () => {
+    // Refresh project details after milestone update
+    fetchProjectDetails();
   };
 
   if (loading) {
@@ -671,11 +686,26 @@ export default function ProjectDetail() {
                     onClick={() => navigate(`/milestones/${milestone.id}`)}
                   >
                     <CardContent className="p-4 space-y-3">
-                      <div>
-                        <h4 className="font-semibold mb-2">{milestone.name}</h4>
-                        <Badge variant="outline">
-                          {milestone.status || "pending"}
-                        </Badge>
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <h4 className="font-semibold mb-2">
+                            {milestone.name}
+                          </h4>
+                          <Badge variant="outline">
+                            {milestone.status || "pending"}
+                          </Badge>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 flex-shrink-0"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEditMilestone(milestone);
+                          }}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
                       </div>
 
                       {/* Budget Information */}
@@ -781,6 +811,14 @@ export default function ProjectDetail() {
           />
         </TabsContent>
       </Tabs>
+
+      {/* Edit Milestone Dialog */}
+      <EditMilestoneDialog
+        milestone={selectedMilestone}
+        open={editMilestoneDialogOpen}
+        onOpenChange={setEditMilestoneDialogOpen}
+        onSuccess={handleMilestoneUpdate}
+      />
     </div>
   );
 }
