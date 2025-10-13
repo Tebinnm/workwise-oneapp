@@ -5,7 +5,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
   Plus,
-  MoreVertical,
+  Eye,
   CheckCircle2,
   Star,
   MessageSquare,
@@ -239,9 +239,17 @@ function SortableTaskCard({
                 <Edit className="h-3 w-3 md:h-4 md:w-4" />
               </Button>
             </TaskDialog>
-            <Button variant="ghost" size="icon" className="h-6 w-6">
-              <MoreVertical className="h-3 w-3 md:h-4 md:w-4" />
-            </Button>
+            <TaskDialog
+              projectId={projectId}
+              task={task}
+              onSuccess={onUpdate}
+              onDelete={onDelete}
+              viewMode={true}
+            >
+              <Button variant="ghost" size="icon" className="h-6 w-6">
+                <Eye className="h-3 w-3 md:h-4 md:w-4" />
+              </Button>
+            </TaskDialog>
           </div>
         </div>
         {task.description && (

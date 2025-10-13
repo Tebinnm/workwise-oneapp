@@ -57,6 +57,7 @@ interface TaskDialogProps {
   open?: boolean; // External control of dialog open state
   onOpenChange?: (open: boolean) => void; // External control of dialog open state
   defaultStatus?: "todo" | "in_progress" | "done"; // Default status for new tasks
+  viewMode?: boolean; // View-only mode - no editing allowed
 }
 
 interface Profile {
@@ -90,6 +91,7 @@ export function TaskDialog({
   open: externalOpen,
   onOpenChange: externalOnOpenChange,
   defaultStatus,
+  viewMode = false,
 }: TaskDialogProps) {
   const isEditMode = !!task;
   const { isWorker, isSupervisor, isAdmin, canDeleteTasks } = usePermissions();
@@ -313,7 +315,7 @@ export function TaskDialog({
       // Fetch attendance records to get the attendance types
       const { data: attendanceRecords, error: attendanceError } = await supabase
         .from("attendance")
-        .select("user_id, attendance_type")
+        .select("user_id, attendance_type, duration_minutes")
         .eq("task_id", task.id);
 
       console.log(
@@ -321,22 +323,39 @@ export function TaskDialog({
         attendanceRecords
       );
 
-      const teamAssignmentsData = assignments.map((a) => {
-        // Find the attendance record for this user
-        const attendanceRecord = attendanceRecords?.find(
-          (record) => record.user_id === a.user_id
-        );
+      const teamAssignmentsData = await Promise.all(
+        assignments.map(async (a) => {
+          // Find the attendance record for this user
+          const attendanceRecord = attendanceRecords?.find(
+            (record) => record.user_id === a.user_id
+          );
 
-        return {
-          userId: a.user_id,
-          attendanceType:
+          const attendanceType =
             (attendanceRecord?.attendance_type as
               | "full_day"
               | "half_day"
               | "hour_based"
-              | "leave") || "full_day",
-        };
-      });
+              | "leave") || "full_day";
+
+          // Calculate budget for this assignment
+          const budget = await calculateMemberBudget(
+            a.user_id,
+            attendanceType,
+            attendanceRecord?.duration_minutes
+              ? attendanceRecord.duration_minutes / 60
+              : undefined
+          );
+
+          return {
+            userId: a.user_id,
+            attendanceType,
+            hours: attendanceRecord?.duration_minutes
+              ? attendanceRecord.duration_minutes / 60
+              : undefined,
+            calculatedBudget: budget,
+          };
+        })
+      );
 
       console.log("🔍 DEBUG: Populated team assignments:", teamAssignmentsData);
       setTeamAssignments(teamAssignmentsData);
@@ -773,12 +792,6 @@ export function TaskDialog({
       );
       if (!wageConfig) return 0;
 
-      // For general tasks, use monthly salary directly
-      if (taskType === "general") {
-        return wageConfig.monthly_salary || 0;
-      }
-
-      // For attendance tasks, calculate based on attendance type
       // Calculate daily rate
       const dailyRate =
         wageConfig.wage_type === "daily"
@@ -934,14 +947,18 @@ export function TaskDialog({
       <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto">
         <DialogHeader className="relative">
           <DialogTitle>
-            {isWorkerWithAssignedTask
+            {viewMode
+              ? "View Task Details"
+              : isWorkerWithAssignedTask
               ? "Task Timer"
               : isEditMode
               ? "Edit Task"
               : "Create New Task"}
           </DialogTitle>
           <DialogDescription className="text-lg">
-            {isWorkerWithAssignedTask
+            {viewMode
+              ? "View task information, assignments, and scheduling details."
+              : isWorkerWithAssignedTask
               ? "Manage your task timer: start, pause, or stop as needed."
               : isEditMode
               ? "Update task details, assignments, and scheduling."
@@ -973,7 +990,7 @@ export function TaskDialog({
                         onChange={(e) => setTitle(e.target.value)}
                         placeholder="Enter task title"
                         required
-                        disabled={!canEditTaskDetails}
+                        disabled={viewMode || !canEditTaskDetails}
                       />
                     </div>
                     <div className="space-y-2">
@@ -983,7 +1000,7 @@ export function TaskDialog({
                         onValueChange={(value: "attendance" | "general") =>
                           setTaskType(value)
                         }
-                        disabled={!canEditTaskDetails}
+                        disabled={viewMode || !canEditTaskDetails}
                       >
                         <SelectTrigger>
                           <SelectValue />
@@ -1006,7 +1023,7 @@ export function TaskDialog({
                       onChange={(e) => setDescription(e.target.value)}
                       placeholder="Enter task description"
                       rows={3}
-                      disabled={!canEditTaskDetails}
+                      disabled={viewMode || !canEditTaskDetails}
                     />
                   </div>
 
@@ -1017,7 +1034,7 @@ export function TaskDialog({
                       onCheckedChange={(checked) =>
                         setBillable(checked as boolean)
                       }
-                      disabled={!canEditTaskDetails}
+                      disabled={viewMode || !canEditTaskDetails}
                     />
                     <Label htmlFor="billable">Billable task</Label>
                   </div>
@@ -1025,7 +1042,7 @@ export function TaskDialog({
               </Card>
 
               {/* Recurrence - Only show for general tasks, not attendance tasks */}
-              {canEditTaskDetails && taskType !== "attendance" && (
+              {!viewMode && canEditTaskDetails && taskType !== "attendance" && (
                 <Card>
                   <CardHeader>
                     <CardTitle className="text-lg flex items-center gap-2">
@@ -1195,7 +1212,7 @@ export function TaskDialog({
               )}
 
               {/* Team Assignment with Attendance */}
-              {canEditTaskDetails && (
+              {(viewMode || canEditTaskDetails) && (
                 <Card>
                   <CardHeader>
                     <CardTitle className="text-lg flex items-center gap-2">
@@ -1210,7 +1227,7 @@ export function TaskDialog({
                         <strong>Note:</strong>{" "}
                         {taskType === "attendance"
                           ? "Configure attendance settings for each team member. Budget will be calculated based on attendance type (full day, half day, or hours)."
-                          : "Assign team members to this task. Budget will be calculated using monthly salary for each member."}
+                          : "Assign team members to this task. Budget will be calculated based on full day attendance by default."}
                       </p>
                     </div>
                   </CardHeader>
@@ -1237,6 +1254,7 @@ export function TaskDialog({
                                   onCheckedChange={() =>
                                     toggleAssignee(profile.id)
                                   }
+                                  disabled={viewMode}
                                 />
                                 <Avatar className="h-10 w-10">
                                   <AvatarFallback className="text-sm">
@@ -1379,9 +1397,7 @@ export function TaskDialog({
                                       <div className="flex flex-col gap-1">
                                         <div className="flex items-center justify-between">
                                           <span className="text-sm font-medium text-green-800">
-                                            {taskType === "general"
-                                              ? "Monthly Salary:"
-                                              : "Calculated Budget:"}
+                                            Calculated Budget:
                                           </span>
                                           <span className="text-sm font-bold text-green-900">
                                             {formatCurrency(
@@ -1390,11 +1406,20 @@ export function TaskDialog({
                                             )}
                                           </span>
                                         </div>
-                                        {taskType === "general" && (
-                                          <p className="text-xs text-green-700">
-                                            Based on monthly salary
-                                          </p>
-                                        )}
+                                        <p className="text-xs text-green-700">
+                                          Based on{" "}
+                                          {assignment.attendanceType ===
+                                          "full_day"
+                                            ? "full day"
+                                            : assignment.attendanceType ===
+                                              "half_day"
+                                            ? "half day"
+                                            : assignment.attendanceType ===
+                                              "hour_based"
+                                            ? `${assignment.hours || 1} hour(s)`
+                                            : "leave"}{" "}
+                                          attendance
+                                        </p>
                                       </div>
                                     </div>
                                   )}
@@ -1450,14 +1475,10 @@ export function TaskDialog({
                           <div className="flex items-center justify-between">
                             <div>
                               <p className="text-sm font-medium">
-                                {taskType === "general"
-                                  ? "Total Monthly Salary"
-                                  : "Total Task Budget"}
+                                Total Task Budget
                               </p>
                               <p className="text-lg text-muted-foreground">
-                                {taskType === "general"
-                                  ? "Sum of all members' monthly salaries"
-                                  : "Sum of all member budgets for this task"}
+                                Sum of all member budgets for this task
                               </p>
                             </div>
                             <p className="text-2xl font-bold text-primary">
