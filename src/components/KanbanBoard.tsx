@@ -106,10 +106,8 @@ function DroppableColumn({
     >
       <div className="flex items-center justify-between px-1">
         <div className="flex items-center gap-2">
-          <h3 className="font-semibold text-base md:text-lg">{column.label}</h3>
-          <Badge variant="secondary" className="text-xs">
-            {tasks.length}
-          </Badge>
+          <h3 className="font-semibold text-large">{column.label}</h3>
+          <Badge variant="secondary">{tasks.length}</Badge>
         </div>
         {/* Only show add button for todo and in_progress columns, not done */}
         {column.id !== "done" && (
@@ -153,7 +151,7 @@ function DroppableColumn({
                   : "border-muted-foreground/30"
               }`}
             >
-              <p className="text-lg text-muted-foreground">
+              <p className="text-medium text-muted-foreground">
                 {isDragging && isOverColumn ? "Drop here" : "No tasks"}
               </p>
             </div>
@@ -220,10 +218,10 @@ function SortableTaskCard({
               <GripVertical className="h-4 w-4" />
             </div>
             <div className="space-y-1 flex-1 min-w-0">
-              <h4 className="font-medium text-sm md:text-base line-clamp-2">
+              <h4 className="font-medium text-medium line-clamp-2">
                 {task.title}
               </h4>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-small text-muted-foreground">
                 {task.created_at.substring(0, 10)}
               </p>
             </div>
@@ -253,14 +251,14 @@ function SortableTaskCard({
           </div>
         </div>
         {task.description && (
-          <p className="text-lg text-muted-foreground line-clamp-2">
+          <p className="text-sm text-muted-foreground line-clamp-2">
             {task.description}
           </p>
         )}
         <div className="flex items-center justify-between pt-2 border-t gap-2">
           <Badge
             variant={task.status === "done" ? "default" : "secondary"}
-            className="rounded-full text-xs flex-shrink-0"
+            className="rounded-full flex-shrink-0"
           >
             <CheckCircle2 className="h-3 w-3 mr-1" />
             <span className="hidden sm:inline">
@@ -275,14 +273,14 @@ function SortableTaskCard({
                     key={idx}
                     className="h-5 w-5 md:h-6 md:w-6 border-2 border-background"
                   >
-                    <AvatarFallback className="text-[10px] md:text-xs bg-primary text-primary-foreground">
+                    <AvatarFallback className="text-small bg-primary text-primary-foreground">
                       {assignment.profiles?.full_name?.[0] || "U"}
                     </AvatarFallback>
                   </Avatar>
                 ))}
               </div>
               {task.task_assignments.length > 3 && (
-                <span className="text-xs text-muted-foreground">
+                <span className="text-small text-muted-foreground">
                   +{task.task_assignments.length - 3}
                 </span>
               )}
@@ -510,11 +508,11 @@ export function KanbanBoard({
                   <GripVertical className="h-4 w-4" />
                 </div>
                 <div className="flex-1">
-                  <h4 className="font-medium text-sm md:text-base line-clamp-2">
+                  <h4 className="font-medium text-medium line-clamp-2">
                     {activeTask.title}
                   </h4>
                   {activeTask.description && (
-                    <p className="text-lg text-muted-foreground line-clamp-1 mt-1">
+                    <p className="text-sm text-muted-foreground line-clamp-1 mt-1">
                       {activeTask.description}
                     </p>
                   )}
@@ -522,7 +520,7 @@ export function KanbanBoard({
               </div>
               <Badge
                 variant={activeTask.status === "done" ? "default" : "secondary"}
-                className="rounded-full text-xs"
+                className="rounded-full"
               >
                 {activeTask.status?.replace("_", " ")}
               </Badge>

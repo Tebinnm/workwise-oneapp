@@ -368,18 +368,18 @@ export default function UserManagement() {
 
   const getStatusColor = (status: string) => {
     return status === "active"
-      ? "bg-green-100 text-green-800"
-      : "bg-red-100 text-red-800";
+      ? "bg-status-active text-status-active-foreground"
+      : "bg-status-cancelled text-status-cancelled-foreground";
   };
 
   const getRoleColor = (role: string) => {
     const colors: { [key: string]: string } = {
-      admin: "bg-purple-100 text-purple-800",
-      supervisor: "bg-blue-100 text-blue-800",
-      worker: "bg-gray-100 text-gray-800",
-      client: "bg-green-100 text-green-800",
+      admin: "bg-role-admin text-role-admin-foreground",
+      supervisor: "bg-role-supervisor text-role-supervisor-foreground",
+      worker: "bg-role-worker text-role-worker-foreground",
+      client: "bg-role-client text-role-client-foreground",
     };
-    return colors[role] || "bg-gray-100 text-gray-800";
+    return colors[role] || "bg-role-worker text-role-worker-foreground";
   };
 
   return (
@@ -526,8 +526,8 @@ export default function UserManagement() {
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
-              <div className="p-3 bg-green-100 rounded-lg">
-                <Users className="h-6 w-6 text-green-600" />
+              <div className="p-3 bg-success/10 rounded-lg">
+                <Users className="h-6 w-6 text-success" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Active Users</p>
@@ -542,8 +542,8 @@ export default function UserManagement() {
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
-              <div className="p-3 bg-blue-100 rounded-lg">
-                <DollarSign className="h-6 w-6 text-blue-600" />
+              <div className="p-3 bg-primary/10 rounded-lg">
+                <DollarSign className="h-6 w-6 text-primary" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">
@@ -560,8 +560,8 @@ export default function UserManagement() {
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
-              <div className="p-3 bg-purple-100 rounded-lg">
-                <Building className="h-6 w-6 text-purple-600" />
+              <div className="p-3 bg-accent/10 rounded-lg">
+                <Building className="h-6 w-6 text-accent" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Projects</p>

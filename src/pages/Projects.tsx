@@ -142,15 +142,15 @@ export default function Projects() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "active":
-        return "bg-green-100 text-green-800";
+        return "bg-status-active text-status-active-foreground";
       case "completed":
-        return "bg-blue-100 text-blue-800";
+        return "bg-status-completed text-status-completed-foreground";
       case "on_hold":
-        return "bg-yellow-100 text-yellow-800";
+        return "bg-status-on-hold text-status-on-hold-foreground";
       case "cancelled":
-        return "bg-red-100 text-red-800";
+        return "bg-status-cancelled text-status-cancelled-foreground";
       default:
-        return "bg-gray-100 text-gray-800";
+        return "bg-status-default text-status-default-foreground";
     }
   };
 
@@ -159,18 +159,21 @@ export default function Projects() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Projects</h1>
+          <h1 className="text-xlarge font-bold">Projects</h1>
           <p className="text-muted-foreground">
             Manage and monitor all your projects
           </p>
         </div>
         {canCreateProjects() && (
-          <ProjectDialog onProjectCreated={fetchProjects}>
-            <Button className="shadow-glow">
-              <Plus className="h-4 w-4 mr-2" />
-              New Project
-            </Button>
-          </ProjectDialog>
+          <ProjectDialog
+            onProjectCreated={fetchProjects}
+            trigger={
+              <Button className="shadow-glow">
+                <Plus className="h-4 w-4 mr-2" />
+                New Project
+              </Button>
+            }
+          />
         )}
       </div>
 
@@ -208,19 +211,22 @@ export default function Projects() {
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <Folder className="h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No projects found</h3>
+            <h3 className="text-large font-semibold mb-2">No projects found</h3>
             <p className="text-muted-foreground mb-4">
               {searchQuery || statusFilter !== "all"
                 ? "Try adjusting your filters"
                 : "Get started by creating your first project"}
             </p>
             {!searchQuery && statusFilter === "all" && canCreateProjects() && (
-              <ProjectDialog onProjectCreated={fetchProjects}>
-                <Button>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create Project
-                </Button>
-              </ProjectDialog>
+              <ProjectDialog
+                onProjectCreated={fetchProjects}
+                trigger={
+                  <Button>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create Project
+                  </Button>
+                }
+              />
             )}
           </CardContent>
         </Card>
@@ -253,11 +259,11 @@ export default function Projects() {
 
                   {/* Project Name & Description */}
                   <div>
-                    <h3 className="font-semibold text-lg mb-1 line-clamp-1">
+                    <h3 className="font-semibold text-large mb-1 line-clamp-1">
                       {project.name}
                     </h3>
                     {project.description && (
-                      <p className="text-sm text-muted-foreground line-clamp-2">
+                      <p className="text-small text-muted-foreground line-clamp-2">
                         {project.description}
                       </p>
                     )}
@@ -265,7 +271,7 @@ export default function Projects() {
 
                   {/* Location */}
                   {project.site_location && (
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-2 text-small text-muted-foreground">
                       <MapPin className="h-4 w-4" />
                       <span className="line-clamp-1">
                         {project.site_location}
@@ -275,7 +281,7 @@ export default function Projects() {
 
                   {/* Dates */}
                   {(project.start_date || project.end_date) && (
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-2 text-small text-muted-foreground">
                       <Calendar className="h-4 w-4" />
                       <span>
                         {project.start_date
@@ -291,7 +297,7 @@ export default function Projects() {
 
                   {/* Progress */}
                   <div className="space-y-2">
-                    <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center justify-between text-small">
                       <span className="text-muted-foreground">Progress</span>
                       <span className="font-medium">
                         {stats.completed}/{stats.total} Milestones
@@ -308,11 +314,11 @@ export default function Projects() {
                   {/* Budget */}
                   <div className="grid grid-cols-2 gap-4 pt-4 border-t">
                     <div>
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1">
+                      <div className="flex items-center gap-1 text-small text-muted-foreground mb-1">
                         <DollarSign className="h-3 w-3" />
                         <span>Budget</span>
                       </div>
-                      <p className="font-semibold text-sm">
+                      <p className="font-semibold text-small">
                         {project.total_budget !== null
                           ? formatCurrency(
                               project.total_budget,
@@ -322,11 +328,11 @@ export default function Projects() {
                       </p>
                     </div>
                     <div>
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1">
+                      <div className="flex items-center gap-1 text-small text-muted-foreground mb-1">
                         <TrendingUp className="h-3 w-3" />
                         <span>Received</span>
                       </div>
-                      <p className="font-semibold text-sm text-success">
+                      <p className="font-semibold text-small text-success">
                         {project.received_amount !== null
                           ? formatCurrency(
                               project.received_amount,

@@ -65,20 +65,20 @@ export function ExpenseList({
   const getCategoryColor = (category: string | null) => {
     switch (category) {
       case "materials":
-        return "bg-blue-100 text-blue-800";
+        return "bg-expense-materials text-expense-materials-foreground";
       case "equipment":
-        return "bg-purple-100 text-purple-800";
+        return "bg-expense-equipment text-expense-equipment-foreground";
       case "labor":
-        return "bg-green-100 text-green-800";
+        return "bg-expense-labor text-expense-labor-foreground";
       case "transportation":
-        return "bg-yellow-100 text-yellow-800";
+        return "bg-expense-transportation text-expense-transportation-foreground";
       case "permits":
-        return "bg-red-100 text-red-800";
+        return "bg-expense-permits text-expense-permits-foreground";
       case "utilities":
-        return "bg-cyan-100 text-cyan-800";
+        return "bg-expense-utilities text-expense-utilities-foreground";
       case "other":
       default:
-        return "bg-gray-100 text-gray-800";
+        return "bg-expense-other text-expense-other-foreground";
     }
   };
 
@@ -186,7 +186,7 @@ export function ExpenseList({
                           href={expense.receipt_url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-sm text-blue-600 hover:underline inline-flex items-center gap-1"
+                          className="text-sm text-accent hover:underline inline-flex items-center gap-1"
                           onClick={(e) => e.stopPropagation()}
                         >
                           View Receipt
@@ -243,7 +243,7 @@ export function ExpenseList({
                               e.stopPropagation();
                               setDeleteExpenseId(expense.id);
                             }}
-                            className="text-red-600"
+                            className="text-destructive"
                           >
                             <Trash2 className="h-4 w-4 mr-2" />
                             Delete
@@ -295,7 +295,7 @@ export function ExpenseList({
               onClick={() =>
                 deleteExpenseId && handleDeleteExpense(deleteExpenseId)
               }
-              className="bg-red-600 hover:bg-red-700"
+              className="bg-destructive hover:bg-destructive/90"
             >
               Delete
             </AlertDialogAction>

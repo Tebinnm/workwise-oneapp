@@ -25,6 +25,12 @@ import {
   SidebarMenuItem,
   SidebarHeader,
 } from "@/components/ui/sidebar";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -72,6 +78,8 @@ export function AppSidebar() {
   const [milestoneToDelete, setMilestoneToDelete] = useState<Milestone | null>(
     null
   );
+  const [showProjectDialog, setShowProjectDialog] = useState(false);
+  const [showMilestoneDialog, setShowMilestoneDialog] = useState(false);
   const navigate = useNavigate();
   const {
     profile,
@@ -330,55 +338,38 @@ export function AppSidebar() {
 
         <SidebarGroup>
           {canManageProjects() && (
-            <div className="flex flex-col px-2  gap-2">
-              <ProjectDialog
-                onProjectCreated={fetchProjects}
-                trigger={
+            <div className="flex flex-col px-2 gap-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
                   <Button
                     variant="ghost"
                     size="sm"
                     className="w-full justify-start h-8"
-                    title="Manage projects"
+                    title="Projects & Milestones"
                   >
+                    Projects & Milestones
+                    <Plus className="h-4 w-4 ms-6" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-56">
+                  <DropdownMenuItem onClick={() => setShowProjectDialog(true)}>
                     <Folder className="h-4 w-4 mr-2" />
                     Manage Projects
-                  </Button>
-                }
-              />
-
-              <CreateMilestoneDialog
-                onSuccess={() => {
-                  fetchMilestones();
-                  fetchProjects();
-                }}
-              >
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="w-full justify-start h-8"
-                  title="Create milestone"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create Milestone
-                </Button>
-              </CreateMilestoneDialog>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setShowMilestoneDialog(true)}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create Milestone
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           )}
-
-          {/* <SidebarGroupContent>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton>
-                  <Star className="h-4 w-4" />
-                  <span>Favorites</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroupContent> */}
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel>Projects</SidebarGroupLabel>
+          {/* <SidebarGroupLabel>Projects</SidebarGroupLabel> */}
           <SidebarGroupContent>
             <SidebarMenu>
               {searchQuery ? (
@@ -388,7 +379,7 @@ export function AppSidebar() {
                     .toLowerCase()
                     .includes(searchQuery.toLowerCase())
                 ).length === 0 ? (
-                  <div className="px-4 py-8 text-center text-sm text-muted-foreground">
+                  <div className="px-4 py-8 text-center text-small text-muted-foreground">
                     No milestones found
                   </div>
                 ) : (
@@ -467,7 +458,7 @@ export function AppSidebar() {
                             <span className="break-words leading-tight">
                               {project.name}
                             </span>
-                            <span className="text-xs text-muted-foreground">
+                            <span className="text-small text-muted-foreground">
                               ({project.milestones?.length || 0})
                             </span>
                           </div>
@@ -498,7 +489,7 @@ export function AppSidebar() {
                     {expandedProjects.has(project.id) && (
                       <div className="ml-4 space-y-1">
                         {project.milestones?.length === 0 ? (
-                          <div className="px-4 py-2 text-xs text-muted-foreground">
+                          <div className="px-4 py-2 text-small text-muted-foreground">
                             No milestones in this project
                           </div>
                         ) : (
@@ -578,6 +569,23 @@ export function AppSidebar() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <ProjectDialog
+        open={showProjectDialog}
+        onOpenChange={setShowProjectDialog}
+        onProjectCreated={fetchProjects}
+        onProjectUpdated={fetchProjects}
+        onProjectDeleted={fetchProjects}
+      />
+
+      <CreateMilestoneDialog
+        open={showMilestoneDialog}
+        onOpenChange={setShowMilestoneDialog}
+        onSuccess={() => {
+          fetchMilestones();
+          fetchProjects();
+        }}
+      />
     </Sidebar>
   );
 }

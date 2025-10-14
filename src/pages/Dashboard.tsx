@@ -385,18 +385,18 @@ export default function Dashboard() {
   return (
     <div className="flex flex-col lg:flex-row lg:justify-between gap-6">
       <div className="space-y-1 lg:flex-1">
-        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground">
+        <h2 className="text-display font-bold text-foreground">
           {currentTime.toLocaleTimeString("en-US", {
             hour: "2-digit",
             minute: "2-digit",
             hour12: true,
           })}
-        </h1>
-        <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold mt-2 lg:mt-4">
+        </h2>
+        <h2 className="text-xlarge font-bold mt-2 lg:mt-4">
           {getGreeting()}, {profile?.full_name || "User"}
         </h2>
         {checkedIn && checkInTime && (
-          <p className="text-muted-foreground text-base sm:text-lg">
+          <p className="text-muted-foreground text-medium">
             Last checked in on {format(checkInTime, "dd MMM yyyy h:mm:ss a")}
           </p>
         )}
@@ -405,18 +405,16 @@ export default function Dashboard() {
         {/* Header Section */}
 
         {/* My Milestones Section */}
-        <Card className="h-[500px] lg:h-[calc(100vh-8rem)] overflow-hidden">
+        <Card className="h-[500px] lg:h-[calc(100vh-6rem)] overflow-hidden">
           <CardHeader className="pb-3">
-            <CardTitle className="text-xl sm:text-2xl font-bold">
-              My Milestones
-            </CardTitle>
+            <CardTitle>My Milestones</CardTitle>
 
             {/* Date Filter Tabs */}
             <div className="flex gap-2 mt-3 flex-wrap">
               <Button
                 variant={dateFilter === "all" ? "default" : "outline"}
                 onClick={() => setDateFilter("all")}
-                className="flex items-center gap-2 text-sm"
+                className="flex items-center gap-2 py-1 px-2"
                 size="sm"
               >
                 <ListTodo className="h-3 w-3 sm:h-4 sm:w-4" />
@@ -425,7 +423,7 @@ export default function Dashboard() {
               <Button
                 variant={dateFilter === "overdue" ? "default" : "outline"}
                 onClick={() => setDateFilter("overdue")}
-                className="flex items-center gap-2 text-sm"
+                className="flex items-center gap-2 py-1 px-2"
                 size="sm"
               >
                 <AlertCircle className="h-3 w-3 sm:h-4 sm:w-4" />
@@ -434,7 +432,7 @@ export default function Dashboard() {
               <Button
                 variant={dateFilter === "today" ? "default" : "outline"}
                 onClick={() => setDateFilter("today")}
-                className="flex items-center gap-2 text-sm"
+                className="flex items-center gap-2 py-1 px-2"
                 size="sm"
               >
                 <Calendar className="h-3 w-3 sm:h-4 sm:w-4" />
@@ -443,7 +441,7 @@ export default function Dashboard() {
               <Button
                 variant={dateFilter === "upcoming" ? "default" : "outline"}
                 onClick={() => setDateFilter("upcoming")}
-                className="flex items-center gap-2 text-sm"
+                className="flex items-center gap-2 py-1 px-2"
                 size="sm"
               >
                 <Star className="h-3 w-3 sm:h-4 sm:w-4" />
@@ -453,7 +451,7 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent className="pb-4">
             {/* Milestone List */}
-            <div className="h-[340px] lg:h-96 overflow-y-auto space-y-3 pr-2">
+            <div className="h-[360px] lg:h-96 overflow-y-auto space-y-3 pr-2">
               {(() => {
                 console.log(
                   "Rendering milestone list. Count:",
@@ -475,7 +473,7 @@ export default function Dashboard() {
               {filteredMilestones.length === 0 && (
                 <div className="text-center py-8 text-muted-foreground">
                   <ListTodo className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-2 opacity-50" />
-                  <p className="text-base sm:text-lg">No milestones found</p>
+                  <p className="text-medium">No milestones found</p>
                 </div>
               )}
             </div>
@@ -563,18 +561,16 @@ function MilestoneCard({
 
   return (
     <Card
-      className="hover:shadow-elevated transition-all cursor-pointer border-l-4 border-l-primary"
+      className="hover:shadow-elevated transition-all cursor-pointer border-l-4 border-l-primary "
       onClick={onNavigate}
     >
       <CardContent className="p-3 sm:p-4">
-        <div className="space-y-2 sm:space-y-3">
+        <div className="space-y-2 sm:space-y-3 ">
           {/* Milestone Header */}
           <div className="flex items-start justify-between gap-2">
             <div className="flex-1 min-w-0">
-              <h4 className="font-semibold text-base sm:text-lg truncate">
-                {milestone.name}
-              </h4>
-              <p className="text-xs sm:text-sm text-muted-foreground font-mono">
+              <h4 className="text-medium truncate">{milestone.name}</h4>
+              <p className="text-small text-muted-foreground font-mono">
                 {getMilestoneId(milestone)}
               </p>
             </div>
@@ -610,46 +606,62 @@ function MilestoneCard({
           </div>
 
           {/* Project Name */}
-          <div className="flex items-center gap-2">
-            <span className="text-xs sm:text-sm text-muted-foreground flex-shrink-0">
+          <div className="flex items-center gap-1">
+            <span className="text-small text-muted-foreground flex-shrink-0">
               Project:
             </span>
-            <span className="text-base sm:text-lg font-medium truncate">
+            <span className="text-small truncate">
               {milestone.projects?.name || "No project"}
             </span>
           </div>
 
           {/* Team Members */}
-          <div className="space-y-1.5 sm:space-y-2">
-            <span className="text-xs sm:text-sm text-muted-foreground">
+          <div className="m-0">
+            <span className="text-small text-muted-foreground">
               Team Members:
             </span>
             <div className="flex flex-wrap gap-1.5 sm:gap-2">
               {milestone.project_members &&
               milestone.project_members.length > 0 ? (
                 milestone.project_members.map((member, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center gap-1.5 sm:gap-2"
-                  >
-                    <Avatar className="h-6 w-6 sm:h-8 sm:w-8">
-                      <AvatarFallback className="text-xs">
-                        {member.profiles?.full_name
-                          ?.split(" ")
-                          .map((n) => n[0])
-                          .join("")
-                          .toUpperCase() || "U"}
-                      </AvatarFallback>
-                    </Avatar>
-                    <span className="text-sm sm:text-lg truncate">
-                      {member.profiles?.full_name ||
-                        member.profiles?.email ||
-                        "Unknown"}
-                    </span>
+                  <div className="flex items-center justify-between gap-1.5 sm:gap-2 w-full">
+                    <div
+                      key={index}
+                      className="flex items-center gap-1.5 sm:gap-2"
+                    >
+                      <Avatar className="h-6 w-6 sm:h-8 sm:w-8">
+                        <AvatarFallback className="text-small">
+                          {member.profiles?.full_name
+                            ?.split(" ")
+                            .map((n) => n[0])
+                            .join("")
+                            .toUpperCase() || "U"}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="text-medium truncate">
+                        {member.profiles?.full_name ||
+                          member.profiles?.email ||
+                          "Unknown"}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 sm:h-8"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onNavigate();
+                        }}
+                      >
+                        <ArrowRight className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1" />
+                        Open
+                      </Button>
+                    </div>
                   </div>
                 ))
               ) : (
-                <span className="text-xs sm:text-sm text-muted-foreground">
+                <span className="text-small text-muted-foreground">
                   No members assigned
                 </span>
               )}
@@ -658,32 +670,18 @@ function MilestoneCard({
 
           {/* Milestone Status */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-            <div className="flex items-center gap-2 sm:gap-3">
+            {/* <div className="flex items-center gap-2 sm:gap-3">
               <Badge
                 className={`${getStatusColor(
                   milestone.status
-                )} flex items-center gap-1 text-xs`}
+                )} flex items-center gap-1`}
               >
                 <StatusIcon className="h-3 w-3" />
                 {(milestone.status || "unknown")
                   .replace("_", " ")
                   .toUpperCase()}
               </Badge>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 sm:h-8 text-xs sm:text-sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onNavigate();
-                }}
-              >
-                <ArrowRight className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1" />
-                Open
-              </Button>
-            </div>
+            </div> */}
           </div>
 
           {/* Status Actions */}
@@ -697,7 +695,7 @@ function MilestoneCard({
                   e.stopPropagation();
                   onStatusChange(milestone.id, action.status);
                 }}
-                className="flex items-center gap-1 text-xs sm:text-sm h-7 sm:h-8"
+                className="flex items-center gap-1 h-7 sm:h-8"
               >
                 <action.icon className="h-3 w-3" />
                 {action.label}

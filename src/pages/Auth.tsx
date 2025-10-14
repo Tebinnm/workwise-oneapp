@@ -113,8 +113,8 @@ export default function Auth() {
         <div className="w-full max-w-md space-y-6 md:space-y-8">
           <div className="space-y-2">
             <Logo />
-            <h1 className="text-2xl sm:text-3xl font-bold">Welcome back!</h1>
-            <p className="text-sm md:text-base text-muted-foreground">
+            <h1 className="text-xlarge font-bold">Welcome back!</h1>
+            <p className="text-medium text-muted-foreground">
               Please enter {isLogin ? "log in" : "sign up"} details below
             </p>
           </div>
@@ -178,7 +178,7 @@ export default function Auth() {
               {isLogin ? "Log in" : "Sign up"}
             </Button>
 
-            <div className="text-center text-xs sm:text-sm">
+            <div className="text-center text-small">
               {isLogin
                 ? "Don't have an account? "
                 : "Already have an account? "}
@@ -208,10 +208,10 @@ export default function Auth() {
             </div>
           </div>
           <div className="space-y-2">
-            <h2 className="text-xl xl:text-2xl font-bold text-sidebar-foreground">
+            <h2 className="text-xlarge font-bold text-sidebar-foreground">
               Stay organized. Stay productive!
             </h2>
-            <p className="text-sm xl:text-base text-sidebar-foreground/70">
+            <p className="text-medium text-sidebar-foreground/70">
               Simplify task management, boost efficiency, and keep your workflow
               seamless.
             </p>

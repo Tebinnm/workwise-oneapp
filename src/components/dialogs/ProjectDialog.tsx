@@ -57,6 +57,8 @@ interface ProjectDialogProps {
   onProjectUpdated?: () => void;
   onProjectDeleted?: () => void;
   trigger?: React.ReactNode;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 const PROJECT_COLORS = [
@@ -90,8 +92,12 @@ export function ProjectDialog({
   onProjectUpdated,
   onProjectDeleted,
   trigger,
+  open: controlledOpen,
+  onOpenChange: controlledOnOpenChange,
 }: ProjectDialogProps) {
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
+  const setOpen = controlledOnOpenChange || setInternalOpen;
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
@@ -343,14 +349,7 @@ export function ProjectDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {trigger || (
-          <Button variant="outline" size="sm">
-            <Plus className="h-4 w-4 mr-2" />
-            Manage projects
-          </Button>
-        )}
-      </DialogTrigger>
+      {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
       <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Projects</DialogTitle>

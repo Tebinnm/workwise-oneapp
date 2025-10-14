@@ -54,6 +54,67 @@ All colors MUST be HSL.
     --sidebar-border: 217 33% 17%;
     --sidebar-ring: 25 95% 53%;
 
+    /* Status colors for light mode */
+    --status-active: 142 71% 35%;
+    --status-active-foreground: 0 0% 100%;
+    --status-completed: 220 85% 50%;
+    --status-completed-foreground: 0 0% 100%;
+    --status-on-hold: 45 100% 48%;
+    --status-on-hold-foreground: 0 0% 0%;
+    --status-cancelled: 0 72% 51%;
+    --status-cancelled-foreground: 0 0% 100%;
+    --status-default: 220 13% 46%;
+    --status-default-foreground: 0 0% 100%;
+
+    /* Task status colors for light mode */
+    --task-todo: 220 13% 60%;
+    --task-in-progress: 220 85% 50%;
+    --task-blocked: 0 72% 51%;
+    --task-done: 142 71% 35%;
+    --task-cancelled: 220 13% 75%;
+
+    /* Expense category colors for light mode */
+    --expense-materials: 220 85% 50%;
+    --expense-materials-foreground: 0 0% 100%;
+    --expense-equipment: 280 70% 50%;
+    --expense-equipment-foreground: 0 0% 100%;
+    --expense-labor: 142 71% 35%;
+    --expense-labor-foreground: 0 0% 100%;
+    --expense-transportation: 45 100% 48%;
+    --expense-transportation-foreground: 0 0% 0%;
+    --expense-permits: 0 72% 51%;
+    --expense-permits-foreground: 0 0% 100%;
+    --expense-utilities: 190 80% 45%;
+    --expense-utilities-foreground: 0 0% 100%;
+    --expense-other: 220 13% 46%;
+    --expense-other-foreground: 0 0% 100%;
+
+    /* Invoice status colors for light mode */
+    --invoice-draft: 220 13% 46%;
+    --invoice-draft-foreground: 0 0% 100%;
+    --invoice-pending: 45 100% 48%;
+    --invoice-pending-foreground: 0 0% 0%;
+    --invoice-paid: 142 71% 35%;
+    --invoice-paid-foreground: 0 0% 100%;
+    --invoice-partially-paid: 220 85% 50%;
+    --invoice-partially-paid-foreground: 0 0% 100%;
+    --invoice-overdue: 0 72% 51%;
+    --invoice-overdue-foreground: 0 0% 100%;
+    --invoice-cancelled: 220 13% 60%;
+    --invoice-cancelled-foreground: 0 0% 100%;
+    --invoice-default: 220 13% 46%;
+    --invoice-default-foreground: 0 0% 100%;
+
+    /* User role colors for light mode */
+    --role-admin: 280 70% 50%;
+    --role-admin-foreground: 0 0% 100%;
+    --role-supervisor: 220 85% 50%;
+    --role-supervisor-foreground: 0 0% 100%;
+    --role-worker: 220 13% 46%;
+    --role-worker-foreground: 0 0% 100%;
+    --role-client: 142 71% 35%;
+    --role-client-foreground: 0 0% 100%;
+
     --gradient-primary: linear-gradient(
       135deg,
       hsl(25 95% 53%),
@@ -110,6 +171,67 @@ All colors MUST be HSL.
     --sidebar-accent-foreground: 210 40% 98%;
     --sidebar-border: 217 33% 17%;
     --sidebar-ring: 25 95% 53%;
+
+    /* Status colors for dark mode */
+    --status-active: 142 70% 45%;
+    --status-active-foreground: 0 0% 100%;
+    --status-completed: 220 70% 50%;
+    --status-completed-foreground: 0 0% 100%;
+    --status-on-hold: 45 90% 60%;
+    --status-on-hold-foreground: 0 0% 0%;
+    --status-cancelled: 0 63% 51%;
+    --status-cancelled-foreground: 0 0% 100%;
+    --status-default: 215 20% 35%;
+    --status-default-foreground: 210 40% 98%;
+
+    /* Task status colors for dark mode */
+    --task-todo: 215 20% 50%;
+    --task-in-progress: 220 70% 50%;
+    --task-blocked: 0 63% 51%;
+    --task-done: 142 70% 45%;
+    --task-cancelled: 215 20% 40%;
+
+    /* Expense category colors for dark mode */
+    --expense-materials: 220 70% 50%;
+    --expense-materials-foreground: 0 0% 100%;
+    --expense-equipment: 280 65% 55%;
+    --expense-equipment-foreground: 0 0% 100%;
+    --expense-labor: 142 70% 45%;
+    --expense-labor-foreground: 0 0% 100%;
+    --expense-transportation: 45 90% 60%;
+    --expense-transportation-foreground: 0 0% 0%;
+    --expense-permits: 0 63% 51%;
+    --expense-permits-foreground: 0 0% 100%;
+    --expense-utilities: 190 75% 50%;
+    --expense-utilities-foreground: 0 0% 100%;
+    --expense-other: 215 20% 35%;
+    --expense-other-foreground: 210 40% 98%;
+
+    /* Invoice status colors for dark mode */
+    --invoice-draft: 215 20% 35%;
+    --invoice-draft-foreground: 210 40% 98%;
+    --invoice-pending: 45 90% 60%;
+    --invoice-pending-foreground: 0 0% 0%;
+    --invoice-paid: 142 70% 45%;
+    --invoice-paid-foreground: 0 0% 100%;
+    --invoice-partially-paid: 220 70% 50%;
+    --invoice-partially-paid-foreground: 0 0% 100%;
+    --invoice-overdue: 0 63% 51%;
+    --invoice-overdue-foreground: 0 0% 100%;
+    --invoice-cancelled: 215 20% 50%;
+    --invoice-cancelled-foreground: 210 40% 98%;
+    --invoice-default: 215 20% 35%;
+    --invoice-default-foreground: 210 40% 98%;
+
+    /* User role colors for dark mode */
+    --role-admin: 280 65% 55%;
+    --role-admin-foreground: 0 0% 100%;
+    --role-supervisor: 220 70% 50%;
+    --role-supervisor-foreground: 0 0% 100%;
+    --role-worker: 215 20% 35%;
+    --role-worker-foreground: 210 40% 98%;
+    --role-client: 142 70% 45%;
+    --role-client-foreground: 0 0% 100%;
 
     --gradient-primary: linear-gradient(
       135deg,

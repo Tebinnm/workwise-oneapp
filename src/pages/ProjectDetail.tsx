@@ -233,15 +233,15 @@ export default function ProjectDetail() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "active":
-        return "bg-green-100 text-green-800";
+        return "bg-status-active text-status-active-foreground";
       case "completed":
-        return "bg-blue-100 text-blue-800";
+        return "bg-status-completed text-status-completed-foreground";
       case "on_hold":
-        return "bg-yellow-100 text-yellow-800";
+        return "bg-status-on-hold text-status-on-hold-foreground";
       case "cancelled":
-        return "bg-red-100 text-red-800";
+        return "bg-status-cancelled text-status-cancelled-foreground";
       default:
-        return "bg-gray-100 text-gray-800";
+        return "bg-status-default text-status-default-foreground";
     }
   };
 
@@ -335,8 +335,8 @@ export default function ProjectDetail() {
             <Card>
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-blue-100 rounded-lg">
-                    <Calendar className="h-5 w-5 text-blue-600" />
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <Calendar className="h-5 w-5 text-primary" />
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Duration</p>
@@ -377,8 +377,8 @@ export default function ProjectDetail() {
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-green-100 rounded-lg">
-                  <TrendingUp className="h-5 w-5 text-green-600" />
+                <div className="p-2 bg-success/10 rounded-lg">
+                  <TrendingUp className="h-5 w-5 text-success" />
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Received</p>
@@ -421,7 +421,7 @@ export default function ProjectDetail() {
                 <p className="text-lg text-muted-foreground mb-1">
                   Spent (Wages)
                 </p>
-                <p className="text-lg font-bold text-orange-600">
+                <p className="text-lg font-bold text-primary">
                   {formatCurrency(
                     totalSpentFromBudgets || financials.total_spent || 0,
                     projectCurrency
@@ -433,7 +433,7 @@ export default function ProjectDetail() {
               </div>
               <div>
                 <p className="text-lg text-muted-foreground mb-1">Expenses</p>
-                <p className="text-lg font-bold text-red-600">
+                <p className="text-lg font-bold text-destructive">
                   {formatCurrency(
                     totalExpensesAmount || financials.total_expenses || 0,
                     projectCurrency
@@ -442,7 +442,7 @@ export default function ProjectDetail() {
               </div>
               <div>
                 <p className="text-lg text-muted-foreground mb-1">Invoiced</p>
-                <p className="text-lg font-bold text-blue-600">
+                <p className="text-lg font-bold text-accent">
                   {formatCurrency(
                     financials.total_invoiced || 0,
                     projectCurrency
@@ -534,10 +534,10 @@ export default function ProjectDetail() {
                 <CardTitle className="text-lg">Milestones</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold mb-2">
+                <div className="text-xl font-bold mb-2">
                   {summary?.milestones_count || 0}
                 </div>
-                <p className="text-lg text-muted-foreground">
+                <p className="text-sm text-muted-foreground">
                   {summary?.completed_milestones || 0} completed
                 </p>
               </CardContent>
@@ -548,13 +548,13 @@ export default function ProjectDetail() {
                 <CardTitle className="text-lg">Outstanding</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold mb-2">
+                <div className="text-xl font-bold mb-2">
                   {formatCurrency(
                     summary?.outstanding_amount || 0,
                     projectCurrency
                   )}
                 </div>
-                <p className="text-lg text-muted-foreground">Amount pending</p>
+                <p className="text-sm text-muted-foreground">Amount pending</p>
               </CardContent>
             </Card>
 
@@ -563,14 +563,14 @@ export default function ProjectDetail() {
                 <CardTitle className="text-lg">Total Spent</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold mb-2">
+                <div className="text-xl font-bold mb-2">
                   {formatCurrency(
                     (summary?.total_spent || 0) +
                       (totalExpensesAmount || summary?.total_expenses || 0),
                     projectCurrency
                   )}
                 </div>
-                <p className="text-lg text-muted-foreground">
+                <p className="text-sm text-muted-foreground">
                   Wages + Expenses
                 </p>
               </CardContent>
@@ -580,7 +580,7 @@ export default function ProjectDetail() {
           {/* Project Members Section */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-xl">
                 <Users className="h-5 w-5" />
                 Team Members Engaged
               </CardTitle>
@@ -613,13 +613,13 @@ export default function ProjectDetail() {
                             </p>
                           )}
                           <div className="space-y-1">
-                            <p className="text-lg font-medium text-muted-foreground">
+                            <p className="text-sm font-medium text-muted-foreground">
                               Assigned to:
                             </p>
                             {member.milestones.map((milestone: any) => (
                               <div
                                 key={milestone.id}
-                                className="flex items-center justify-between text-lg"
+                                className="flex items-center justify-between text-sm"
                               >
                                 <span className="text-muted-foreground truncate">
                                   {milestone.name}

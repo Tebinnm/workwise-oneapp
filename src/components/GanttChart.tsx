@@ -53,11 +53,11 @@ interface GanttChartProps {
 type ZoomLevel = "month" | "week" | "day";
 
 const statusColors = {
-  todo: "bg-gray-400",
-  in_progress: "bg-blue-500",
-  blocked: "bg-red-500",
-  done: "bg-green-500",
-  cancelled: "bg-gray-300",
+  todo: "bg-task-todo",
+  in_progress: "bg-task-in-progress",
+  blocked: "bg-task-blocked",
+  done: "bg-task-done",
+  cancelled: "bg-task-cancelled",
 };
 
 export function GanttChart({

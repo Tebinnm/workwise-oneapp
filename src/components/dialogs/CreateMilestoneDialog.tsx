@@ -41,15 +41,21 @@ interface Project {
 }
 
 interface CreateMilestoneDialogProps {
-  children: React.ReactNode;
+  children?: React.ReactNode;
   onSuccess?: () => void;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 export function CreateMilestoneDialog({
   children,
   onSuccess,
+  open: controlledOpen,
+  onOpenChange: controlledOnOpenChange,
 }: CreateMilestoneDialogProps) {
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
+  const setOpen = controlledOnOpenChange || setInternalOpen;
   const [loading, setLoading] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");

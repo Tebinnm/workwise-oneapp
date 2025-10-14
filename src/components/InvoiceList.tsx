@@ -61,19 +61,19 @@ export function InvoiceList({
   const getStatusColor = (status: string) => {
     switch (status) {
       case "draft":
-        return "bg-gray-100 text-gray-800";
+        return "bg-invoice-draft text-invoice-draft-foreground";
       case "pending":
-        return "bg-yellow-100 text-yellow-800";
+        return "bg-invoice-pending text-invoice-pending-foreground";
       case "paid":
-        return "bg-green-100 text-green-800";
+        return "bg-invoice-paid text-invoice-paid-foreground";
       case "partial":
-        return "bg-blue-100 text-blue-800";
+        return "bg-invoice-partially-paid text-invoice-partially-paid-foreground";
       case "overdue":
-        return "bg-red-100 text-red-800";
+        return "bg-invoice-overdue text-invoice-overdue-foreground";
       case "cancelled":
-        return "bg-gray-100 text-gray-600";
+        return "bg-invoice-cancelled text-invoice-cancelled-foreground";
       default:
-        return "bg-gray-100 text-gray-800";
+        return "bg-invoice-default text-invoice-default-foreground";
     }
   };
 
@@ -204,8 +204,8 @@ export function InvoiceList({
                     <span
                       className={
                         invoice.balance_due > 0
-                          ? "text-red-600 font-medium"
-                          : "text-green-600 font-medium"
+                          ? "text-destructive font-medium"
+                          : "text-success font-medium"
                       }
                     >
                       {formatCurrency(invoice.balance_due, currency)}
@@ -248,7 +248,7 @@ export function InvoiceList({
                                 e.stopPropagation();
                                 setDeleteInvoiceId(invoice.id);
                               }}
-                              className="text-red-600"
+                              className="text-destructive"
                             >
                               <Trash2 className="h-4 w-4 mr-2" />
                               Delete
@@ -299,7 +299,7 @@ export function InvoiceList({
               onClick={() =>
                 deleteInvoiceId && handleDeleteInvoice(deleteInvoiceId)
               }
-              className="bg-red-600 hover:bg-red-700"
+              className="bg-destructive hover:bg-destructive/90"
             >
               Delete
             </AlertDialogAction>

@@ -201,8 +201,8 @@ export function CreateMilestoneDialog({
             Add a new milestone to start managing tasks and team members.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
+        <form onSubmit={handleSubmit} className="space-y-2">
+          <div className="space-y-0">
             <Label htmlFor="name">Milestone Name *</Label>
             <Input
               id="name"
@@ -264,7 +264,7 @@ export function CreateMilestoneDialog({
             </Select>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-2">
             <div className="space-y-2">
               <Label>Start Date</Label>
               <Popover>
@@ -330,7 +330,7 @@ export function CreateMilestoneDialog({
             />
           </div>
 
-          <div className="flex justify-end gap-3">
+          <div className="flex justify-end gap-2">
             <Button
               type="button"
               variant="outline"

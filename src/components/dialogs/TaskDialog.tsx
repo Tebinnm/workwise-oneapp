@@ -1019,7 +1019,7 @@ export function TaskDialog({
                         htmlFor="title"
                         className="flex items-center gap-1"
                       >
-                        Task Title <span className="text-red-500">*</span>
+                        Task Title <span className="text-destructive">*</span>
                       </Label>
                       <Input
                         id="title"
@@ -1257,10 +1257,10 @@ export function TaskDialog({
                       {taskType === "attendance"
                         ? "Team Assignment & Attendance"
                         : "Team Assignment"}{" "}
-                      <span className="text-red-500 text-base">*</span>
+                      <span className="text-destructive text-base">*</span>
                     </CardTitle>
-                    <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                      <p className="text-sm text-blue-800">
+                    <div className="p-3 bg-accent/10 border border-accent/30 rounded-lg">
+                      <p className="text-lg text-foreground">
                         <strong>Note:</strong>{" "}
                         {taskType === "attendance"
                           ? "Configure attendance settings for each team member. Budget will be calculated based on attendance type (full day, half day, or hours)."
@@ -1430,20 +1430,20 @@ export function TaskDialog({
                                   {/* Budget Calculation Display */}
                                   {assignment.calculatedBudget !==
                                     undefined && (
-                                    <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                                    <div className="p-3 bg-success/10 border border-success/30 rounded-lg">
                                       <div className="flex flex-col gap-1">
                                         <div className="flex items-center justify-between">
-                                          <span className="text-sm font-medium text-green-800">
+                                          <span className="text-sm font-medium text-foreground">
                                             Calculated Budget:
                                           </span>
-                                          <span className="text-sm font-bold text-green-900">
+                                          <span className="text-sm font-bold text-success">
                                             {formatCurrency(
                                               assignment.calculatedBudget,
                                               projectCurrency
                                             )}
                                           </span>
                                         </div>
-                                        <p className="text-xs text-green-700">
+                                        <p className="text-xs text-muted-foreground">
                                           Based on{" "}
                                           {assignment.attendanceType ===
                                           "full_day"
@@ -1616,17 +1616,17 @@ export function TaskDialog({
 
                         {/* Timer Controls for Workers */}
                         {isWorkerWithAssignedTask && (
-                          <div className="p-6 bg-gradient-to-br from-blue-500 via-indigo-600 to-purple-600 rounded-lg shadow-xl">
+                          <div className="p-6 bg-gradient-to-br from-primary via-accent to-primary-glow rounded-lg shadow-xl">
                             <div className="space-y-4">
                               <div className="flex items-center gap-3">
                                 <div
                                   className={cn(
                                     "h-4 w-4 rounded-full",
                                     timerRunning
-                                      ? "bg-green-400 animate-pulse shadow-lg shadow-green-400/50"
+                                      ? "bg-success animate-pulse shadow-lg shadow-success/50"
                                       : timerStartTime
-                                      ? "bg-yellow-400 shadow-lg shadow-yellow-400/50"
-                                      : "bg-gray-400 shadow-lg shadow-gray-400/50"
+                                      ? "bg-status-on-hold shadow-lg shadow-status-on-hold/50"
+                                      : "bg-muted shadow-lg shadow-muted/50"
                                   )}
                                 ></div>
                                 <div>
@@ -1714,7 +1714,8 @@ export function TaskDialog({
                       <div className="space-y-4">
                         <div className="space-y-2">
                           <Label className="flex items-center gap-1">
-                            Start Date <span className="text-red-500">*</span>
+                            Start Date{" "}
+                            <span className="text-destructive">*</span>
                           </Label>
                           <Popover>
                             <PopoverTrigger asChild>

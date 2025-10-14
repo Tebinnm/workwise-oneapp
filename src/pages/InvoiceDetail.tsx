@@ -55,19 +55,19 @@ export default function InvoiceDetail() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "draft":
-        return "bg-gray-100 text-gray-800";
+        return "bg-invoice-draft text-invoice-draft-foreground";
       case "pending":
-        return "bg-yellow-100 text-yellow-800";
+        return "bg-invoice-pending text-invoice-pending-foreground";
       case "paid":
-        return "bg-green-100 text-green-800";
+        return "bg-invoice-paid text-invoice-paid-foreground";
       case "partial":
-        return "bg-blue-100 text-blue-800";
+        return "bg-invoice-partially-paid text-invoice-partially-paid-foreground";
       case "overdue":
-        return "bg-red-100 text-red-800";
+        return "bg-invoice-overdue text-invoice-overdue-foreground";
       case "cancelled":
-        return "bg-gray-100 text-gray-600";
+        return "bg-invoice-cancelled text-invoice-cancelled-foreground";
       default:
-        return "bg-gray-100 text-gray-800";
+        return "bg-invoice-default text-invoice-default-foreground";
     }
   };
 
@@ -290,7 +290,7 @@ export default function InvoiceDetail() {
                 <span>{formatCurrency(invoice.total, projectCurrency)}</span>
               </div>
               {invoice.amount_paid && invoice.amount_paid > 0 && (
-                <div className="flex justify-between text-green-600 print:text-green-800">
+                <div className="flex justify-between text-success font-semibold">
                   <span>Amount Paid:</span>
                   <span>
                     {formatCurrency(invoice.amount_paid, projectCurrency)}
@@ -298,7 +298,7 @@ export default function InvoiceDetail() {
                 </div>
               )}
               {invoice.balance_due > 0 && (
-                <div className="flex justify-between text-red-600 print:text-red-800 font-semibold">
+                <div className="flex justify-between text-destructive font-semibold">
                   <span>Balance Due:</span>
                   <span>
                     {formatCurrency(invoice.balance_due, projectCurrency)}
