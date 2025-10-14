@@ -47,6 +47,10 @@ interface Project {
   milestones?: Array<{
     id: string;
     status: string;
+    tasks?: Array<{
+      id: string;
+      status: string;
+    }>;
   }>;
 }
 
@@ -93,7 +97,11 @@ export default function Projects() {
           *,
           milestones (
             id,
-            status
+            status,
+            tasks (
+              id,
+              status
+            )
           )
         `
         )
@@ -130,12 +138,23 @@ export default function Projects() {
 
   const getMilestoneStats = (project: Project) => {
     const milestones = project.milestones || [];
-    const total = milestones.length;
-    const completed = milestones.filter((m) => m.status === "completed").length;
+
+    // Calculate progress based on tasks completion
+    let totalTasks = 0;
+    let completedTasks = 0;
+
+    milestones.forEach((milestone) => {
+      const tasks = milestone.tasks || [];
+      totalTasks += tasks.length;
+      completedTasks += tasks.filter(
+        (task) => task.status === "done" || task.status === "completed"
+      ).length;
+    });
+
     return {
-      total,
-      completed,
-      percentage: total > 0 ? (completed / total) * 100 : 0,
+      total: totalTasks,
+      completed: completedTasks,
+      percentage: totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0,
     };
   };
 
@@ -300,7 +319,7 @@ export default function Projects() {
                     <div className="flex items-center justify-between text-small">
                       <span className="text-muted-foreground">Progress</span>
                       <span className="font-medium">
-                        {stats.completed}/{stats.total} Milestones
+                        {stats.completed}/{stats.total} Tasks
                       </span>
                     </div>
                     <div className="w-full bg-muted rounded-full h-2">

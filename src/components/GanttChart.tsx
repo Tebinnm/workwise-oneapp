@@ -23,9 +23,11 @@ import {
   ZoomOut,
   Calendar as CalendarIcon,
   GripVertical,
+  Download,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { GanttExportService } from "@/services/ganttExportService";
 
 interface Task {
   id: string;
@@ -48,6 +50,8 @@ interface GanttChartProps {
     taskId: string,
     updates: { start_datetime?: string; end_datetime?: string }
   ) => Promise<void>;
+  projectName?: string;
+  currency?: string;
 }
 
 type ZoomLevel = "month" | "week" | "day";
@@ -64,6 +68,8 @@ export function GanttChart({
   tasks,
   onTaskClick,
   onTaskUpdate,
+  projectName = "Project",
+  currency = "USD",
 }: GanttChartProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [zoomLevel, setZoomLevel] = useState<ZoomLevel>("week");
@@ -562,6 +568,16 @@ export function GanttChart({
     setCurrentDate(new Date());
   };
 
+  const handleExportToExcel = () => {
+    try {
+      GanttExportService.exportToExcel(tasks, projectName, currency);
+      toast.success("Gantt chart exported successfully");
+    } catch (error: any) {
+      console.error("Error exporting Gantt chart:", error);
+      toast.error(error.message || "Failed to export Gantt chart");
+    }
+  };
+
   return (
     <div className="space-y-4">
       {/* Controls */}
@@ -597,6 +613,17 @@ export function GanttChart({
             </span>
             <div className="h-4 w-px bg-border hidden sm:block" />
             <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleExportToExcel}
+                disabled={validTasks.length === 0}
+                title="Export to Excel"
+              >
+                <Download className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Export</span>
+              </Button>
+              <div className="h-4 w-px bg-border hidden sm:block" />
               <Button
                 variant="outline"
                 size="sm"

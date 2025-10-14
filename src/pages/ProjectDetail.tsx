@@ -44,7 +44,8 @@ import { formatCurrency } from "@/lib/utils";
 export default function ProjectDetail() {
   const { projectId } = useParams<{ projectId: string }>();
   const navigate = useNavigate();
-  const { canCreateMilestones, canCreateProjects } = usePermissions();
+  const { canCreateMilestones, canCreateProjects, canEditMilestones } =
+    usePermissions();
   const [project, setProject] = useState<ProjectWithDetails | null>(null);
   const [summary, setSummary] = useState<any>(null);
   const [financials, setFinancials] = useState<any>(null);
@@ -695,17 +696,19 @@ export default function ProjectDetail() {
                             {milestone.status || "pending"}
                           </Badge>
                         </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 flex-shrink-0"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleEditMilestone(milestone);
-                          }}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
+                        {canEditMilestones() && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 flex-shrink-0"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEditMilestone(milestone);
+                            }}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                        )}
                       </div>
 
                       {/* Budget Information */}
