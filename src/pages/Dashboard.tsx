@@ -45,6 +45,7 @@ import {
   isFuture,
 } from "date-fns";
 import { EditMilestoneDialog } from "@/components/dialogs/EditMilestoneDialog";
+import { usePermissions } from "@/hooks/usePermissions";
 
 interface Task {
   id: string;
@@ -70,7 +71,9 @@ interface Milestone {
   description: string | null;
   start_date: string | null;
   end_date: string | null;
+  budget: number | null;
   status: string | null;
+  project_id: string;
   created_at: string;
   projects: {
     name: string;
@@ -89,6 +92,7 @@ interface Milestone {
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const { canEditMilestones } = usePermissions();
   const [profile, setProfile] = useState<any>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [activeTask, setActiveTask] = useState<Task | null>(null);
@@ -379,7 +383,7 @@ export default function Dashboard() {
 
   const handleMilestoneUpdate = () => {
     // Refresh milestones after update
-    fetchMilestones();
+    fetchDashboardData();
   };
 
   return (
@@ -468,6 +472,7 @@ export default function Dashboard() {
                   getMilestoneId={getMilestoneId}
                   onNavigate={() => navigate(`/milestones/${milestone.id}`)}
                   onEdit={handleEditMilestone}
+                  canEdit={canEditMilestones()}
                 />
               ))}
               {filteredMilestones.length === 0 && (
@@ -499,12 +504,14 @@ function MilestoneCard({
   getMilestoneId,
   onNavigate,
   onEdit,
+  canEdit,
 }: {
   milestone: Milestone;
   onStatusChange: (milestoneId: string, status: string) => void;
   getMilestoneId: (milestone: Milestone) => string;
   onNavigate: () => void;
   onEdit: (milestone: Milestone) => void;
+  canEdit: boolean;
 }) {
   const getStatusActions = (currentStatus: string) => {
     switch (currentStatus) {
@@ -591,17 +598,19 @@ function MilestoneCard({
               >
                 <Bookmark className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7 sm:h-8 sm:w-8"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onEdit(milestone);
-                }}
-              >
-                <Edit className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-              </Button>
+              {canEdit && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 sm:h-8 sm:w-8"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEdit(milestone);
+                  }}
+                >
+                  <Edit className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                </Button>
+              )}
             </div>
           </div>
 

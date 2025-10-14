@@ -136,6 +136,11 @@ export function usePermissions() {
     return isAdmin() || isSupervisor();
   };
 
+  // Can edit milestones
+  const canEditMilestones = (): boolean => {
+    return isAdmin() || isSupervisor();
+  };
+
   // Can create projects (admin only)
   const canCreateProjects = (): boolean => {
     return isAdmin();
@@ -164,6 +169,7 @@ export function usePermissions() {
     canManageProjects,
     canCreateProjects,
     canCreateMilestones,
+    canEditMilestones,
     canCreateTasks,
     canManageTasks,
     canDeleteTasks,
