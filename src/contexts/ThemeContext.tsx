@@ -51,8 +51,8 @@ export const backgroundOptions: BackgroundOption[] = [
   {
     id: "oneapp1",
     label: "OneApp 1",
-    url: "/bg-oneapp1.png",
-    thumbnail: "/bg-oneapp1.png",
+    url: "/bg-oneapp1.jpg",
+    thumbnail: "/bg-oneapp1.jpg",
   },
   {
     id: "oneapp2",

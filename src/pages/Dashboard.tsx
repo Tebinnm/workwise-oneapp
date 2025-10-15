@@ -32,6 +32,8 @@ import {
   ArrowRight,
   ChevronRight,
   MapPin,
+  Users,
+  FolderOpen,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -47,6 +49,11 @@ import {
 } from "date-fns";
 import { EditMilestoneDialog } from "@/components/dialogs/EditMilestoneDialog";
 import { usePermissions } from "@/hooks/usePermissions";
+import {
+  FinancialService,
+  ProjectFinancialDetails,
+} from "@/services/financialService";
+import ProfitLossPieChart from "@/components/ProfitLossPieChart";
 
 interface Task {
   id: string;
@@ -126,9 +133,18 @@ export default function Dashboard() {
   });
   const [allMilestones, setAllMilestones] = useState<Milestone[]>([]);
   const [filteredMilestones, setFilteredMilestones] = useState<Milestone[]>([]);
+  const [activeUsersCount, setActiveUsersCount] = useState(0);
+  const [activeProjectsCount, setActiveProjectsCount] = useState(0);
+
+  // Financial data state
+  const [projectFinancials, setProjectFinancials] = useState<
+    ProjectFinancialDetails[]
+  >([]);
+  const [financialLoading, setFinancialLoading] = useState(false);
 
   useEffect(() => {
     fetchDashboardData();
+    fetchFinancialData();
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
@@ -136,6 +152,13 @@ export default function Dashboard() {
   useEffect(() => {
     filterMilestonesByDate();
   }, [allMilestones, dateFilter, customDateRange]);
+
+  // Refresh financial data when date filter changes
+  useEffect(() => {
+    if (projectFinancials.length > 0) {
+      // Financial data is already loaded, just re-filter
+    }
+  }, [dateFilter, projectFinancials]);
 
   const filterMilestonesByDate = () => {
     console.log(
@@ -272,6 +295,40 @@ export default function Dashboard() {
       setCheckedIn(true);
       setCheckInTime(new Date(attendance[0].clock_in));
     }
+
+    // Fetch active users count
+    try {
+      const { data: usersData, error: usersError } = await (supabase as any)
+        .from("profiles")
+        .select("id")
+        .eq("status", "active");
+
+      if (usersError) {
+        console.error("Error fetching active users count:", usersError);
+      } else {
+        setActiveUsersCount(usersData?.length || 0);
+      }
+    } catch (error) {
+      console.error("Error fetching active users:", error);
+    }
+
+    // Fetch active projects count
+    try {
+      const { data: projectsData, error: projectsError } = await (
+        supabase as any
+      )
+        .from("projects")
+        .select("id")
+        .eq("status", "active");
+
+      if (projectsError) {
+        console.error("Error fetching active projects count:", projectsError);
+      } else {
+        setActiveProjectsCount(projectsData?.length || 0);
+      }
+    } catch (error) {
+      console.error("Error fetching active projects:", error);
+    }
   };
 
   const handleCheckInOut = async () => {
@@ -388,24 +445,167 @@ export default function Dashboard() {
     fetchDashboardData();
   };
 
+  const fetchFinancialData = async () => {
+    setFinancialLoading(true);
+    try {
+      const financials = await FinancialService.getAllProjectFinancials();
+      setProjectFinancials(financials);
+    } catch (error) {
+      console.error("Error fetching financial data:", error);
+      toast.error("Failed to load financial data");
+    } finally {
+      setFinancialLoading(false);
+    }
+  };
+
+  const getFilteredFinancialData = () => {
+    if (!projectFinancials.length) return [];
+
+    // Filter projects based on date filter
+    let filteredProjects = [...projectFinancials];
+
+    const now = new Date();
+
+    switch (dateFilter) {
+      case "today":
+        // Show projects with milestones due today
+        filteredProjects = projectFinancials.filter((project) => {
+          const projectMilestones = allMilestones.filter(
+            (m) => m.project_id === project.project_id
+          );
+          return projectMilestones.some(
+            (milestone) =>
+              milestone.end_date && isToday(new Date(milestone.end_date))
+          );
+        });
+        break;
+      case "overdue":
+        // Show projects with overdue milestones
+        filteredProjects = projectFinancials.filter((project) => {
+          const projectMilestones = allMilestones.filter(
+            (m) => m.project_id === project.project_id
+          );
+          return projectMilestones.some(
+            (milestone) =>
+              milestone.status !== "completed" &&
+              milestone.end_date &&
+              new Date(milestone.end_date) < now
+          );
+        });
+        break;
+      case "upcoming":
+        // Show projects with upcoming milestones
+        filteredProjects = projectFinancials.filter((project) => {
+          const projectMilestones = allMilestones.filter(
+            (m) => m.project_id === project.project_id
+          );
+          return projectMilestones.some(
+            (milestone) =>
+              milestone.status !== "completed" &&
+              milestone.end_date &&
+              isFuture(new Date(milestone.end_date))
+          );
+        });
+        break;
+      case "all":
+      default:
+        filteredProjects = projectFinancials;
+        break;
+    }
+
+    // Calculate profit and loss totals
+    const totalProfit = filteredProjects.reduce((sum, project) => {
+      return project.profit_loss > 0 ? sum + project.profit_loss : sum;
+    }, 0);
+
+    const totalLoss = Math.abs(
+      filteredProjects.reduce((sum, project) => {
+        return project.profit_loss < 0 ? sum + project.profit_loss : sum;
+      }, 0)
+    );
+
+    const pieData = [];
+
+    if (totalProfit > 0) {
+      pieData.push({
+        name: "Profit",
+        value: totalProfit,
+        color: "#10b981", // green-500
+      });
+    }
+
+    if (totalLoss > 0) {
+      pieData.push({
+        name: "Loss",
+        value: totalLoss,
+        color: "#ef4444", // red-500
+      });
+    }
+
+    return pieData;
+  };
+
   return (
     <div className="flex flex-col lg:flex-row lg:justify-between gap-6 h-full">
       <div className="space-y-1 lg:flex-1">
-        <h2 className="text-display font-bold text-foreground">
+        <h2 className="text-xlarge font-bold text-foreground">
           {currentTime.toLocaleTimeString("en-US", {
             hour: "2-digit",
             minute: "2-digit",
             hour12: true,
-          })}
-        </h2>
-        <h2 className="text-xlarge font-bold mt-2 lg:mt-4">
-          {getGreeting()}, {profile?.full_name || "User"}
+          })}{" "}
+          - {getGreeting()}, {profile?.full_name || "User"}
         </h2>
         {checkedIn && checkInTime && (
           <p className="text-muted-foreground text-medium">
             Last checked in on {format(checkInTime, "dd MMM yyyy h:mm:ss a")}
           </p>
         )}
+
+        {/* Active Users and Projects Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
+          <Card className="hover:shadow-elevated transition-all">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-muted-foreground text-lg">Active Users</p>
+                  <p className="text-2xl font-bold text-foreground">
+                    {activeUsersCount}
+                  </p>
+                </div>
+                <div className="h-12 w-12 bg-primary/10 rounded-lg flex items-center justify-center">
+                  <Users className="h-6 w-6 text-primary" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="hover:shadow-elevated transition-all">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-muted-foreground text-lg">
+                    Active Projects
+                  </p>
+                  <p className="text-2xl font-bold text-foreground">
+                    {activeProjectsCount}
+                  </p>
+                </div>
+                <div className="h-12 w-12 bg-primary/10 rounded-lg flex items-center justify-center">
+                  <FolderOpen className="h-6 w-6 text-primary" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Profit/Loss Pie Chart */}
+        <div className="">
+          <ProfitLossPieChart
+            data={getFilteredFinancialData()}
+            isLoading={financialLoading}
+          />
+        </div>
       </div>
       <div className="w-full lg:w-1/3 flex flex-col space-y-4">
         {/* Header Section */}
@@ -478,9 +678,9 @@ export default function Dashboard() {
                 />
               ))}
               {filteredMilestones.length === 0 && (
-                <div className="text-center py-8 text-muted-foreground">
+                <div className="text-center py-8 text-glass-muted">
                   <ListTodo className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-2 opacity-50" />
-                  <p className="text-medium">No milestones found</p>
+                  <p className="text-medium text-glass">No milestones found</p>
                 </div>
               )}
             </div>
@@ -578,8 +778,10 @@ function MilestoneCard({
           {/* Milestone Header */}
           <div className="flex items-start justify-between gap-2">
             <div className="flex-1 min-w-0">
-              <h4 className="text-medium truncate">{milestone.name}</h4>
-              <p className="text-small text-muted-foreground font-mono">
+              <h4 className="text-medium truncate text-glass-strong">
+                {milestone.name}
+              </h4>
+              <p className="text-small text-glass-muted font-mono">
                 {getMilestoneId(milestone)}
               </p>
             </div>
@@ -618,10 +820,10 @@ function MilestoneCard({
 
           {/* Project Name */}
           <div className="flex items-center gap-1">
-            <span className="text-small text-muted-foreground flex-shrink-0">
+            <span className="text-small text-glass-muted flex-shrink-0">
               Project:
             </span>
-            <span className="text-small truncate">
+            <span className="text-small truncate text-glass">
               {milestone.projects?.name || "No project"}
             </span>
           </div>
@@ -630,7 +832,7 @@ function MilestoneCard({
           {milestone.projects?.site_location && (
             <div className="flex items-center gap-1">
               <MapPin className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-              <span className="text-small text-muted-foreground truncate">
+              <span className="text-small text-glass-muted truncate">
                 {milestone.projects.site_location}
               </span>
             </div>
@@ -638,9 +840,7 @@ function MilestoneCard({
 
           {/* Team Members */}
           <div className="m-0">
-            <span className="text-small text-muted-foreground">
-              Team Members:
-            </span>
+            <span className="text-small text-glass-muted">Team Members:</span>
             <div className="flex flex-wrap gap-1.5 sm:gap-2">
               {milestone.project_members &&
               milestone.project_members.length > 0 ? (
@@ -659,7 +859,7 @@ function MilestoneCard({
                             .toUpperCase() || "U"}
                         </AvatarFallback>
                       </Avatar>
-                      <span className="text-medium truncate">
+                      <span className="text-medium truncate text-glass">
                         {member.profiles?.full_name ||
                           member.profiles?.email ||
                           "Unknown"}
@@ -682,7 +882,7 @@ function MilestoneCard({
                   </div>
                 ))
               ) : (
-                <span className="text-small text-muted-foreground">
+                <span className="text-small text-glass-muted">
                   No members assigned
                 </span>
               )}

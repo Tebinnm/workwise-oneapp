@@ -269,7 +269,7 @@ export function AppSidebar() {
         </SidebarHeader>
         <div className="px-2 mb-3">
           <div className="relative">
-            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-glass-muted" />
             <Input
               placeholder="Search"
               value={searchQuery}
@@ -506,7 +506,7 @@ export function AppSidebar() {
                               </TooltipTrigger>
                               <TooltipContent side="right" align="center">
                                 <div className="flex items-center gap-2 text-sm">
-                                  <MapPin className="h-4 w-4 text-muted-foreground" />
+                                  <MapPin className="h-4 w-4 text-glass-muted" />
                                   <div>
                                     {project.site_location && (
                                       <div className="font-medium text-popover-foreground">
@@ -514,7 +514,7 @@ export function AppSidebar() {
                                       </div>
                                     )}
                                     {project.site_address && (
-                                      <div className="text-muted-foreground text-sm">
+                                      <div className="text-glass-muted text-sm">
                                         {project.site_address}
                                       </div>
                                     )}

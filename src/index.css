@@ -12,23 +12,23 @@ All colors MUST be HSL.
 @layer base {
   :root {
     --background: 0 0% 98%;
-    --foreground: 222 47% 11%;
+    --foreground: 0 0% 100%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card-foreground: 0 0% 100%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
+    --popover-foreground: 0 0% 100%;
 
     --primary: 25 95% 53%;
     --primary-foreground: 0 0% 100%;
     --primary-glow: 25 95% 60%;
 
     --secondary: 220 15% 95%;
-    --secondary-foreground: 222 47% 11%;
+    --secondary-foreground: 0 0% 100%;
 
     --muted: 220 15% 95%;
-    --muted-foreground: 220 9% 46%;
+    --muted-foreground: 0 0% 90%;
 
     --accent: 25 95% 53%;
     --accent-foreground: 0 0% 100%;
@@ -63,7 +63,7 @@ All colors MUST be HSL.
     --status-completed: 220 85% 50%;
     --status-completed-foreground: 0 0% 100%;
     --status-on-hold: 45 100% 48%;
-    --status-on-hold-foreground: 0 0% 0%;
+    --status-on-hold-foreground: 0 0% 100%;
     --status-cancelled: 0 72% 51%;
     --status-cancelled-foreground: 0 0% 100%;
     --status-default: 220 13% 46%;
@@ -84,7 +84,7 @@ All colors MUST be HSL.
     --expense-labor: 142 71% 35%;
     --expense-labor-foreground: 0 0% 100%;
     --expense-transportation: 45 100% 48%;
-    --expense-transportation-foreground: 0 0% 0%;
+    --expense-transportation-foreground: 0 0% 100%;
     --expense-permits: 0 72% 51%;
     --expense-permits-foreground: 0 0% 100%;
     --expense-utilities: 190 80% 45%;
@@ -96,7 +96,7 @@ All colors MUST be HSL.
     --invoice-draft: 220 13% 46%;
     --invoice-draft-foreground: 0 0% 100%;
     --invoice-pending: 45 100% 48%;
-    --invoice-pending-foreground: 0 0% 0%;
+    --invoice-pending-foreground: 0 0% 100%;
     --invoice-paid: 142 71% 35%;
     --invoice-paid-foreground: 0 0% 100%;
     --invoice-partially-paid: 220 85% 50%;
@@ -135,29 +135,29 @@ All colors MUST be HSL.
 
   .dark {
     --background: 222 47% 11%;
-    --foreground: 210 40% 98%;
+    --foreground: 0 0% 100%;
 
     --card: 217 33% 17%;
-    --card-foreground: 210 40% 98%;
+    --card-foreground: 0 0% 100%;
 
     --popover: 217 33% 17%;
-    --popover-foreground: 210 40% 98%;
+    --popover-foreground: 0 0% 100%;
 
     --primary: 25 95% 53%;
     --primary-foreground: 0 0% 100%;
     --primary-glow: 25 95% 60%;
 
     --secondary: 217 33% 20%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary-foreground: 0 0% 100%;
 
     --muted: 217 33% 20%;
-    --muted-foreground: 215 20% 65%;
+    --muted-foreground: 0 0% 90%;
 
     --accent: 25 95% 53%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 63% 31%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive-foreground: 0 0% 100%;
 
     --success: 142 70% 45%;
     --success-foreground: 0 0% 100%;
@@ -184,11 +184,11 @@ All colors MUST be HSL.
     --status-completed: 220 70% 50%;
     --status-completed-foreground: 0 0% 100%;
     --status-on-hold: 45 90% 60%;
-    --status-on-hold-foreground: 0 0% 0%;
+    --status-on-hold-foreground: 0 0% 100%;
     --status-cancelled: 0 63% 51%;
     --status-cancelled-foreground: 0 0% 100%;
     --status-default: 215 20% 35%;
-    --status-default-foreground: 210 40% 98%;
+    --status-default-foreground: 0 0% 100%;
 
     /* Task status colors for dark mode */
     --task-todo: 215 20% 50%;
@@ -205,7 +205,7 @@ All colors MUST be HSL.
     --expense-labor: 142 70% 45%;
     --expense-labor-foreground: 0 0% 100%;
     --expense-transportation: 45 90% 60%;
-    --expense-transportation-foreground: 0 0% 0%;
+    --expense-transportation-foreground: 0 0% 100%;
     --expense-permits: 0 63% 51%;
     --expense-permits-foreground: 0 0% 100%;
     --expense-utilities: 190 75% 50%;
@@ -215,9 +215,9 @@ All colors MUST be HSL.
 
     /* Invoice status colors for dark mode */
     --invoice-draft: 215 20% 35%;
-    --invoice-draft-foreground: 210 40% 98%;
+    --invoice-draft-foreground: 0 0% 100%;
     --invoice-pending: 45 90% 60%;
-    --invoice-pending-foreground: 0 0% 0%;
+    --invoice-pending-foreground: 0 0% 100%;
     --invoice-paid: 142 70% 45%;
     --invoice-paid-foreground: 0 0% 100%;
     --invoice-partially-paid: 220 70% 50%;
@@ -225,9 +225,9 @@ All colors MUST be HSL.
     --invoice-overdue: 0 63% 51%;
     --invoice-overdue-foreground: 0 0% 100%;
     --invoice-cancelled: 215 20% 50%;
-    --invoice-cancelled-foreground: 210 40% 98%;
+    --invoice-cancelled-foreground: 0 0% 100%;
     --invoice-default: 215 20% 35%;
-    --invoice-default-foreground: 210 40% 98%;
+    --invoice-default-foreground: 0 0% 100%;
 
     /* User role colors for dark mode */
     --role-admin: 280 65% 55%;
@@ -235,7 +235,7 @@ All colors MUST be HSL.
     --role-supervisor: 220 70% 50%;
     --role-supervisor-foreground: 0 0% 100%;
     --role-worker: 215 20% 35%;
-    --role-worker-foreground: 210 40% 98%;
+    --role-worker-foreground: 0 0% 100%;
     --role-client: 142 70% 45%;
     --role-client-foreground: 0 0% 100%;
 
@@ -334,5 +334,78 @@ All colors MUST be HSL.
 
   .safe-right {
     padding-right: env(safe-area-inset-right);
+  }
+
+  /* Glassmorphism effect utilities */
+  .glassmorphism {
+    background: rgba(255, 255, 255, 0.25);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+    color: white;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  }
+
+  .glassmorphism-light {
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 16px 0 rgba(31, 38, 135, 0.2);
+    color: white;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  }
+
+  .glassmorphism-subtle {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow: 0 2px 8px 0 rgba(31, 38, 135, 0.15);
+    color: white;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  }
+
+  /* Dark mode glassmorphism variants */
+  .dark .glassmorphism {
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+    color: white;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  }
+
+  .dark .glassmorphism-light {
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.3);
+    color: white;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  }
+
+  .dark .glassmorphism-subtle {
+    background: rgba(0, 0, 0, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.2);
+    color: white;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  }
+
+  /* Text utilities for glassmorphism */
+  .text-glass {
+    color: white;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  }
+
+  .text-glass-strong {
+    color: white;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    font-weight: 600;
+  }
+
+  .text-glass-muted {
+    color: rgba(255, 255, 255, 0.8);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
   }
 }

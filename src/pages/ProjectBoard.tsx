@@ -164,10 +164,10 @@ export default function ProjectBoard() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex-1 min-w-0">
-          <h1 className="text-2xl sm:text-3xl font-bold truncate">
+          <h1 className="text-2xl sm:text-3xl font-bold truncate text-glass-strong">
             {project?.name || "Project"}
           </h1>
-          <p className="text-sm md:text-base text-muted-foreground line-clamp-2">
+          <p className="text-lg text-glass-muted line-clamp-2">
             {project?.description}
           </p>
         </div>
@@ -218,7 +218,7 @@ export default function ProjectBoard() {
 
       {/* Budget Summary Card */}
       {budgetSummary && (
-        <Card className="border-primary/20 bg-gradient-to-r from-primary/5 to-primary/10">
+        <Card className="border-primary/20 glassmorphism-subtle">
           <CardContent className="p-4 md:p-6">
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
               <div className="space-y-1">

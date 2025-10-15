@@ -151,7 +151,7 @@ function DroppableColumn({
                   : "border-muted-foreground/30"
               }`}
             >
-              <p className="text-medium text-muted-foreground">
+              <p className="text-lg text-glass-muted">
                 {isDragging && isOverColumn ? "Drop here" : "No tasks"}
               </p>
             </div>
@@ -214,14 +214,14 @@ function SortableTaskCard({
             {...listeners}
             className="flex items-start gap-2 flex-1 min-w-0 cursor-grab active:cursor-grabbing"
           >
-            <div className="mt-1 text-muted-foreground hover:text-foreground transition-colors flex-shrink-0">
+            <div className="mt-1 text-glass-muted hover:text-glass-strong transition-colors flex-shrink-0">
               <GripVertical className="h-4 w-4" />
             </div>
             <div className="space-y-1 flex-1 min-w-0">
               <h4 className="font-medium text-medium line-clamp-2">
                 {task.title}
               </h4>
-              <p className="text-small text-muted-foreground">
+              <p className="text-small text-glass-muted">
                 {task.created_at.substring(0, 10)}
               </p>
             </div>
@@ -251,7 +251,7 @@ function SortableTaskCard({
           </div>
         </div>
         {task.description && (
-          <p className="text-sm text-muted-foreground line-clamp-2">
+          <p className="text-sm text-glass-muted line-clamp-2">
             {task.description}
           </p>
         )}
@@ -280,24 +280,24 @@ function SortableTaskCard({
                 ))}
               </div>
               {task.task_assignments.length > 3 && (
-                <span className="text-small text-muted-foreground">
+                <span className="text-small text-glass-muted">
                   +{task.task_assignments.length - 3}
                 </span>
               )}
             </div>
           )}
         </div>
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <button className="hover:text-foreground transition-colors">
+        <div className="flex items-center gap-2 text-glass-muted">
+          <button className="hover:text-glass-strong transition-colors">
             <Star className="h-3 w-3 md:h-4 md:w-4" />
           </button>
-          <button className="hover:text-foreground transition-colors">
+          <button className="hover:text-glass-strong transition-colors">
             <MessageSquare className="h-3 w-3 md:h-4 md:w-4" />
           </button>
-          <button className="hover:text-foreground transition-colors">
+          <button className="hover:text-glass-strong transition-colors">
             <Paperclip className="h-3 w-3 md:h-4 md:w-4" />
           </button>
-          <button className="hover:text-foreground transition-colors ml-auto">
+          <button className="hover:text-glass-strong transition-colors ml-auto">
             <Link2 className="h-3 w-3 md:h-4 md:w-4" />
           </button>
         </div>
@@ -504,7 +504,7 @@ export function KanbanBoard({
           <Card className="shadow-2xl opacity-95 cursor-grabbing rotate-2 ring-2 ring-primary">
             <CardContent className="p-3 md:p-4 space-y-2">
               <div className="flex items-start gap-2">
-                <div className="mt-1 text-muted-foreground">
+                <div className="mt-1 text-glass-muted">
                   <GripVertical className="h-4 w-4" />
                 </div>
                 <div className="flex-1">
@@ -512,7 +512,7 @@ export function KanbanBoard({
                     {activeTask.title}
                   </h4>
                   {activeTask.description && (
-                    <p className="text-sm text-muted-foreground line-clamp-1 mt-1">
+                    <p className="text-sm text-glass-muted line-clamp-1 mt-1">
                       {activeTask.description}
                     </p>
                   )}

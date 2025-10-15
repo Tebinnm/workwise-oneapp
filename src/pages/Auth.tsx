@@ -113,8 +113,10 @@ export default function Auth() {
         <div className="w-full max-w-md space-y-6 md:space-y-8">
           <div className="space-y-2">
             <Logo />
-            <h1 className="text-xlarge font-bold">Welcome back!</h1>
-            <p className="text-medium text-muted-foreground">
+            <h1 className="text-xlarge font-bold text-glass-strong">
+              Welcome back!
+            </h1>
+            <p className="text-lg text-glass-muted">
               Please enter {isLogin ? "log in" : "sign up"} details below
             </p>
           </div>
@@ -178,14 +180,14 @@ export default function Auth() {
               {isLogin ? "Log in" : "Sign up"}
             </Button>
 
-            <div className="text-center text-small">
+            <div className="text-center text-small text-glass-muted">
               {isLogin
                 ? "Don't have an account? "
                 : "Already have an account? "}
               <button
                 type="button"
                 onClick={() => setIsLogin(!isLogin)}
-                className="text-primary hover:underline font-medium"
+                className="text-primary hover:underline font-medium text-glass-strong"
               >
                 {isLogin ? "Sign up" : "Log in"}
               </button>
@@ -199,7 +201,7 @@ export default function Auth() {
         <div className="text-center space-y-6 max-w-lg">
           <div className="relative mx-auto w-48 h-48 xl:w-64 xl:h-64">
             <div className="absolute inset-0 bg-gradient-primary opacity-20 blur-3xl rounded-full" />
-            <div className="relative bg-card/10 backdrop-blur-sm rounded-3xl p-6 xl:p-8 border border-primary/20">
+            <div className="relative glassmorphism rounded-3xl p-6 xl:p-8 border border-primary/20">
               <div className="space-y-4">
                 <div className="h-3 xl:h-4 bg-primary/30 rounded" />
                 <div className="h-3 xl:h-4 bg-primary/20 rounded w-3/4" />
@@ -208,10 +210,10 @@ export default function Auth() {
             </div>
           </div>
           <div className="space-y-2">
-            <h2 className="text-xlarge font-bold text-sidebar-foreground">
+            <h2 className="text-xlarge font-bold text-sidebar-foreground text-glass-strong">
               Stay organized. Stay productive!
             </h2>
-            <p className="text-medium text-sidebar-foreground/70">
+            <p className="text-lg text-sidebar-foreground/70 text-glass-muted">
               Simplify task management, boost efficiency, and keep your workflow
               seamless.
             </p>
