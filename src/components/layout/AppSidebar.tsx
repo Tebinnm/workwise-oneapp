@@ -56,6 +56,7 @@ import { toast } from "sonner";
 import { CreateMilestoneDialog } from "@/components/dialogs/CreateMilestoneDialog";
 import { ProjectDialog } from "@/components/dialogs/ProjectDialog";
 import { usePermissions } from "@/hooks/usePermissions";
+import { useSidebarAutoClose } from "@/hooks/useSidebarAutoClose";
 import { PermissionService } from "@/services/permissionService";
 
 interface Milestone {
@@ -96,6 +97,9 @@ export function AppSidebar() {
     canManageProjects,
     canApproveAttendance,
   } = usePermissions();
+
+  // Auto-close sidebar on mobile when navigation occurs
+  useSidebarAutoClose();
 
   useEffect(() => {
     if (profile) {
