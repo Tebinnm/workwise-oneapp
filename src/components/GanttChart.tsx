@@ -882,13 +882,15 @@ export function GanttChart({
                       </p>
                     )}
                   </div>
-                  <button
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={() => setHoveredTask(null)}
                     className="sm:hidden flex-shrink-0 text-glass-muted hover:text-glass-strong"
                     aria-label="Close"
                   >
                     ✕
-                  </button>
+                  </Button>
                 </div>
 
                 <div className="space-y-1 text-xs sm:text-sm">

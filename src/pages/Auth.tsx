@@ -113,10 +113,10 @@ export default function Auth() {
         <div className="w-full max-w-md space-y-6 md:space-y-8">
           <div className="space-y-2">
             <Logo />
-            <h1 className="text-xlarge font-bold text-glass-strong">
+            <h1 className="text-xlarge font-bold text-foreground">
               Welcome back!
             </h1>
-            <p className="text-lg text-glass-muted">
+            <p className="text-lg text-muted-foreground">
               Please enter {isLogin ? "log in" : "sign up"} details below
             </p>
           </div>
@@ -180,17 +180,18 @@ export default function Auth() {
               {isLogin ? "Log in" : "Sign up"}
             </Button>
 
-            <div className="text-center text-small text-glass-muted">
+            <div className="text-center text-small text-muted-foreground">
               {isLogin
                 ? "Don't have an account? "
                 : "Already have an account? "}
-              <button
+              <Button
                 type="button"
+                variant="link"
                 onClick={() => setIsLogin(!isLogin)}
-                className="text-primary hover:underline font-medium text-glass-strong"
+                className="font-medium"
               >
                 {isLogin ? "Sign up" : "Log in"}
-              </button>
+              </Button>
             </div>
           </form>
         </div>
@@ -210,10 +211,10 @@ export default function Auth() {
             </div>
           </div>
           <div className="space-y-2">
-            <h2 className="text-xlarge font-bold text-sidebar-foreground text-glass-strong">
+            <h2 className="text-xlarge font-bold text-sidebar-foreground">
               Stay organized. Stay productive!
             </h2>
-            <p className="text-lg text-sidebar-foreground/70 text-glass-muted">
+            <p className="text-lg text-sidebar-foreground/70">
               Simplify task management, boost efficiency, and keep your workflow
               seamless.
             </p>

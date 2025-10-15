@@ -288,18 +288,34 @@ function SortableTaskCard({
           )}
         </div>
         <div className="flex items-center gap-2 text-glass-muted">
-          <button className="hover:text-glass-strong transition-colors">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="hover:text-glass-strong transition-colors"
+          >
             <Star className="h-3 w-3 md:h-4 md:w-4" />
-          </button>
-          <button className="hover:text-glass-strong transition-colors">
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="hover:text-glass-strong transition-colors"
+          >
             <MessageSquare className="h-3 w-3 md:h-4 md:w-4" />
-          </button>
-          <button className="hover:text-glass-strong transition-colors">
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="hover:text-glass-strong transition-colors"
+          >
             <Paperclip className="h-3 w-3 md:h-4 md:w-4" />
-          </button>
-          <button className="hover:text-glass-strong transition-colors ml-auto">
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="hover:text-glass-strong transition-colors ml-auto"
+          >
             <Link2 className="h-3 w-3 md:h-4 md:w-4" />
-          </button>
+          </Button>
         </div>
       </CardContent>
     </Card>
