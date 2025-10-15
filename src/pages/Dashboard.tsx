@@ -31,6 +31,7 @@ import {
   Edit,
   ArrowRight,
   ChevronRight,
+  MapPin,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -78,6 +79,7 @@ interface Milestone {
   projects: {
     name: string;
     id: string;
+    site_location: string | null;
   } | null;
   project_members: Array<{
     user_id: string;
@@ -217,7 +219,7 @@ export default function Dashboard() {
       .select(
         `
         *,
-        projects(id, name),
+        projects(id, name, site_location),
         project_members(
           user_id,
           role,
@@ -387,7 +389,7 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="flex flex-col lg:flex-row lg:justify-between gap-6">
+    <div className="flex flex-col lg:flex-row lg:justify-between gap-6 h-full">
       <div className="space-y-1 lg:flex-1">
         <h2 className="text-display font-bold text-foreground">
           {currentTime.toLocaleTimeString("en-US", {
@@ -409,7 +411,7 @@ export default function Dashboard() {
         {/* Header Section */}
 
         {/* My Milestones Section */}
-        <Card className="h-[500px] lg:h-[calc(100vh-6rem)] overflow-hidden">
+        <Card className="h-[500px] lg:h-[calc(100vh-6rem)] flex flex-col">
           <CardHeader className="pb-3">
             <CardTitle>My Milestones</CardTitle>
 
@@ -453,9 +455,9 @@ export default function Dashboard() {
               </Button>
             </div>
           </CardHeader>
-          <CardContent className="pb-4">
+          <CardContent className="pb-4 flex-1 flex flex-col min-h-0">
             {/* Milestone List */}
-            <div className="h-[360px] lg:h-96 overflow-y-auto space-y-3 pr-2">
+            <div className="flex-1 overflow-y-auto space-y-3 pr-2">
               {(() => {
                 console.log(
                   "Rendering milestone list. Count:",
@@ -623,6 +625,16 @@ function MilestoneCard({
               {milestone.projects?.name || "No project"}
             </span>
           </div>
+
+          {/* Project Location */}
+          {milestone.projects?.site_location && (
+            <div className="flex items-center gap-1">
+              <MapPin className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+              <span className="text-small text-muted-foreground truncate">
+                {milestone.projects.site_location}
+              </span>
+            </div>
+          )}
 
           {/* Team Members */}
           <div className="m-0">

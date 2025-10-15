@@ -88,6 +88,9 @@ export default {
           "accent-foreground": "hsl(var(--sidebar-accent-foreground))",
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
+          text: "hsl(var(--sidebar-text))",
+          "text-muted": "hsl(var(--sidebar-text-muted))",
+          "text-secondary": "hsl(var(--sidebar-text-secondary))",
         },
         status: {
           active: "hsl(var(--status-active))",

@@ -13,6 +13,7 @@ import {
   Users,
   ClipboardCheck,
   Info,
+  MapPin,
 } from "lucide-react";
 import {
   Sidebar,
@@ -31,6 +32,12 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -63,6 +70,8 @@ interface Project {
   description: string | null;
   color: string;
   icon: string;
+  site_address: string | null;
+  site_location: string | null;
   milestones: Milestone[];
 }
 
@@ -249,169 +258,299 @@ export function AppSidebar() {
   };
 
   return (
-    <Sidebar>
-      <SidebarHeader className="border-b border-sidebar-border px-4 py-4">
-        <Logo className="text-sidebar-foreground" variant="sidebar" />
-      </SidebarHeader>
-      <div className="px-2 mb-3">
-        <div className="relative">
-          <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-8 h-8 bg-sidebar-accent border-sidebar-border text-sidebar-foreground placeholder:text-muted-foreground"
-          />
+    <TooltipProvider>
+      <Sidebar>
+        <SidebarHeader className="border-b border-sidebar-border px-4 py-4">
+          <Logo className="text-sidebar-foreground" variant="sidebar" />
+        </SidebarHeader>
+        <div className="px-2 mb-3">
+          <div className="relative">
+            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-8 h-8 bg-sidebar-accent border-sidebar-border text-sidebar-text placeholder:text-sidebar-text-muted"
+            />
+          </div>
         </div>
-      </div>
-      <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <NavLink
-                    to="/dashboard"
-                    className={({ isActive }) =>
-                      isActive
-                        ? "bg-sidebar-accent text-sidebar-primary font-medium"
-                        : ""
-                    }
-                  >
-                    <LayoutDashboard className="h-4 w-4" />
-                    <span>Dashboard</span>
-                  </NavLink>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <NavLink
-                    to="/projects"
-                    className={({ isActive }) =>
-                      isActive
-                        ? "bg-sidebar-accent text-sidebar-primary font-medium"
-                        : ""
-                    }
-                  >
-                    <Folder className="h-4 w-4" />
-                    <span>Projects</span>
-                  </NavLink>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              {canApproveAttendance() && (
+        <SidebarContent>
+          <SidebarGroup>
+            <SidebarGroupContent>
+              <SidebarMenu>
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
                     <NavLink
-                      to="/attendance"
+                      to="/dashboard"
                       className={({ isActive }) =>
                         isActive
                           ? "bg-sidebar-accent text-sidebar-primary font-medium"
                           : ""
                       }
                     >
-                      <ClipboardCheck className="h-4 w-4" />
-                      <span>Attendance</span>
+                      <LayoutDashboard className="h-4 w-4" />
+                      <span className="text-sidebar-text">Dashboard</span>
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
-              )}
-              {canManageSystemUsers() && (
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
                     <NavLink
-                      to="/users"
+                      to="/projects"
                       className={({ isActive }) =>
                         isActive
                           ? "bg-sidebar-accent text-sidebar-primary font-medium"
                           : ""
                       }
                     >
-                      <Users className="h-4 w-4" />
-                      <span>User Management</span>
+                      <Folder className="h-4 w-4" />
+                      <span className="text-sidebar-text">Projects</span>
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
-              )}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+                {canApproveAttendance() && (
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild>
+                      <NavLink
+                        to="/attendance"
+                        className={({ isActive }) =>
+                          isActive
+                            ? "bg-sidebar-accent text-sidebar-primary font-medium"
+                            : ""
+                        }
+                      >
+                        <ClipboardCheck className="h-4 w-4" />
+                        <span className="text-sidebar-text">Attendance</span>
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )}
+                {canManageSystemUsers() && (
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild>
+                      <NavLink
+                        to="/users"
+                        className={({ isActive }) =>
+                          isActive
+                            ? "bg-sidebar-accent text-sidebar-primary font-medium"
+                            : ""
+                        }
+                      >
+                        <Users className="h-4 w-4" />
+                        <span className="text-sidebar-text">
+                          User Management
+                        </span>
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
 
-        <SidebarGroup>
-          {canManageProjects() && (
-            <div className="flex flex-col px-2 gap-2">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="w-full justify-start h-8"
-                    title="Projects & Milestones"
-                  >
-                    Projects & Milestones
-                    <Plus className="h-4 w-4 ms-6" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-56">
-                  <DropdownMenuItem onClick={() => setShowProjectDialog(true)}>
-                    <Folder className="h-4 w-4 mr-2" />
-                    Manage Projects
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => setShowMilestoneDialog(true)}
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Create Milestone
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          )}
-        </SidebarGroup>
+          <SidebarGroup>
+            {canManageProjects() && (
+              <div className="flex flex-col px-2 gap-2">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="w-full justify-start h-8"
+                      title="Projects & Milestones"
+                    >
+                      <span className="text-sidebar-text">
+                        Projects & Milestones
+                      </span>
+                      <Plus className="h-4 w-4 ms-6" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="w-56">
+                    <DropdownMenuItem
+                      onClick={() => setShowProjectDialog(true)}
+                      className="cursor-pointer group"
+                    >
+                      <Folder className="h-4 w-4 mr-2 group-hover:text-white" />
+                      <span className="text-popover-foreground group-hover:text-white">
+                        Manage Projects
+                      </span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => setShowMilestoneDialog(true)}
+                      className="cursor-pointer group"
+                    >
+                      <Plus className="h-4 w-4 mr-2 group-hover:text-white" />
+                      <span className="text-popover-foreground group-hover:text-white">
+                        Create Milestone
+                      </span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            )}
+          </SidebarGroup>
 
-        <SidebarGroup>
-          {/* <SidebarGroupLabel>Projects</SidebarGroupLabel> */}
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {searchQuery ? (
-                // Show filtered milestones when searching
-                milestones.filter((milestone) =>
-                  milestone.name
-                    .toLowerCase()
-                    .includes(searchQuery.toLowerCase())
-                ).length === 0 ? (
-                  <div className="px-4 py-8 text-center text-small text-muted-foreground">
-                    No milestones found
+          <SidebarGroup>
+            {/* <SidebarGroupLabel>Projects</SidebarGroupLabel> */}
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {searchQuery ? (
+                  // Show filtered milestones when searching
+                  milestones.filter((milestone) =>
+                    milestone.name
+                      .toLowerCase()
+                      .includes(searchQuery.toLowerCase())
+                  ).length === 0 ? (
+                    <div className="px-4 py-8 text-center text-small text-sidebar-text-muted">
+                      No milestones found
+                    </div>
+                  ) : (
+                    milestones
+                      .filter((milestone) =>
+                        milestone.name
+                          .toLowerCase()
+                          .includes(searchQuery.toLowerCase())
+                      )
+                      .map((milestone) => (
+                        <SidebarMenuItem
+                          key={milestone.id}
+                          onMouseEnter={() => setHoveredMilestone(milestone.id)}
+                          onMouseLeave={() => setHoveredMilestone(null)}
+                        >
+                          <div className="flex items-center w-full group">
+                            <SidebarMenuButton asChild className="flex-1">
+                              <NavLink
+                                to={`/milestones/${milestone.id}`}
+                                className={({ isActive }) =>
+                                  isActive
+                                    ? "bg-sidebar-accent text-sidebar-primary font-medium"
+                                    : ""
+                                }
+                              >
+                                <Folder className="h-4 w-4" />
+                                <span className="break-words leading-tight text-sidebar-text-secondary">
+                                  {milestone.name}
+                                </span>
+                              </NavLink>
+                            </SidebarMenuButton>
+                            {hoveredMilestone === milestone.id && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  setMilestoneToDelete(milestone);
+                                }}
+                              >
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            )}
+                          </div>
+                        </SidebarMenuItem>
+                      ))
+                  )
+                ) : // Show grouped milestones when not searching
+                projects.length === 0 ? (
+                  <div className="px-4 py-8 text-center text-sm text-sidebar-text-muted">
+                    No projects yet. Create one!
                   </div>
                 ) : (
-                  milestones
-                    .filter((milestone) =>
-                      milestone.name
-                        .toLowerCase()
-                        .includes(searchQuery.toLowerCase())
-                    )
-                    .map((milestone) => (
+                  projects.map((project) => (
+                    <div key={project.id}>
                       <SidebarMenuItem
-                        key={milestone.id}
-                        onMouseEnter={() => setHoveredMilestone(milestone.id)}
-                        onMouseLeave={() => setHoveredMilestone(null)}
+                        onMouseEnter={() => setHoveredProject(project.id)}
+                        onMouseLeave={() => setHoveredProject(null)}
                       >
                         <div className="flex items-center w-full group">
-                          <SidebarMenuButton asChild className="flex-1">
-                            <NavLink
-                              to={`/milestones/${milestone.id}`}
-                              className={({ isActive }) =>
-                                isActive
-                                  ? "bg-sidebar-accent text-sidebar-primary font-medium"
-                                  : ""
-                              }
+                          {project.site_location || project.site_address ? (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <SidebarMenuButton
+                                  onClick={() =>
+                                    toggleProjectExpansion(project.id)
+                                  }
+                                  className="flex-1 justify-between"
+                                >
+                                  <div className="flex items-center space-x-2">
+                                    <div
+                                      className="p-1 rounded"
+                                      style={{
+                                        backgroundColor: project.color + "20",
+                                      }}
+                                    >
+                                      <div style={{ color: project.color }}>
+                                        {getIconComponent(project.icon, 14)}
+                                      </div>
+                                    </div>
+                                    <span className="break-words leading-tight text-sidebar-text">
+                                      {project.name}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center space-x-1">
+                                    <span className="text-small text-sidebar-text-muted">
+                                      ({project.milestones?.length || 0})
+                                    </span>
+                                    {expandedProjects.has(project.id) ? (
+                                      <ChevronDown className="h-4 w-4" />
+                                    ) : (
+                                      <ChevronRight className="h-4 w-4" />
+                                    )}
+                                  </div>
+                                </SidebarMenuButton>
+                              </TooltipTrigger>
+                              <TooltipContent side="right" align="center">
+                                <div className="flex items-center gap-2 text-sm">
+                                  <MapPin className="h-4 w-4 text-muted-foreground" />
+                                  <div>
+                                    {project.site_location && (
+                                      <div className="font-medium text-popover-foreground">
+                                        {project.site_location}
+                                      </div>
+                                    )}
+                                    {project.site_address && (
+                                      <div className="text-muted-foreground text-sm">
+                                        {project.site_address}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              </TooltipContent>
+                            </Tooltip>
+                          ) : (
+                            <SidebarMenuButton
+                              onClick={() => toggleProjectExpansion(project.id)}
+                              className="flex-1 justify-between"
                             >
-                              <Folder className="h-4 w-4" />
-                              <span className="break-words leading-tight">
-                                {milestone.name}
-                              </span>
-                            </NavLink>
-                          </SidebarMenuButton>
-                          {hoveredMilestone === milestone.id && (
+                              <div className="flex items-center space-x-2">
+                                <div
+                                  className="p-1 rounded"
+                                  style={{
+                                    backgroundColor: project.color + "20",
+                                  }}
+                                >
+                                  <div style={{ color: project.color }}>
+                                    {getIconComponent(project.icon, 14)}
+                                  </div>
+                                </div>
+                                <span className="break-words leading-tight text-sidebar-text">
+                                  {project.name}
+                                </span>
+                              </div>
+                              <div className="flex items-center space-x-1">
+                                <span className="text-small text-sidebar-text-muted">
+                                  ({project.milestones?.length || 0})
+                                </span>
+                                {expandedProjects.has(project.id) ? (
+                                  <ChevronDown className="h-4 w-4" />
+                                ) : (
+                                  <ChevronRight className="h-4 w-4" />
+                                )}
+                              </div>
+                            </SidebarMenuButton>
+                          )}
+                          {hoveredProject === project.id && (
                             <Button
                               variant="ghost"
                               size="icon"
@@ -419,173 +558,117 @@ export function AppSidebar() {
                               onClick={(e) => {
                                 e.preventDefault();
                                 e.stopPropagation();
-                                setMilestoneToDelete(milestone);
+                                navigate(`/projects/${project.id}`);
                               }}
+                              title="View project overview"
                             >
-                              <Trash2 className="h-4 w-4 text-destructive" />
+                              <Info className="h-4 w-4" />
                             </Button>
                           )}
                         </div>
                       </SidebarMenuItem>
-                    ))
-                )
-              ) : // Show grouped milestones when not searching
-              projects.length === 0 ? (
-                <div className="px-4 py-8 text-center text-sm text-muted-foreground">
-                  No projects yet. Create one!
-                </div>
-              ) : (
-                projects.map((project) => (
-                  <div key={project.id}>
-                    <SidebarMenuItem
-                      onMouseEnter={() => setHoveredProject(project.id)}
-                      onMouseLeave={() => setHoveredProject(null)}
-                    >
-                      <div className="flex items-center w-full group">
-                        <SidebarMenuButton
-                          onClick={() => toggleProjectExpansion(project.id)}
-                          className="flex-1 justify-between"
-                        >
-                          <div className="flex items-center space-x-2">
-                            <div
-                              className="p-1 rounded"
-                              style={{ backgroundColor: project.color + "20" }}
-                            >
-                              <div style={{ color: project.color }}>
-                                {getIconComponent(project.icon, 14)}
-                              </div>
+
+                      {expandedProjects.has(project.id) && (
+                        <div className="ml-4 space-y-1">
+                          {project.milestones?.length === 0 ? (
+                            <div className="px-4 py-2 text-small text-sidebar-text-muted">
+                              No milestones in this project
                             </div>
-                            <span className="break-words leading-tight">
-                              {project.name}
-                            </span>
-                            <span className="text-small text-muted-foreground">
-                              ({project.milestones?.length || 0})
-                            </span>
-                          </div>
-                          {expandedProjects.has(project.id) ? (
-                            <ChevronDown className="h-4 w-4" />
                           ) : (
-                            <ChevronRight className="h-4 w-4" />
+                            project.milestones?.map((milestone) => (
+                              <SidebarMenuItem
+                                key={milestone.id}
+                                onMouseEnter={() =>
+                                  setHoveredMilestone(milestone.id)
+                                }
+                                onMouseLeave={() => setHoveredMilestone(null)}
+                              >
+                                <div className="flex items-center w-full group">
+                                  <SidebarMenuButton asChild className="flex-1">
+                                    <NavLink
+                                      to={`/milestones/${milestone.id}`}
+                                      className={({ isActive }) =>
+                                        isActive
+                                          ? "bg-sidebar-accent text-sidebar-primary font-medium"
+                                          : ""
+                                      }
+                                    >
+                                      <Folder className="h-4 w-4" />
+                                      <span className="break-words leading-tight text-sidebar-text-secondary">
+                                        {milestone.name}
+                                      </span>
+                                    </NavLink>
+                                  </SidebarMenuButton>
+                                  {hoveredMilestone === milestone.id && (
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        setMilestoneToDelete(milestone);
+                                      }}
+                                    >
+                                      <Trash2 className="h-4 w-4 text-destructive" />
+                                    </Button>
+                                  )}
+                                </div>
+                              </SidebarMenuItem>
+                            ))
                           )}
-                        </SidebarMenuButton>
-                        {hoveredProject === project.id && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              navigate(`/projects/${project.id}`);
-                            }}
-                            title="View project overview"
-                          >
-                            <Info className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </div>
-                    </SidebarMenuItem>
+                        </div>
+                      )}
+                    </div>
+                  ))
+                )}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        </SidebarContent>
 
-                    {expandedProjects.has(project.id) && (
-                      <div className="ml-4 space-y-1">
-                        {project.milestones?.length === 0 ? (
-                          <div className="px-4 py-2 text-small text-muted-foreground">
-                            No milestones in this project
-                          </div>
-                        ) : (
-                          project.milestones?.map((milestone) => (
-                            <SidebarMenuItem
-                              key={milestone.id}
-                              onMouseEnter={() =>
-                                setHoveredMilestone(milestone.id)
-                              }
-                              onMouseLeave={() => setHoveredMilestone(null)}
-                            >
-                              <div className="flex items-center w-full group">
-                                <SidebarMenuButton asChild className="flex-1">
-                                  <NavLink
-                                    to={`/milestones/${milestone.id}`}
-                                    className={({ isActive }) =>
-                                      isActive
-                                        ? "bg-sidebar-accent text-sidebar-primary font-medium"
-                                        : ""
-                                    }
-                                  >
-                                    <Folder className="h-4 w-4" />
-                                    <span className="break-words leading-tight">
-                                      {milestone.name}
-                                    </span>
-                                  </NavLink>
-                                </SidebarMenuButton>
-                                {hoveredMilestone === milestone.id && (
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                                    onClick={(e) => {
-                                      e.preventDefault();
-                                      e.stopPropagation();
-                                      setMilestoneToDelete(milestone);
-                                    }}
-                                  >
-                                    <Trash2 className="h-4 w-4 text-destructive" />
-                                  </Button>
-                                )}
-                              </div>
-                            </SidebarMenuItem>
-                          ))
-                        )}
-                      </div>
-                    )}
-                  </div>
-                ))
-              )}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-      </SidebarContent>
+        <AlertDialog
+          open={!!milestoneToDelete}
+          onOpenChange={(open) => !open && setMilestoneToDelete(null)}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Milestone</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete "{milestoneToDelete?.name}"?
+                This action cannot be undone and will also delete all tasks
+                associated with this milestone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDeleteMilestone}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
-      <AlertDialog
-        open={!!milestoneToDelete}
-        onOpenChange={(open) => !open && setMilestoneToDelete(null)}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Milestone</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete "{milestoneToDelete?.name}"? This
-              action cannot be undone and will also delete all tasks associated
-              with this milestone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDeleteMilestone}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        <ProjectDialog
+          open={showProjectDialog}
+          onOpenChange={setShowProjectDialog}
+          onProjectCreated={fetchProjects}
+          onProjectUpdated={fetchProjects}
+          onProjectDeleted={fetchProjects}
+        />
 
-      <ProjectDialog
-        open={showProjectDialog}
-        onOpenChange={setShowProjectDialog}
-        onProjectCreated={fetchProjects}
-        onProjectUpdated={fetchProjects}
-        onProjectDeleted={fetchProjects}
-      />
-
-      <CreateMilestoneDialog
-        open={showMilestoneDialog}
-        onOpenChange={setShowMilestoneDialog}
-        onSuccess={() => {
-          fetchMilestones();
-          fetchProjects();
-        }}
-      />
-    </Sidebar>
+        <CreateMilestoneDialog
+          open={showMilestoneDialog}
+          onOpenChange={setShowMilestoneDialog}
+          onSuccess={() => {
+            fetchMilestones();
+            fetchProjects();
+          }}
+        />
+      </Sidebar>
+    </TooltipProvider>
   );
 }

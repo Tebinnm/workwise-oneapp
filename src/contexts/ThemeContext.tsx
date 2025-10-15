@@ -136,9 +136,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     root.style.setProperty("--accent", hslColor);
     root.style.setProperty("--ring", hslColor);
 
-    // Update sidebar colors to match
-    root.style.setProperty("--sidebar-ring", hslColor);
-    root.style.setProperty("--sidebar-primary", hslColor);
+    // Note: Sidebar colors are kept static in CSS and not affected by theme changes
 
     // Update gradient primary
     root.style.setProperty(

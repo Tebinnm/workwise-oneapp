@@ -53,6 +53,9 @@ All colors MUST be HSL.
     --sidebar-accent-foreground: 210 40% 98%;
     --sidebar-border: 217 33% 17%;
     --sidebar-ring: 25 95% 53%;
+    --sidebar-text: 210 40% 95%;
+    --sidebar-text-muted: 215 20% 75%;
+    --sidebar-text-secondary: 215 20% 65%;
 
     /* Status colors for light mode */
     --status-active: 142 71% 35%;
@@ -171,6 +174,9 @@ All colors MUST be HSL.
     --sidebar-accent-foreground: 210 40% 98%;
     --sidebar-border: 217 33% 17%;
     --sidebar-ring: 25 95% 53%;
+    --sidebar-text: 210 40% 95%;
+    --sidebar-text-muted: 215 20% 75%;
+    --sidebar-text-secondary: 215 20% 65%;
 
     /* Status colors for dark mode */
     --status-active: 142 70% 45%;

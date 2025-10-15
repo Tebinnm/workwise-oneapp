@@ -38,6 +38,8 @@ interface Project {
   description: string | null;
   color: string;
   icon: string;
+  site_address: string | null;
+  site_location: string | null;
 }
 
 interface CreateMilestoneDialogProps {
@@ -84,7 +86,9 @@ export function CreateMilestoneDialog({
       // Fetch all projects (RLS policies handle access control)
       const { data, error } = await supabase
         .from("projects")
-        .select("*")
+        .select(
+          "id, name, description, color, icon, site_address, site_location"
+        )
         .order("name");
 
       if (error) throw error;
@@ -269,6 +273,35 @@ export function CreateMilestoneDialog({
                 )}
               </SelectContent>
             </Select>
+            {projectId &&
+              projectId !== "none" &&
+              (() => {
+                const selectedProject = projects.find(
+                  (p) => p.id === projectId
+                );
+                return selectedProject &&
+                  (selectedProject.site_location ||
+                    selectedProject.site_address) ? (
+                  <div className="mt-2 p-2 bg-muted rounded-md">
+                    <div className="flex items-center space-x-2">
+                      <div
+                        className="w-3 h-3 rounded-full"
+                        style={{ backgroundColor: selectedProject.color }}
+                      />
+                      <div className="flex flex-col">
+                        <span className="text-sm font-medium">
+                          {selectedProject.name}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          📍{" "}
+                          {selectedProject.site_location ||
+                            selectedProject.site_address}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ) : null;
+              })()}
           </div>
 
           <div className="grid grid-cols-2 gap-4">
