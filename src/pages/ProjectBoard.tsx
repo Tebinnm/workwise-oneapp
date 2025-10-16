@@ -164,10 +164,10 @@ export default function ProjectBoard() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex-1 min-w-0">
-          <h1 className="text-2xl sm:text-3xl font-bold truncate text-glass-strong">
+          <h1 className="text-2xl sm:text-3xl font-bold text-glass-strong break-words">
             {project?.name || "Project"}
           </h1>
-          <p className="text-lg text-glass-muted line-clamp-2">
+          <p className="text-lg text-glass-muted break-words">
             {project?.description}
           </p>
         </div>
@@ -222,11 +222,11 @@ export default function ProjectBoard() {
           <CardContent className="p-4 md:p-6">
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
               <div className="space-y-1">
-                <h3 className="text-lg font-semibold flex items-center gap-2">
+                <h3 className="text-lg font-semibold flex items-center gap-2 break-words">
                   <DollarSign className="h-5 w-5 text-primary" />
                   Project Budget Overview
                 </h3>
-                <p className="text-lg text-muted-foreground">
+                <p className="text-lg text-muted-foreground break-words">
                   Real-time budget tracking based on attendance
                 </p>
               </div>

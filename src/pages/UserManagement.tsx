@@ -392,32 +392,43 @@ export default function UserManagement() {
             Manage users, wage configurations, and project assignments
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={handleExportUsers}>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExportUsers}
+            className="flex-1 sm:flex-none"
+          >
             <Download className="h-4 w-4 mr-2" />
-            Export
+            <span className="hidden sm:inline">Export</span>
           </Button>
-          <Button variant="outline" size="sm" onClick={handleDownloadTemplate}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleDownloadTemplate}
+            className="flex-1 sm:flex-none"
+          >
             <Download className="h-4 w-4 mr-2" />
-            Template
+            <span className="hidden sm:inline">Template</span>
           </Button>
-          <div className="relative">
+          <div className="relative flex-1 sm:flex-none">
             <input
               type="file"
               accept=".csv"
               onChange={handleImportUsers}
               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
             />
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" className="w-full">
               <Upload className="h-4 w-4 mr-2" />
-              Import
+              <span className="hidden sm:inline">Import</span>
             </Button>
           </div>
           <Dialog open={showAddUserDialog} onOpenChange={setShowAddUserDialog}>
             <DialogTrigger asChild>
-              <Button>
+              <Button className="flex-1 sm:flex-none">
                 <UserPlus className="h-4 w-4 mr-2" />
-                Add User
+                <span className="hidden sm:inline">Add User</span>
+                <span className="sm:hidden">Add</span>
               </Button>
             </DialogTrigger>
             <DialogContent>
@@ -580,8 +591,8 @@ export default function UserManagement() {
       >
         <TabsList>
           <TabsTrigger value="users">Users</TabsTrigger>
-          <TabsTrigger value="wages">Wage Configuration</TabsTrigger>
-          <TabsTrigger value="assignments">Project Assignments</TabsTrigger>
+          <TabsTrigger value="wages">Wage Config</TabsTrigger>
+          <TabsTrigger value="assignments">Project Settings</TabsTrigger>
         </TabsList>
 
         {/* Users Tab */}
@@ -601,9 +612,9 @@ export default function UserManagement() {
                     />
                   </div>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="w-32">
+                    <SelectTrigger className="w-full sm:w-32">
                       <SelectValue placeholder="Status" />
                     </SelectTrigger>
                     <SelectContent>
@@ -613,7 +624,7 @@ export default function UserManagement() {
                     </SelectContent>
                   </Select>
                   <Select value={roleFilter} onValueChange={setRoleFilter}>
-                    <SelectTrigger className="w-32">
+                    <SelectTrigger className="w-full sm:w-32">
                       <SelectValue placeholder="Role" />
                     </SelectTrigger>
                     <SelectContent>
@@ -707,23 +718,32 @@ export default function UserManagement() {
                           </span>
                         </TableCell>
                         <TableCell>
-                          <div className="flex items-center gap-2">
+                          <div className="flex flex-wrap items-center gap-2">
                             <MemberWageConfigDialog
                               userId={user.id}
                               userName={user.full_name || "Unknown"}
                               onSuccess={fetchUsers}
                             >
-                              <Button variant="ghost" size="sm">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="flex-shrink-0"
+                              >
                                 <Settings className="h-4 w-4" />
                               </Button>
                             </MemberWageConfigDialog>
-                            <Button variant="ghost" size="sm">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="flex-shrink-0"
+                            >
                               <Edit className="h-4 w-4" />
                             </Button>
                             <Button
                               variant="ghost"
                               size="sm"
                               onClick={() => handleDeleteUser(user.id)}
+                              className="flex-shrink-0"
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -755,7 +775,7 @@ export default function UserManagement() {
                     key={user.id}
                     className="p-4 border rounded-lg space-y-3"
                   >
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                       <div className="flex items-center gap-3">
                         <Avatar className="h-10 w-10">
                           <AvatarFallback>
@@ -774,9 +794,14 @@ export default function UserManagement() {
                         userName={user.full_name || "Unknown"}
                         onSuccess={fetchUsers}
                       >
-                        <Button variant="outline" size="sm">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full sm:w-auto"
+                        >
                           <Settings className="h-4 w-4 mr-2" />
-                          Configure
+                          <span className="hidden sm:inline">Configure</span>
+                          <span className="sm:hidden">Config</span>
                         </Button>
                       </MemberWageConfigDialog>
                     </div>
@@ -837,7 +862,7 @@ export default function UserManagement() {
               <div className="space-y-4">
                 {users.map((user) => (
                   <div key={user.id} className="p-4 border rounded-lg">
-                    <div className="flex items-center justify-between mb-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
                       <div className="flex items-center gap-3">
                         <Avatar className="h-10 w-10">
                           <AvatarFallback>
@@ -858,9 +883,16 @@ export default function UserManagement() {
                         allProjects={projects}
                         onSuccess={fetchUsers}
                       >
-                        <Button variant="outline" size="sm">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full sm:w-auto"
+                        >
                           <Building className="h-4 w-4 mr-2" />
-                          Manage Projects
+                          <span className="hidden sm:inline">
+                            Manage Projects
+                          </span>
+                          <span className="sm:hidden">Manage</span>
                         </Button>
                       </ProjectAssignmentDialog>
                     </div>
