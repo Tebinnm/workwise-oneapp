@@ -198,7 +198,7 @@ export default function Auth() {
       </div>
 
       {/* Right side - Illustration */}
-      <div className="hidden lg:flex flex-1 items-center justify-center bg-sidebar p-8 xl:p-12">
+      <div className="hidden lg:flex flex-1 items-center justify-center bg-gradient-to-br from-primary/10 to-primary/5 p-8 xl:p-12">
         <div className="text-center space-y-6 max-w-lg">
           <div className="relative mx-auto w-48 h-48 xl:w-64 xl:h-64">
             <div className="absolute inset-0 bg-gradient-primary opacity-20 blur-3xl rounded-full" />
@@ -211,10 +211,10 @@ export default function Auth() {
             </div>
           </div>
           <div className="space-y-2">
-            <h2 className="text-xlarge font-bold text-sidebar-foreground">
+            <h2 className="text-xlarge font-bold text-white">
               Stay organized. Stay productive!
             </h2>
-            <p className="text-lg text-sidebar-foreground/70">
+            <p className="text-lg text-muted-foreground">
               Simplify task management, boost efficiency, and keep your workflow
               seamless.
             </p>
