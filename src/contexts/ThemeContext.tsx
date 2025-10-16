@@ -91,8 +91,6 @@ interface ThemeContextType {
   setThemeColor: (color: string) => void;
   background: string;
   setBackground: (backgroundId: string) => void;
-  theme: "light" | "dark";
-  setTheme: (theme: "light" | "dark") => void;
 }
 
 export const ThemeContext = createContext<ThemeContextType | undefined>(
@@ -101,7 +99,6 @@ export const ThemeContext = createContext<ThemeContextType | undefined>(
 
 const STORAGE_KEY_COLOR = "workwise-theme-color";
 const STORAGE_KEY_BACKGROUND = "workwise-background";
-const STORAGE_KEY_THEME = "workwise-theme-mode";
 const DEFAULT_COLOR = "#ff6b35"; // Orange default
 const DEFAULT_BACKGROUND = "oneapp1";
 
@@ -114,11 +111,6 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [background, setBackgroundState] = useState<string>(() => {
     const stored = localStorage.getItem(STORAGE_KEY_BACKGROUND);
     return stored || DEFAULT_BACKGROUND;
-  });
-
-  const [theme, setThemeState] = useState<"light" | "dark">(() => {
-    const stored = localStorage.getItem(STORAGE_KEY_THEME);
-    return (stored as "light" | "dark") || "light";
   });
 
   useEffect(() => {
@@ -167,14 +159,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const root = document.documentElement;
 
-    if (theme === "dark") {
-      root.classList.add("dark");
-    } else {
-      root.classList.remove("dark");
-    }
-
-    localStorage.setItem(STORAGE_KEY_THEME, theme);
-  }, [theme]);
+    // Always apply dark mode
+    root.classList.add("dark");
+  }, []);
 
   const setThemeColor = (newColor: string) => {
     setThemeColorState(newColor);
@@ -184,10 +171,6 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     setBackgroundState(backgroundId);
   };
 
-  const setTheme = (newTheme: "light" | "dark") => {
-    setThemeState(newTheme);
-  };
-
   return (
     <ThemeContext.Provider
       value={{
@@ -195,8 +178,6 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         setThemeColor,
         background,
         setBackground,
-        theme,
-        setTheme,
       }}
     >
       {children}

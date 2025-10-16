@@ -11,129 +11,6 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    --background: 0 0% 98%;
-    --foreground: 222 47% 11%;
-
-    --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
-
-    --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
-
-    --primary: 25 95% 53%;
-    --primary-foreground: 0 0% 100%;
-    --primary-glow: 25 95% 60%;
-
-    --secondary: 220 15% 85%;
-    --secondary-foreground: 222 47% 11%;
-
-    --muted: 220 15% 90%;
-    --muted-foreground: 222 47% 11%;
-
-    --accent: 220 15% 85%;
-    --accent-foreground: 222 47% 11%;
-
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 100%;
-
-    --success: 142 76% 36%;
-    --success-foreground: 0 0% 100%;
-
-    --border: 220 13% 80%;
-    --input: 220 13% 85%;
-    --ring: 25 95% 53%;
-
-    --radius: 0.75rem;
-
-    --sidebar-background: 222 47% 11%;
-    --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 25 95% 53%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 217 33% 17%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 217 33% 17%;
-    --sidebar-ring: 25 95% 53%;
-    --sidebar-text: 210 40% 95%;
-    --sidebar-text-muted: 215 20% 75%;
-    --sidebar-text-secondary: 215 20% 65%;
-
-    /* Status colors for light mode */
-    --status-active: 142 71% 35%;
-    --status-active-foreground: 0 0% 100%;
-    --status-completed: 220 85% 50%;
-    --status-completed-foreground: 0 0% 100%;
-    --status-on-hold: 45 100% 48%;
-    --status-on-hold-foreground: 0 0% 100%;
-    --status-cancelled: 0 72% 51%;
-    --status-cancelled-foreground: 0 0% 100%;
-    --status-default: 220 13% 46%;
-    --status-default-foreground: 0 0% 100%;
-
-    /* Task status colors for light mode */
-    --task-todo: 220 13% 60%;
-    --task-in-progress: 220 85% 50%;
-    --task-blocked: 0 72% 51%;
-    --task-done: 142 71% 35%;
-    --task-cancelled: 220 13% 75%;
-
-    /* Expense category colors for light mode */
-    --expense-materials: 220 85% 50%;
-    --expense-materials-foreground: 0 0% 100%;
-    --expense-equipment: 280 70% 50%;
-    --expense-equipment-foreground: 0 0% 100%;
-    --expense-labor: 142 71% 35%;
-    --expense-labor-foreground: 0 0% 100%;
-    --expense-transportation: 45 100% 48%;
-    --expense-transportation-foreground: 0 0% 100%;
-    --expense-permits: 0 72% 51%;
-    --expense-permits-foreground: 0 0% 100%;
-    --expense-utilities: 190 80% 45%;
-    --expense-utilities-foreground: 0 0% 100%;
-    --expense-other: 220 13% 46%;
-    --expense-other-foreground: 0 0% 100%;
-
-    /* Invoice status colors for light mode */
-    --invoice-draft: 220 13% 46%;
-    --invoice-draft-foreground: 0 0% 100%;
-    --invoice-pending: 45 100% 48%;
-    --invoice-pending-foreground: 0 0% 100%;
-    --invoice-paid: 142 71% 35%;
-    --invoice-paid-foreground: 0 0% 100%;
-    --invoice-partially-paid: 220 85% 50%;
-    --invoice-partially-paid-foreground: 0 0% 100%;
-    --invoice-overdue: 0 72% 51%;
-    --invoice-overdue-foreground: 0 0% 100%;
-    --invoice-cancelled: 220 13% 60%;
-    --invoice-cancelled-foreground: 0 0% 100%;
-    --invoice-default: 220 13% 46%;
-    --invoice-default-foreground: 0 0% 100%;
-
-    /* User role colors for light mode */
-    --role-admin: 280 70% 50%;
-    --role-admin-foreground: 0 0% 100%;
-    --role-supervisor: 220 85% 50%;
-    --role-supervisor-foreground: 0 0% 100%;
-    --role-worker: 220 13% 46%;
-    --role-worker-foreground: 0 0% 100%;
-    --role-client: 142 71% 35%;
-    --role-client-foreground: 0 0% 100%;
-
-    --gradient-primary: linear-gradient(
-      135deg,
-      hsl(25 95% 53%),
-      hsl(25 95% 60%)
-    );
-    --gradient-mesh: linear-gradient(
-      135deg,
-      hsl(25 95% 53% / 0.1),
-      hsl(220 70% 60% / 0.1)
-    );
-    --shadow-elevated: 0 4px 20px -2px hsl(222 47% 11% / 0.08);
-    --shadow-glow: 0 0 40px hsl(25 95% 53% / 0.3);
-    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-
-  .dark {
     --background: 222 47% 11%;
     --foreground: 0 0% 100%;
 
@@ -165,6 +42,8 @@ All colors MUST be HSL.
     --border: 217 33% 20%;
     --input: 217 33% 20%;
     --ring: 25 95% 53%;
+
+    --radius: 0.75rem;
 
     --sidebar-background: 222 47% 11%;
     --sidebar-foreground: 210 40% 98%;
@@ -251,6 +130,7 @@ All colors MUST be HSL.
     );
     --shadow-elevated: 0 4px 20px -2px hsl(0 0% 0% / 0.3);
     --shadow-glow: 0 0 40px hsl(25 95% 53% / 0.4);
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 }
 
@@ -279,20 +159,6 @@ All colors MUST be HSL.
     html {
       scroll-behavior: smooth;
     }
-  }
-
-  /* Enhanced button visibility for light mode */
-  .light-mode-buttons {
-    --button-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1),
-      0 1px 2px -1px rgb(0 0 0 / 0.1);
-    --button-shadow-hover: 0 4px 6px -1px rgb(0 0 0 / 0.1),
-      0 2px 4px -2px rgb(0 0 0 / 0.1);
-  }
-
-  /* Additional button enhancements for better visibility */
-  :root:not(.dark) {
-    --button-outline-border: 220 13% 70%;
-    --button-ghost-hover: 220 15% 90%;
   }
 
   /* Custom scrollbar styling - thin and simple */
@@ -350,56 +216,31 @@ All colors MUST be HSL.
     padding-right: env(safe-area-inset-right);
   }
 
-  /* Glassmorphism effect utilities */
+  /* Glassmorphism effect utilities for dark mode */
   .glassmorphism {
-    background: rgba(255, 255, 255, 0.25);
+    background: rgba(0, 0, 0, 0.25);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.18);
-    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
-    color: white;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-  }
-
-  .glassmorphism-light {
-    background: rgba(255, 255, 255, 0.15);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    box-shadow: 0 4px 16px 0 rgba(31, 38, 135, 0.2);
-    color: white;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-  }
-
-  .glassmorphism-subtle {
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    box-shadow: 0 2px 8px 0 rgba(31, 38, 135, 0.15);
-    color: white;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-  }
-
-  /* Dark mode glassmorphism variants */
-  .dark .glassmorphism {
-    background: rgba(0, 0, 0, 0.25);
     border: 1px solid rgba(255, 255, 255, 0.1);
     box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
     color: white;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
   }
 
-  .dark .glassmorphism-light {
+  .glassmorphism-light {
     background: rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     border: 1px solid rgba(255, 255, 255, 0.08);
     box-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.3);
     color: white;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
   }
 
-  .dark .glassmorphism-subtle {
+  .glassmorphism-subtle {
     background: rgba(0, 0, 0, 0.15);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
     border: 1px solid rgba(255, 255, 255, 0.05);
     box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.2);
     color: white;
