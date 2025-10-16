@@ -590,9 +590,18 @@ export default function UserManagement() {
         className="space-y-4"
       >
         <TabsList>
-          <TabsTrigger value="users">Users</TabsTrigger>
-          <TabsTrigger value="wages">Wage Config</TabsTrigger>
-          <TabsTrigger value="assignments">Project Settings</TabsTrigger>
+          <TabsTrigger value="users" className="px-2 py-1 sm:px-3 sm:py-1.5">
+            Users
+          </TabsTrigger>
+          <TabsTrigger value="wages" className="px-2 py-1 sm:px-3 sm:py-1.5">
+            Wage Configuration
+          </TabsTrigger>
+          <TabsTrigger
+            value="assignments"
+            className="px-2 py-1 sm:px-3 sm:py-1.5"
+          >
+            Project Settings
+          </TabsTrigger>
         </TabsList>
 
         {/* Users Tab */}
