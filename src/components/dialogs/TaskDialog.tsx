@@ -5,14 +5,14 @@ import { toast } from "sonner";
 import { BudgetService, AttendanceStatus } from "@/services/budgetService";
 import { usePermissions } from "@/hooks/usePermissions";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+  LeftDrawer,
+  LeftDrawerContent,
+  LeftDrawerDescription,
+  LeftDrawerFooter,
+  LeftDrawerHeader,
+  LeftDrawerTitle,
+  LeftDrawerTrigger,
+} from "@/components/ui/left-drawer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -979,11 +979,11 @@ export function TaskDialog({
     isAdmin() || isSupervisor() || (isWorker() && !isWorkerWithAssignedTask);
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader className="relative">
-          <DialogTitle>
+    <LeftDrawer open={open} onOpenChange={setOpen}>
+      <LeftDrawerTrigger asChild>{children}</LeftDrawerTrigger>
+      <LeftDrawerContent side="right" className="overflow-y-auto">
+        <LeftDrawerHeader className="relative">
+          <LeftDrawerTitle>
             {viewMode
               ? "View Task Details"
               : isWorkerWithAssignedTask
@@ -991,8 +991,8 @@ export function TaskDialog({
               : isEditMode
               ? "Edit Task"
               : "Create New Task"}
-          </DialogTitle>
-          <DialogDescription className="text-lg">
+          </LeftDrawerTitle>
+          <LeftDrawerDescription>
             {viewMode
               ? "View task information, assignments, and scheduling details."
               : isWorkerWithAssignedTask
@@ -1000,8 +1000,8 @@ export function TaskDialog({
               : isEditMode
               ? "Update task details, assignments, and scheduling."
               : "Create a new task with advanced features including recurrence, multi-assignment, and attendance integration."}
-          </DialogDescription>
-        </DialogHeader>
+          </LeftDrawerDescription>
+        </LeftDrawerHeader>
 
         <form onSubmit={handleSubmit} className="relative space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -1798,7 +1798,7 @@ export function TaskDialog({
             </div>
           </div>
 
-          <DialogFooter className="mt-6">
+          <LeftDrawerFooter className="mt-6">
             {!isEditMode ? (
               <Button
                 type="submit"
@@ -1834,9 +1834,9 @@ export function TaskDialog({
                 </>
               )
             )}
-          </DialogFooter>
+          </LeftDrawerFooter>
         </form>
-      </DialogContent>
-    </Dialog>
+      </LeftDrawerContent>
+    </LeftDrawer>
   );
 }

@@ -19,6 +19,7 @@ import { KanbanBoard } from "@/components/KanbanBoard";
 import { BudgetService } from "@/services/budgetService";
 import { usePermissions } from "@/hooks/usePermissions";
 import { formatCurrency } from "@/lib/utils";
+import { BackButton } from "@/components/ui/back-button";
 
 interface Task {
   id: string;
@@ -160,14 +161,17 @@ export default function ProjectBoard() {
   };
 
   return (
-    <div className="space-y-4 md:space-y-6">
+    <div className="space-y-2 md:space-y-3">
+      {/* Back Button */}
+      <BackButton to="/dashboard" label="Back to Dashboard" />
+
       {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
         <div className="flex-1 min-w-0">
-          <h1 className="text-2xl sm:text-3xl font-bold text-glass-strong break-words">
+          <h1 className="text-2xl sm:text-3xl font-bold break-words">
             {project?.name || "Project"}
           </h1>
-          <p className="text-lg text-glass-muted break-words">
+          <p className="text-lg text-muted-foreground break-words">
             {project?.description}
           </p>
         </div>
@@ -217,10 +221,10 @@ export default function ProjectBoard() {
       </div>
 
       {/* Budget Summary Card */}
-      {budgetSummary && (
-        <Card className="border-primary/20 glassmorphism-subtle">
-          <CardContent className="p-4 md:p-6">
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      {/* {budgetSummary && (
+        <Card className="border-primary/20">
+          <CardContent className="p-3 md:p-4">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-2">
               <div className="space-y-1">
                 <h3 className="text-lg font-semibold flex items-center gap-2 break-words">
                   <DollarSign className="h-5 w-5 text-primary" />
@@ -230,7 +234,7 @@ export default function ProjectBoard() {
                   Real-time budget tracking based on attendance
                 </p>
               </div>
-              <div className="grid grid-cols-3 gap-4 md:gap-6 w-full md:w-auto">
+              <div className="grid grid-cols-3 gap-2 md:gap-3 w-full md:w-auto">
                 <div className="text-center">
                   <p className="text-xs text-muted-foreground mb-1">
                     Allocated
@@ -275,7 +279,7 @@ export default function ProjectBoard() {
             </div>
           </CardContent>
         </Card>
-      )}
+      )} */}
 
       {/* Kanban Board */}
       {view === "kanban" && (

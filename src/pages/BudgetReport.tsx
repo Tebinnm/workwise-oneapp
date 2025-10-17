@@ -42,6 +42,7 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { BudgetExportService } from "@/services/budgetExportService";
 import { Link } from "react-router-dom";
+import { BackButton } from "@/components/ui/back-button";
 
 interface BudgetFilters {
   userId?: string;
@@ -187,6 +188,9 @@ export default function BudgetReport() {
 
   return (
     <div className="space-y-6">
+      {/* Back Button */}
+      <BackButton to="/dashboard" label="Back to Dashboard" />
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>

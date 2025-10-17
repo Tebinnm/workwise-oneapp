@@ -1,13 +1,13 @@
 import { useState, useEffect } from "react";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+  LeftDrawer,
+  LeftDrawerContent,
+  LeftDrawerDescription,
+  LeftDrawerFooter,
+  LeftDrawerHeader,
+  LeftDrawerTitle,
+  LeftDrawerTrigger,
+} from "@/components/ui/left-drawer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -100,26 +100,26 @@ export function MemberWageConfigDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
+    <LeftDrawer open={open} onOpenChange={setOpen}>
+      <LeftDrawerTrigger asChild>
         {children || (
           <Button variant="outline" size="sm">
             <Settings className="h-4 w-4 mr-2" />
             Configure Wage
           </Button>
         )}
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[500px]">
+      </LeftDrawerTrigger>
+      <LeftDrawerContent side="right" className="overflow-y-auto">
         <form onSubmit={handleSubmit}>
-          <DialogHeader>
-            <DialogTitle>Configure Wage Settings</DialogTitle>
-            <DialogDescription className="text-lg">
+          <LeftDrawerHeader>
+            <LeftDrawerTitle>Configure Wage Settings</LeftDrawerTitle>
+            <LeftDrawerDescription>
               Set wage configuration for {userName}
               {projectId && " (Project-specific)"}
-            </DialogDescription>
-          </DialogHeader>
+            </LeftDrawerDescription>
+          </LeftDrawerHeader>
 
-          <div className="space-y-4 py-4">
+          <div className="space-y-2 py-2">
             {/* Wage Type */}
             <div className="space-y-2">
               <Label htmlFor="wage-type">Wage Type</Label>
@@ -201,7 +201,7 @@ export function MemberWageConfigDialog({
             </div>
 
             {/* Budget Calculation Preview */}
-            <div className="p-4 bg-muted rounded-lg space-y-2">
+            <div className="p-3 bg-muted rounded-lg space-y-1">
               <h4 className="font-medium text-sm">
                 Budget Calculation Preview
               </h4>
@@ -237,7 +237,7 @@ export function MemberWageConfigDialog({
             </div>
           </div>
 
-          <DialogFooter>
+          <LeftDrawerFooter>
             <Button
               type="button"
               variant="outline"
@@ -249,9 +249,9 @@ export function MemberWageConfigDialog({
             <Button type="submit" disabled={loading}>
               {loading ? "Saving..." : "Save Configuration"}
             </Button>
-          </DialogFooter>
+          </LeftDrawerFooter>
         </form>
-      </DialogContent>
-    </Dialog>
+      </LeftDrawerContent>
+    </LeftDrawer>
   );
 }

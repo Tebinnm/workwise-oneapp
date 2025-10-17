@@ -149,8 +149,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       const body = document.body;
       if (selectedBackground.url) {
         body.style.backgroundImage = `url(${selectedBackground.url})`;
+        body.setAttribute("data-has-background", "true");
       } else {
         body.style.backgroundImage = "none";
+        body.setAttribute("data-has-background", "false");
       }
       localStorage.setItem(STORAGE_KEY_BACKGROUND, background);
     }
@@ -159,8 +161,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const root = document.documentElement;
 
-    // Always apply dark mode
-    root.classList.add("dark");
+    // Apply light mode as default
+    root.classList.remove("dark");
   }, []);
 
   const setThemeColor = (newColor: string) => {

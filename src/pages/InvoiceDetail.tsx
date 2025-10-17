@@ -14,6 +14,7 @@ import { ArrowLeft, Edit, Printer, Download, Loader2 } from "lucide-react";
 import { InvoiceDialog } from "@/components/dialogs/InvoiceDialog";
 import { formatCurrency } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
+import { BackButton } from "@/components/ui/back-button";
 
 export default function InvoiceDetail() {
   const { invoiceId } = useParams<{ invoiceId: string }>();
@@ -115,14 +116,7 @@ export default function InvoiceDetail() {
     <div className="space-y-6">
       {/* Header - Hidden in print */}
       <div className="flex flex-col gap-4 print:hidden">
-        <Button
-          variant="ghost"
-          className="w-fit"
-          onClick={() => navigate("/projects")}
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Projects
-        </Button>
+        <BackButton to="/projects" label="Back to Projects" />
 
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex-1">

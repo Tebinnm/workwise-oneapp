@@ -2,14 +2,14 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+  LeftDrawer,
+  LeftDrawerContent,
+  LeftDrawerDescription,
+  LeftDrawerFooter,
+  LeftDrawerHeader,
+  LeftDrawerTitle,
+  LeftDrawerTrigger,
+} from "@/components/ui/left-drawer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -195,27 +195,27 @@ export function ProjectAssignmentDialog({
   );
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
+    <LeftDrawer open={open} onOpenChange={setOpen}>
+      <LeftDrawerTrigger asChild>
         {children || (
           <Button variant="outline" size="sm">
             <Building className="h-4 w-4 mr-2" />
             Manage Projects
           </Button>
         )}
-      </DialogTrigger>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      </LeftDrawerTrigger>
+      <LeftDrawerContent side="right" className="overflow-y-auto">
         <form onSubmit={handleSubmit}>
-          <DialogHeader>
-            <DialogTitle>Project Assignments</DialogTitle>
-            <DialogDescription>
+          <LeftDrawerHeader>
+            <LeftDrawerTitle>Project Assignments</LeftDrawerTitle>
+            <LeftDrawerDescription>
               Assign {userName} to projects with specific roles and date ranges.
-            </DialogDescription>
-          </DialogHeader>
+            </LeftDrawerDescription>
+          </LeftDrawerHeader>
 
-          <div className="space-y-4 py-4">
+          <div className="space-y-2 py-2">
             {assignments.map((assignment, index) => (
-              <div key={index} className="p-4 border rounded-lg space-y-4">
+              <div key={index} className="p-3 border rounded-lg space-y-2">
                 <div className="flex items-center justify-between">
                   <h4 className="font-medium">Assignment {index + 1}</h4>
                   <Button
@@ -228,7 +228,7 @@ export function ProjectAssignmentDialog({
                   </Button>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                   <div className="space-y-2">
                     <Label>Project</Label>
                     <Select
@@ -354,7 +354,7 @@ export function ProjectAssignmentDialog({
             </Button>
           </div>
 
-          <DialogFooter>
+          <LeftDrawerFooter>
             <Button
               type="button"
               variant="outline"
@@ -366,9 +366,9 @@ export function ProjectAssignmentDialog({
             <Button type="submit" disabled={loading}>
               {loading ? "Saving..." : "Save Assignments"}
             </Button>
-          </DialogFooter>
+          </LeftDrawerFooter>
         </form>
-      </DialogContent>
-    </Dialog>
+      </LeftDrawerContent>
+    </LeftDrawer>
   );
 }

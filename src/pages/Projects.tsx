@@ -28,6 +28,7 @@ import { usePermissions } from "@/hooks/usePermissions";
 import { formatCurrency } from "@/lib/utils";
 import { PermissionService } from "@/services/permissionService";
 import { Loader } from "@/components/ui/loader";
+import { BackButton } from "@/components/ui/back-button";
 
 interface Project {
   id: string;
@@ -175,6 +176,9 @@ export default function Projects() {
 
   return (
     <div className="space-y-6">
+      {/* Back Button */}
+      <BackButton to="/dashboard" label="Back to Dashboard" />
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>

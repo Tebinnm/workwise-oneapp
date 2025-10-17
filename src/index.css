@@ -44,20 +44,20 @@ All colors MUST be HSL.
     --input: 214 32% 91%;
     --ring: 25 95% 53%;
 
-    --radius: 0.75rem;
+    --radius: 5px;
 
     /* Light mode sidebar colors */
-    --sidebar-background: 222 47% 11%;
-    --sidebar-foreground: 210 40% 98%;
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 222 47% 11%;
     --sidebar-primary: 25 95% 53%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 217 33% 17%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 217 33% 17%;
+    --sidebar-accent: 210 40% 95%;
+    --sidebar-accent-foreground: 222 47% 11%;
+    --sidebar-border: 214 32% 91%;
     --sidebar-ring: 25 95% 53%;
-    --sidebar-text: 210 40% 95%;
-    --sidebar-text-muted: 215 20% 75%;
-    --sidebar-text-secondary: 215 20% 65%;
+    --sidebar-text: 222 47% 11%;
+    --sidebar-text-muted: 215 20% 65%;
+    --sidebar-text-secondary: 215 20% 50%;
 
     /* Light mode status colors */
     --status-active: 142 70% 45%;
@@ -130,130 +130,8 @@ All colors MUST be HSL.
       hsl(25 95% 53% / 0.15),
       hsl(220 70% 60% / 0.15)
     );
-    --shadow-elevated: 0 4px 20px -2px hsl(0 0% 0% / 0.1);
-    --shadow-glow: 0 0 40px hsl(25 95% 53% / 0.4);
-    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-
-  /* Dark mode colors */
-  .dark {
-    --background: 222 47% 11%;
-    --foreground: 0 0% 100%;
-
-    --card: 217 33% 17%;
-    --card-foreground: 0 0% 100%;
-
-    --popover: 217 33% 17%;
-    --popover-foreground: 0 0% 100%;
-
-    --primary: 25 95% 53%;
-    --primary-foreground: 0 0% 100%;
-    --primary-glow: 25 95% 60%;
-
-    --secondary: 217 33% 20%;
-    --secondary-foreground: 0 0% 100%;
-
-    --muted: 217 33% 20%;
-    --muted-foreground: 0 0% 90%;
-
-    --accent: 25 95% 53%;
-    --accent-foreground: 0 0% 100%;
-
-    --destructive: 0 63% 31%;
-    --destructive-foreground: 0 0% 100%;
-
-    --success: 142 70% 45%;
-    --success-foreground: 0 0% 100%;
-
-    --border: 217 33% 20%;
-    --input: 217 33% 20%;
-    --ring: 25 95% 53%;
-
-    --sidebar-background: 222 47% 11%;
-    --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 25 95% 53%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 217 33% 17%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 217 33% 17%;
-    --sidebar-ring: 25 95% 53%;
-    --sidebar-text: 210 40% 95%;
-    --sidebar-text-muted: 215 20% 75%;
-    --sidebar-text-secondary: 215 20% 65%;
-
-    /* Dark mode status colors */
-    --status-active: 142 70% 45%;
-    --status-active-foreground: 0 0% 100%;
-    --status-completed: 220 70% 50%;
-    --status-completed-foreground: 0 0% 100%;
-    --status-on-hold: 45 90% 60%;
-    --status-on-hold-foreground: 0 0% 100%;
-    --status-cancelled: 0 63% 51%;
-    --status-cancelled-foreground: 0 0% 100%;
-    --status-default: 215 20% 35%;
-    --status-default-foreground: 0 0% 100%;
-
-    /* Dark mode task status colors */
-    --task-todo: 215 20% 50%;
-    --task-in-progress: 220 70% 50%;
-    --task-blocked: 0 63% 51%;
-    --task-done: 142 70% 45%;
-    --task-cancelled: 215 20% 40%;
-
-    /* Dark mode expense category colors */
-    --expense-materials: 220 70% 50%;
-    --expense-materials-foreground: 0 0% 100%;
-    --expense-equipment: 280 65% 55%;
-    --expense-equipment-foreground: 0 0% 100%;
-    --expense-labor: 142 70% 45%;
-    --expense-labor-foreground: 0 0% 100%;
-    --expense-transportation: 45 90% 60%;
-    --expense-transportation-foreground: 0 0% 100%;
-    --expense-permits: 0 63% 51%;
-    --expense-permits-foreground: 0 0% 100%;
-    --expense-utilities: 190 75% 50%;
-    --expense-utilities-foreground: 0 0% 100%;
-    --expense-other: 215 20% 35%;
-    --expense-other-foreground: 210 40% 98%;
-
-    /* Dark mode invoice status colors */
-    --invoice-draft: 215 20% 35%;
-    --invoice-draft-foreground: 0 0% 100%;
-    --invoice-pending: 45 90% 60%;
-    --invoice-pending-foreground: 0 0% 100%;
-    --invoice-paid: 142 70% 45%;
-    --invoice-paid-foreground: 0 0% 100%;
-    --invoice-partially-paid: 220 70% 50%;
-    --invoice-partially-paid-foreground: 0 0% 100%;
-    --invoice-overdue: 0 63% 51%;
-    --invoice-overdue-foreground: 0 0% 100%;
-    --invoice-cancelled: 215 20% 50%;
-    --invoice-cancelled-foreground: 0 0% 100%;
-    --invoice-default: 215 20% 35%;
-    --invoice-default-foreground: 0 0% 100%;
-
-    /* Dark mode user role colors */
-    --role-admin: 280 65% 55%;
-    --role-admin-foreground: 0 0% 100%;
-    --role-supervisor: 220 70% 50%;
-    --role-supervisor-foreground: 0 0% 100%;
-    --role-worker: 215 20% 35%;
-    --role-worker-foreground: 0 0% 100%;
-    --role-client: 142 70% 45%;
-    --role-client-foreground: 0 0% 100%;
-
-    --gradient-primary: linear-gradient(
-      135deg,
-      hsl(25 95% 53%),
-      hsl(25 95% 60%)
-    );
-    --gradient-mesh: linear-gradient(
-      135deg,
-      hsl(25 95% 53% / 0.15),
-      hsl(220 70% 60% / 0.15)
-    );
-    --shadow-elevated: 0 4px 20px -2px hsl(0 0% 0% / 0.3);
-    --shadow-glow: 0 0 40px hsl(25 95% 53% / 0.4);
+    --shadow-elevated: 0 2px 8px -2px hsl(0 0% 0% / 0.1);
+    --shadow-glow: 0 0 20px hsl(25 95% 53% / 0.2);
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 }
@@ -265,11 +143,42 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
+    font-size: 0.875rem; /* 14px base font size - more compact */
+    line-height: 1.4; /* Tighter line height */
     /* Background image is managed dynamically by ThemeContext */
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
     background-attachment: fixed;
+    position: relative;
+  }
+
+  /* White gradient overlay for better text readability over background images */
+  body::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(
+      to bottom,
+      rgba(255, 255, 255, 1) 0%,
+      rgba(255, 255, 255, 0.8) 20%,
+      rgba(255, 255, 255, 0.6) 40%,
+      rgba(255, 255, 255, 0.4) 60%,
+      rgba(255, 255, 255, 0.2) 80%,
+      rgba(255, 255, 255, 0) 100%
+    );
+    pointer-events: none;
+    z-index: -1;
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+  }
+
+  /* Show gradient overlay when background image is present */
+  body[data-has-background="true"]::before {
+    opacity: 1;
   }
 
   /* Improve mobile touch and scroll behavior */
@@ -340,51 +249,57 @@ All colors MUST be HSL.
     padding-right: env(safe-area-inset-right);
   }
 
-  /* Glassmorphism effect utilities for dark mode */
-  .glassmorphism {
-    background: rgba(0, 0, 0, 0.25);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
-    color: white;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  /* Compact spacing utilities */
+  .compact-p {
+    padding: 0.5rem;
   }
 
-  .glassmorphism-light {
-    background: rgba(0, 0, 0, 0.2);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.3);
-    color: white;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  .compact-px {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
   }
 
-  .glassmorphism-subtle {
-    background: rgba(0, 0, 0, 0.15);
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.2);
-    color: white;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  .compact-py {
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
   }
 
-  /* Text utilities for glassmorphism */
-  .text-glass {
-    color: white;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  .compact-m {
+    margin: 0.5rem;
   }
 
-  .text-glass-strong {
-    color: white;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
-    font-weight: 600;
+  .compact-mx {
+    margin-left: 0.5rem;
+    margin-right: 0.5rem;
   }
 
-  .text-glass-muted {
-    color: rgba(255, 255, 255, 0.8);
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  .compact-my {
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .compact-gap {
+    gap: 0.5rem;
+  }
+
+  .compact-space-y > * + * {
+    margin-top: 0.5rem;
+  }
+
+  .compact-space-x > * + * {
+    margin-left: 0.5rem;
+  }
+
+  /* Compact form elements */
+  .compact-input {
+    height: 2rem;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+  }
+
+  .compact-button {
+    height: 2rem;
+    padding: 0.25rem 0.75rem;
+    font-size: 0.875rem;
   }
 }

@@ -1,13 +1,13 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+  LeftDrawer,
+  LeftDrawerContent,
+  LeftDrawerDescription,
+  LeftDrawerHeader,
+  LeftDrawerTitle,
+  LeftDrawerTrigger,
+} from "@/components/ui/left-drawer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -203,15 +203,15 @@ export function CreateMilestoneDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle>Create New Milestone</DialogTitle>
-          <DialogDescription>
+    <LeftDrawer open={open} onOpenChange={setOpen}>
+      <LeftDrawerTrigger asChild>{children}</LeftDrawerTrigger>
+      <LeftDrawerContent side="right" className="overflow-y-auto">
+        <LeftDrawerHeader>
+          <LeftDrawerTitle>Create New Milestone</LeftDrawerTitle>
+          <LeftDrawerDescription>
             Add a new milestone to start managing tasks and team members.
-          </DialogDescription>
-        </DialogHeader>
+          </LeftDrawerDescription>
+        </LeftDrawerHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="name">Milestone Name *</Label>
@@ -385,7 +385,7 @@ export function CreateMilestoneDialog({
             </Button>
           </div>
         </form>
-      </DialogContent>
-    </Dialog>
+      </LeftDrawerContent>
+    </LeftDrawer>
   );
 }

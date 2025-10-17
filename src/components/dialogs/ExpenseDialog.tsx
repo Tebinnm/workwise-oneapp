@@ -7,14 +7,14 @@ import {
   type ProjectExpenseWithDetails,
 } from "@/services/financialService";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+  LeftDrawer,
+  LeftDrawerContent,
+  LeftDrawerDescription,
+  LeftDrawerFooter,
+  LeftDrawerHeader,
+  LeftDrawerTitle,
+  LeftDrawerTrigger,
+} from "@/components/ui/left-drawer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -298,19 +298,19 @@ export function ExpenseDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>
+    <LeftDrawer open={open} onOpenChange={handleOpenChange}>
+      <LeftDrawerTrigger asChild>{children}</LeftDrawerTrigger>
+      <LeftDrawerContent side="right" className="overflow-y-auto">
+        <LeftDrawerHeader>
+          <LeftDrawerTitle>
             {expense ? "Edit Expense" : "Record New Expense"}
-          </DialogTitle>
-          <DialogDescription className="text-lg">
+          </LeftDrawerTitle>
+          <LeftDrawerDescription>
             {expense
               ? "Update expense details below"
               : "Enter the expense details below"}
-          </DialogDescription>
-        </DialogHeader>
+          </LeftDrawerDescription>
+        </LeftDrawerHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
@@ -498,7 +498,7 @@ export function ExpenseDialog({
             </p>
           </div>
 
-          <DialogFooter>
+          <LeftDrawerFooter>
             <Button
               type="button"
               variant="outline"
@@ -511,9 +511,9 @@ export function ExpenseDialog({
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {expense ? "Update Expense" : "Record Expense"}
             </Button>
-          </DialogFooter>
+          </LeftDrawerFooter>
         </form>
-      </DialogContent>
-    </Dialog>
+      </LeftDrawerContent>
+    </LeftDrawer>
   );
 }

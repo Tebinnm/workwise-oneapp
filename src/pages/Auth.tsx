@@ -202,7 +202,7 @@ export default function Auth() {
         <div className="text-center space-y-6 max-w-lg">
           <div className="relative mx-auto w-48 h-48 xl:w-64 xl:h-64">
             <div className="absolute inset-0 bg-gradient-primary opacity-20 blur-3xl rounded-full" />
-            <div className="relative glassmorphism rounded-3xl p-6 xl:p-8 border border-primary/20">
+            <div className="relative p-6 xl:p-8 border border-primary/20">
               <div className="space-y-4">
                 <div className="h-3 xl:h-4 bg-primary/30 rounded" />
                 <div className="h-3 xl:h-4 bg-primary/20 rounded w-3/4" />

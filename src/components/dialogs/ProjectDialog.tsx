@@ -2,14 +2,14 @@ import React, { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+  LeftDrawer,
+  LeftDrawerContent,
+  LeftDrawerDescription,
+  LeftDrawerFooter,
+  LeftDrawerHeader,
+  LeftDrawerTitle,
+  LeftDrawerTrigger,
+} from "@/components/ui/left-drawer";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -348,16 +348,16 @@ export function ProjectDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
-      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Projects</DialogTitle>
-          <DialogDescription>
+    <LeftDrawer open={open} onOpenChange={setOpen}>
+      {trigger && <LeftDrawerTrigger asChild>{trigger}</LeftDrawerTrigger>}
+      <LeftDrawerContent side="right" className="overflow-y-auto">
+        <LeftDrawerHeader>
+          <LeftDrawerTitle>Projects</LeftDrawerTitle>
+          <LeftDrawerDescription>
             Organize your milestones into projects for better management and
             navigation.
-          </DialogDescription>
-        </DialogHeader>
+          </LeftDrawerDescription>
+        </LeftDrawerHeader>
 
         <div className="space-y-6">
           {/* Create/Edit Form */}
@@ -573,7 +573,7 @@ export function ProjectDialog({
                     </div>
                   </div>
 
-                  <DialogFooter>
+                  <LeftDrawerFooter>
                     <Button
                       onClick={
                         editingProject
@@ -588,7 +588,7 @@ export function ProjectDialog({
                         ? "Update Project"
                         : "Create Project"}
                     </Button>
-                  </DialogFooter>
+                  </LeftDrawerFooter>
                 </div>
               </CardContent>
             </Card>
@@ -670,7 +670,7 @@ export function ProjectDialog({
             )}
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      </LeftDrawerContent>
+    </LeftDrawer>
   );
 }

@@ -91,21 +91,17 @@ export function AppLayout() {
       <div className="flex min-h-screen w-full">
         <AppSidebar />
         <div className="flex-1 flex flex-col min-w-0">
-          <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-            <div className="flex h-14 md:h-16 items-center gap-2 md:gap-4 px-3 md:px-6">
+          <header className="sticky top-0 z-40 border-b bg-background">
+            <div className="flex h-10 md:h-12 items-center gap-1 md:gap-2 px-2 md:px-3">
               <SidebarTrigger />
               <div className="flex-1" />
               {/* <Button variant="ghost" size="icon" className="relative h-9 w-9">
                 <Bell className="h-4 w-4 md:h-5 md:w-5" />
-                <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-destructive" />
+                <span className="absolute top-1 right-1 h-2 w-2 bg-destructive" />
               </Button> */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="rounded-full h-9 w-9"
-                  >
+                  <Button variant="ghost" size="icon" className="h-9 w-9">
                     <Avatar className="h-8 w-8">
                       <AvatarFallback className="bg-primary text-primary-foreground">
                         {getInitials()}
@@ -202,7 +198,7 @@ export function AppLayout() {
               </DropdownMenu>
             </div>
           </header>
-          <main className="flex-1 p-3 md:p-6 lg:p-4 overflow-auto">
+          <main className="flex-1 p-2 md:p-3 lg:p-2 overflow-auto">
             <Outlet />
           </main>
         </div>

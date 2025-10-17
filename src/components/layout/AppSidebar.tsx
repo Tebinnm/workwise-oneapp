@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
   Folder,
@@ -91,6 +91,7 @@ export function AppSidebar() {
   const [showProjectDialog, setShowProjectDialog] = useState(false);
   const [showMilestoneDialog, setShowMilestoneDialog] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
   const {
     profile,
     canManageSystemUsers,
@@ -100,6 +101,29 @@ export function AppSidebar() {
 
   // Auto-close sidebar on mobile when navigation occurs
   useSidebarAutoClose();
+
+  // Helper functions for active state determination
+  const isRouteActive = (path: string, exact = false) => {
+    if (exact) {
+      return location.pathname === path;
+    }
+    return location.pathname.startsWith(path);
+  };
+
+  const isProjectActive = (projectId: string) => {
+    return location.pathname === `/projects/${projectId}`;
+  };
+
+  const isMilestoneActive = (milestoneId: string) => {
+    return location.pathname === `/milestones/${milestoneId}`;
+  };
+
+  const isProjectsSectionActive = () => {
+    return (
+      location.pathname.startsWith("/projects") ||
+      location.pathname.startsWith("/milestones")
+    );
+  };
 
   useEffect(() => {
     if (profile) {
@@ -218,6 +242,21 @@ export function AppSidebar() {
     });
   };
 
+  // Auto-expand projects that contain active milestones
+  useEffect(() => {
+    if (location.pathname.startsWith("/milestones/")) {
+      const activeMilestoneId = location.pathname.split("/")[2];
+      const activeProject = projects.find((project) =>
+        project.milestones?.some(
+          (milestone) => milestone.id === activeMilestoneId
+        )
+      );
+      if (activeProject && !expandedProjects.has(activeProject.id)) {
+        setExpandedProjects((prev) => new Set([...prev, activeProject.id]));
+      }
+    }
+  }, [location.pathname, projects, expandedProjects]);
+
   const getIconComponent = (iconName: string, size = 16) => {
     const iconMap: { [key: string]: React.ComponentType<any> } = {
       folder: Folder,
@@ -265,11 +304,11 @@ export function AppSidebar() {
     <TooltipProvider>
       <Sidebar>
         <SidebarHeader className="border-b border-sidebar-border px-4 py-4">
-          <Logo className="text-sidebar-foreground" variant="sidebar" />
+          <Logo className="text-sidebar-foreground" variant="default" />
         </SidebarHeader>
         <div className="px-2 mb-3">
           <div className="relative">
-            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-glass-muted" />
+            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search"
               value={searchQuery}
@@ -283,13 +322,16 @@ export function AppSidebar() {
             <SidebarGroupContent>
               <SidebarMenu>
                 <SidebarMenuItem>
-                  <SidebarMenuButton asChild>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={isRouteActive("/dashboard", true)}
+                  >
                     <NavLink
                       to="/dashboard"
                       className={({ isActive }) =>
                         isActive
                           ? "bg-sidebar-accent text-sidebar-primary font-medium"
-                          : ""
+                          : "hover:bg-sidebar-accent/50"
                       }
                     >
                       <LayoutDashboard className="h-4 w-4" />
@@ -298,13 +340,16 @@ export function AppSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
-                  <SidebarMenuButton asChild>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={isRouteActive("/projects", true)}
+                  >
                     <NavLink
                       to="/projects"
                       className={({ isActive }) =>
                         isActive
                           ? "bg-sidebar-accent text-sidebar-primary font-medium"
-                          : ""
+                          : "hover:bg-sidebar-accent/50"
                       }
                     >
                       <Folder className="h-4 w-4" />
@@ -314,13 +359,16 @@ export function AppSidebar() {
                 </SidebarMenuItem>
                 {canApproveAttendance() && (
                   <SidebarMenuItem>
-                    <SidebarMenuButton asChild>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={isRouteActive("/attendance")}
+                    >
                       <NavLink
                         to="/attendance"
                         className={({ isActive }) =>
                           isActive
                             ? "bg-sidebar-accent text-sidebar-primary font-medium"
-                            : ""
+                            : "hover:bg-sidebar-accent/50"
                         }
                       >
                         <ClipboardCheck className="h-4 w-4" />
@@ -331,13 +379,16 @@ export function AppSidebar() {
                 )}
                 {canManageSystemUsers() && (
                   <SidebarMenuItem>
-                    <SidebarMenuButton asChild>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={isRouteActive("/users")}
+                    >
                       <NavLink
                         to="/users"
                         className={({ isActive }) =>
                           isActive
                             ? "bg-sidebar-accent text-sidebar-primary font-medium"
-                            : ""
+                            : "hover:bg-sidebar-accent/50"
                         }
                       >
                         <Users className="h-4 w-4" />
@@ -422,13 +473,17 @@ export function AppSidebar() {
                           onMouseLeave={() => setHoveredMilestone(null)}
                         >
                           <div className="flex items-center w-full group">
-                            <SidebarMenuButton asChild className="flex-1">
+                            <SidebarMenuButton
+                              asChild
+                              className="flex-1"
+                              isActive={isMilestoneActive(milestone.id)}
+                            >
                               <NavLink
                                 to={`/milestones/${milestone.id}`}
                                 className={({ isActive }) =>
                                   isActive
                                     ? "bg-sidebar-accent text-sidebar-primary font-medium"
-                                    : ""
+                                    : "hover:bg-sidebar-accent/50"
                                 }
                               >
                                 <Folder className="h-4 w-4" />
@@ -475,7 +530,11 @@ export function AppSidebar() {
                                   onClick={() =>
                                     toggleProjectExpansion(project.id)
                                   }
-                                  className="flex-1 justify-between"
+                                  className={`flex-1 justify-between ${
+                                    isProjectActive(project.id)
+                                      ? "bg-sidebar-accent text-sidebar-primary font-medium"
+                                      : "hover:bg-sidebar-accent/50"
+                                  }`}
                                 >
                                   <div className="flex items-center space-x-2">
                                     <div
@@ -506,7 +565,7 @@ export function AppSidebar() {
                               </TooltipTrigger>
                               <TooltipContent side="right" align="center">
                                 <div className="flex items-center gap-2 text-sm">
-                                  <MapPin className="h-4 w-4 text-glass-muted" />
+                                  <MapPin className="h-4 w-4 text-muted-foreground" />
                                   <div>
                                     {project.site_location && (
                                       <div className="font-medium text-popover-foreground">
@@ -514,7 +573,7 @@ export function AppSidebar() {
                                       </div>
                                     )}
                                     {project.site_address && (
-                                      <div className="text-glass-muted text-sm">
+                                      <div className="text-muted-foreground text-sm">
                                         {project.site_address}
                                       </div>
                                     )}
@@ -525,7 +584,11 @@ export function AppSidebar() {
                           ) : (
                             <SidebarMenuButton
                               onClick={() => toggleProjectExpansion(project.id)}
-                              className="flex-1 justify-between"
+                              className={`flex-1 justify-between ${
+                                isProjectActive(project.id)
+                                  ? "bg-sidebar-accent text-sidebar-primary font-medium"
+                                  : "hover:bg-sidebar-accent/50"
+                              }`}
                             >
                               <div className="flex items-center space-x-2">
                                 <div
@@ -588,13 +651,17 @@ export function AppSidebar() {
                                 onMouseLeave={() => setHoveredMilestone(null)}
                               >
                                 <div className="flex items-center w-full group">
-                                  <SidebarMenuButton asChild className="flex-1">
+                                  <SidebarMenuButton
+                                    asChild
+                                    className="flex-1"
+                                    isActive={isMilestoneActive(milestone.id)}
+                                  >
                                     <NavLink
                                       to={`/milestones/${milestone.id}`}
                                       className={({ isActive }) =>
                                         isActive
                                           ? "bg-sidebar-accent text-sidebar-primary font-medium"
-                                          : ""
+                                          : "hover:bg-sidebar-accent/50"
                                       }
                                     >
                                       <Folder className="h-4 w-4" />

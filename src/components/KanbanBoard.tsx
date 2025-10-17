@@ -100,13 +100,13 @@ function DroppableColumn({
   return (
     <div
       ref={setNodeRef}
-      className={`space-y-3 md:space-y-4 transition-all ${
+      className={`space-y-2 md:space-y-3 transition-all ${
         isDragging ? "ring-2 ring-primary/20 rounded-lg p-2" : ""
       } ${isOverColumn ? "ring-4 ring-primary/40 bg-primary/5" : ""}`}
     >
-      <div className="flex items-center justify-between px-1">
+      <div className="flex items-center justify-between p-1 rounded bg-white">
         <div className="flex items-center gap-2">
-          <h3 className="font-semibold text-large">{column.label}</h3>
+          <h4 className="font-semibold">{column.label}</h4>
           <Badge variant="secondary">{tasks.length}</Badge>
         </div>
         {/* Only show add button for todo and in_progress columns, not done */}
@@ -151,7 +151,7 @@ function DroppableColumn({
                   : "border-muted-foreground/30"
               }`}
             >
-              <p className="text-lg text-glass-muted">
+              <p className="text-lg text-muted-foreground">
                 {isDragging && isOverColumn ? "Drop here" : "No tasks"}
               </p>
             </div>
@@ -207,21 +207,21 @@ function SortableTaskCard({
           : "hover:ring-1 hover:ring-primary/20"
       }`}
     >
-      <CardContent className="p-3 md:p-4 space-y-3">
+      <CardContent className="p-2 md:p-3 space-y-2">
         <div className="flex items-start justify-between gap-2">
           <div
             {...attributes}
             {...listeners}
             className="flex items-start gap-2 flex-1 min-w-0 cursor-grab active:cursor-grabbing"
           >
-            <div className="mt-1 text-glass-muted hover:text-glass-strong transition-colors flex-shrink-0">
+            <div className="mt-1 text-muted-foreground hover:text-foreground transition-colors flex-shrink-0">
               <GripVertical className="h-4 w-4" />
             </div>
             <div className="space-y-1 flex-1 min-w-0">
               <h4 className="font-medium text-medium line-clamp-2">
                 {task.title}
               </h4>
-              <p className="text-small text-glass-muted">
+              <p className="text-small text-muted-foreground">
                 {task.created_at.substring(0, 10)}
               </p>
             </div>
@@ -251,7 +251,7 @@ function SortableTaskCard({
           </div>
         </div>
         {task.description && (
-          <p className="text-sm text-glass-muted line-clamp-2">
+          <p className="text-sm text-muted-foreground line-clamp-2">
             {task.description}
           </p>
         )}
@@ -280,39 +280,39 @@ function SortableTaskCard({
                 ))}
               </div>
               {task.task_assignments.length > 3 && (
-                <span className="text-small text-glass-muted">
+                <span className="text-small text-muted-foreground">
                   +{task.task_assignments.length - 3}
                 </span>
               )}
             </div>
           )}
         </div>
-        <div className="flex items-center gap-2 text-glass-muted">
+        <div className="flex items-center gap-2 text-muted-foreground">
           <Button
             variant="ghost"
             size="sm"
-            className="hover:text-glass-strong transition-colors"
+            className="hover:text-foreground transition-colors"
           >
             <Star className="h-3 w-3 md:h-4 md:w-4" />
           </Button>
           <Button
             variant="ghost"
             size="sm"
-            className="hover:text-glass-strong transition-colors"
+            className="hover:text-foreground transition-colors"
           >
             <MessageSquare className="h-3 w-3 md:h-4 md:w-4" />
           </Button>
           <Button
             variant="ghost"
             size="sm"
-            className="hover:text-glass-strong transition-colors"
+            className="hover:text-foreground transition-colors"
           >
             <Paperclip className="h-3 w-3 md:h-4 md:w-4" />
           </Button>
           <Button
             variant="ghost"
             size="sm"
-            className="hover:text-glass-strong transition-colors ml-auto"
+            className="hover:text-foreground transition-colors ml-auto"
           >
             <Link2 className="h-3 w-3 md:h-4 md:w-4" />
           </Button>
@@ -498,7 +498,7 @@ export function KanbanBoard({
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
     >
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4 lg:gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-2 md:gap-3 lg:gap-4">
         {statusColumns.map((column) => {
           const columnTasks = getTasksByStatus(column.id);
           return (
@@ -518,9 +518,9 @@ export function KanbanBoard({
       <DragOverlay>
         {activeTask ? (
           <Card className="shadow-2xl opacity-95 cursor-grabbing rotate-2 ring-2 ring-primary">
-            <CardContent className="p-3 md:p-4 space-y-2">
+            <CardContent className="p-2 md:p-3 space-y-1">
               <div className="flex items-start gap-2">
-                <div className="mt-1 text-glass-muted">
+                <div className="mt-1 text-muted-foreground">
                   <GripVertical className="h-4 w-4" />
                 </div>
                 <div className="flex-1">
@@ -528,7 +528,7 @@ export function KanbanBoard({
                     {activeTask.title}
                   </h4>
                   {activeTask.description && (
-                    <p className="text-sm text-glass-muted line-clamp-1 mt-1">
+                    <p className="text-sm text-muted-foreground line-clamp-1 mt-1">
                       {activeTask.description}
                     </p>
                   )}

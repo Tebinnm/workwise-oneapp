@@ -581,7 +581,7 @@ export function GanttChart({
   return (
     <div className="space-y-4">
       {/* Controls */}
-      <Card className="p-3 sm:p-4 glassmorphism-light">
+      <Card className="p-3 sm:p-4">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
           <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-start">
             <div className="flex items-center gap-2">
@@ -601,13 +601,13 @@ export function GanttChart({
               </Button>
             </div>
 
-            <span className="text-xs sm:text-sm text-glass-muted sm:hidden">
+            <span className="text-xs sm:text-sm text-muted-foreground sm:hidden">
               {validTasks.length} task{validTasks.length !== 1 ? "s" : ""}
             </span>
           </div>
 
           <div className="flex items-center gap-2 w-full sm:w-auto justify-between">
-            <span className="text-sm text-glass-muted hidden sm:inline">
+            <span className="text-sm text-muted-foreground hidden sm:inline">
               {validTasks.length} task{validTasks.length !== 1 ? "s" : ""} with
               dates
             </span>
@@ -654,16 +654,16 @@ export function GanttChart({
       {/* Gantt Chart */}
       <Card
         className={cn(
-          "overflow-hidden flex flex-col max-h-[calc(100vh-16rem)] glassmorphism-light",
+          "overflow-hidden flex flex-col max-h-[calc(100vh-16rem)]",
           isDragging && "ring-2 ring-primary ring-opacity-50"
         )}
       >
         <div className="overflow-x-auto overflow-y-hidden flex-shrink-0">
           <div className="min-w-max">
             {/* Timeline Header */}
-            <div className="flex border-b glassmorphism-subtle">
+            <div className="flex border-b">
               {/* Task Names Column */}
-              <div className="w-40 sm:w-48 lg:w-64 shrink-0 border-r glassmorphism-subtle p-2 sm:p-3 text-sm sm:text-base font-semibold sticky left-0 z-10 text-glass-strong">
+              <div className="w-40 sm:w-48 lg:w-64 shrink-0 border-r p-2 sm:p-3 text-sm sm:text-base font-semibold sticky left-0 z-10">
                 Task Name
               </div>
 
@@ -672,7 +672,7 @@ export function GanttChart({
                 {timelineColumns.map((date, index) => (
                   <div
                     key={index}
-                    className="border-r text-center p-2 sm:p-3 text-xs sm:text-sm font-medium text-glass"
+                    className="border-r text-center p-2 sm:p-3 text-xs sm:text-sm font-medium"
                     style={{ minWidth: `${columnWidth}px` }}
                   >
                     {formatColumnHeader(date)}
@@ -687,13 +687,13 @@ export function GanttChart({
         <div className="overflow-x-auto overflow-y-auto flex-1">
           <div className="min-w-max">
             {validTasks.length === 0 ? (
-              <div className="flex items-center justify-center h-48 text-glass-muted px-4">
+              <div className="flex items-center justify-center h-48 text-muted-foreground px-4">
                 <div className="text-center space-y-2">
                   <CalendarIcon className="h-8 sm:h-12 w-8 sm:w-12 mx-auto opacity-50" />
-                  <p className="text-base sm:text-lg font-medium text-glass">
+                  <p className="text-base sm:text-lg font-medium">
                     No tasks with dates
                   </p>
-                  <p className="text-lg text-glass-muted max-w-xs mx-auto">
+                  <p className="text-lg text-muted-foreground max-w-xs mx-auto">
                     Add start and end dates to tasks to see them on the Gantt
                     chart
                   </p>
@@ -712,17 +712,15 @@ export function GanttChart({
                     <div
                       key={task.id}
                       className={cn(
-                        "flex border-b hover:glassmorphism-light transition-colors",
-                        taskIndex % 2 === 0
-                          ? "glassmorphism-subtle"
-                          : "glassmorphism-light"
+                        "flex border-b hover:bg-accent transition-colors",
+                        taskIndex % 2 === 0 ? "bg-muted" : "bg-background"
                       )}
                     >
                       {/* Task Name Column */}
                       <div className="w-40 sm:w-48 lg:w-64 shrink-0 border-r p-2 sm:p-3 sticky left-0 z-10 bg-inherit">
                         <div className="space-y-1">
                           <p
-                            className="text-xs sm:text-sm font-medium line-clamp-1 text-glass"
+                            className="text-xs sm:text-sm font-medium line-clamp-1"
                             title={task.title}
                           >
                             {task.title}
@@ -758,7 +756,7 @@ export function GanttChart({
                                     </Avatar>
                                   ))}
                                 {task.task_assignments.length > 2 && (
-                                  <span className="text-xs text-glass-muted ml-1 hidden sm:inline">
+                                  <span className="text-xs text-muted-foreground ml-1 hidden sm:inline">
                                     +{task.task_assignments.length - 2}
                                   </span>
                                 )}
@@ -773,7 +771,7 @@ export function GanttChart({
                         {/* Task Bar */}
                         <div
                           className={cn(
-                            "absolute top-1/2 -translate-y-1/2 h-6 sm:h-8 rounded-md flex items-center px-2 sm:px-3 cursor-pointer transition-all hover:shadow-lg hover:z-20 touch-manipulation group",
+                            "absolute top-1/2 -translate-y-1/2 h-6 sm:h-8 flex items-center px-2 sm:px-3 cursor-pointer transition-all hover:shadow-lg hover:z-20 touch-manipulation group",
                             statusColors[
                               displayTask.status as keyof typeof statusColors
                             ] || "bg-gray-400",
@@ -823,8 +821,8 @@ export function GanttChart({
                   className="absolute top-0 bottom-0 w-0.5 bg-red-500 z-10 pointer-events-none hidden sm:block"
                   style={{ left: `${taskColumnWidth + todayPosition}px` }}
                 >
-                  <div className="absolute -top-1 -left-1 w-2 h-2 sm:w-3 sm:h-3 bg-red-500 rounded-full" />
-                  <div className="absolute top-0 left-1 sm:left-2 text-xs font-semibold text-red-500 whitespace-nowrap text-glass-strong">
+                  <div className="absolute -top-1 -left-1 w-2 h-2 sm:w-3 sm:h-3 bg-red-500" />
+                  <div className="absolute top-0 left-1 sm:left-2 text-xs font-semibold text-red-500 whitespace-nowrap">
                     Today
                   </div>
                 </div>
@@ -835,32 +833,31 @@ export function GanttChart({
       </Card>
 
       {/* Legend */}
-      <Card className="p-3 sm:p-4 glassmorphism-light">
+      <Card className="p-3 sm:p-4">
         <div className="flex items-center gap-3 sm:gap-6 flex-wrap">
-          <span className="text-xs sm:text-sm font-medium text-glass-muted">
+          <span className="text-xs sm:text-sm font-medium text-muted-foreground">
             Status:
           </span>
           {Object.entries(statusColors).map(([status, color]) => (
             <div key={status} className="flex items-center gap-1.5 sm:gap-2">
               <div className={cn("w-3 h-3 sm:w-4 sm:h-4 rounded", color)} />
-              <span className="text-xs sm:text-sm capitalize text-glass">
+              <span className="text-xs sm:text-sm capitalize">
                 {status.replace("_", " ")}
               </span>
             </div>
           ))}
         </div>
         <div className="mt-3 pt-3 border-t">
-          <p className="text-lg text-glass-muted">
-            💡 <strong className="text-glass-strong">Tip:</strong> Click on
-            tasks to view details. Drag tasks to move them or use the resize
-            handles to change duration.
+          <p className="text-lg text-muted-foreground">
+            💡 <strong>Tip:</strong> Click on tasks to view details. Drag tasks
+            to move them or use the resize handles to change duration.
           </p>
         </div>
       </Card>
 
       {/* Task Details on Hover */}
       {hoveredTask && (
-        <Card className="fixed bottom-2 sm:bottom-4 left-2 right-2 sm:left-auto sm:right-4 p-3 sm:p-4 shadow-lg max-w-full sm:max-w-sm z-50 border-2 border-primary max-h-[80vh] overflow-y-auto glassmorphism">
+        <Card className="fixed bottom-2 sm:bottom-4 left-2 right-2 sm:left-auto sm:right-4 p-3 sm:p-4 shadow-lg max-w-full sm:max-w-sm z-50 border-2 border-primary max-h-[80vh] overflow-y-auto">
           {(() => {
             const task = validTasks.find((t) => t.id === hoveredTask);
             if (!task) return null;
@@ -873,11 +870,11 @@ export function GanttChart({
               <div className="space-y-2 sm:space-y-3">
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
-                    <h4 className="font-semibold text-sm sm:text-base line-clamp-2 text-glass-strong">
+                    <h4 className="font-semibold text-sm sm:text-base line-clamp-2">
                       {displayTask.title}
                     </h4>
                     {displayTask.description && (
-                      <p className="text-lg text-glass-muted mt-1 line-clamp-3">
+                      <p className="text-lg text-muted-foreground mt-1 line-clamp-3">
                         {displayTask.description}
                       </p>
                     )}
@@ -886,7 +883,7 @@ export function GanttChart({
                     variant="ghost"
                     size="sm"
                     onClick={() => setHoveredTask(null)}
-                    className="sm:hidden flex-shrink-0 text-glass-muted hover:text-glass-strong"
+                    className="sm:hidden flex-shrink-0 text-muted-foreground hover:text-foreground"
                     aria-label="Close"
                   >
                     ✕
@@ -895,8 +892,8 @@ export function GanttChart({
 
                 <div className="space-y-1 text-xs sm:text-sm">
                   <div className="flex justify-between gap-2">
-                    <span className="text-glass-muted">Start:</span>
-                    <span className="font-medium text-right text-glass">
+                    <span className="text-muted-foreground">Start:</span>
+                    <span className="font-medium text-right">
                       {displayTask.start_datetime
                         ? format(
                             new Date(displayTask.start_datetime),
@@ -906,8 +903,8 @@ export function GanttChart({
                     </span>
                   </div>
                   <div className="flex justify-between gap-2">
-                    <span className="text-glass-muted">End:</span>
-                    <span className="font-medium text-right text-glass">
+                    <span className="text-muted-foreground">End:</span>
+                    <span className="font-medium text-right">
                       {displayTask.end_datetime
                         ? format(
                             new Date(displayTask.end_datetime),
@@ -917,8 +914,8 @@ export function GanttChart({
                     </span>
                   </div>
                   <div className="flex justify-between gap-2">
-                    <span className="text-glass-muted">Duration:</span>
-                    <span className="font-medium text-glass">
+                    <span className="text-muted-foreground">Duration:</span>
+                    <span className="font-medium">
                       {displayTask.start_datetime && displayTask.end_datetime
                         ? `${
                             differenceInDays(
@@ -933,7 +930,7 @@ export function GanttChart({
 
                 {task.task_assignments.length > 0 && (
                   <div>
-                    <p className="text-lg text-glass-muted mb-2">
+                    <p className="text-lg text-muted-foreground mb-2">
                       Assigned to:
                     </p>
                     <div className="flex flex-wrap gap-1.5 sm:gap-2">

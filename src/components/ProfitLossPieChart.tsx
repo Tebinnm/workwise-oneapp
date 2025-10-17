@@ -18,11 +18,13 @@ interface ProfitLossData {
 interface ProfitLossPieChartProps {
   data: ProfitLossData[];
   isLoading?: boolean;
+  title?: string;
 }
 
 const ProfitLossPieChart = ({
   data,
   isLoading = false,
+  title = "Project Profit/Loss Overview",
 }: ProfitLossPieChartProps) => {
   const totalValue = data.reduce((sum, item) => sum + item.value, 0);
   const profitData = data.find((item) => item.name === "Profit");
@@ -37,14 +39,12 @@ const ProfitLossPieChart = ({
     if (active && payload && payload.length) {
       const data = payload[0];
       return (
-        <div className="bg-background border border-border rounded-lg p-2 sm:p-3 shadow-lg glassmorphism-light">
-          <p className="text-xs sm:text-sm font-medium text-glass-strong">
-            {data.name}
-          </p>
-          <p className="text-xs sm:text-sm text-glass-muted">
+        <div className="bg-background border border-border p-2 sm:p-3 shadow-lg">
+          <p className="text-xs sm:text-sm font-medium">{data.name}</p>
+          <p className="text-xs sm:text-sm text-muted-foreground">
             Amount: ${data.value.toLocaleString()}
           </p>
-          <p className="text-xs sm:text-sm text-glass-muted">
+          <p className="text-xs sm:text-sm text-muted-foreground">
             Percentage: {((data.value / totalValue) * 100).toFixed(1)}%
           </p>
         </div>
@@ -59,7 +59,7 @@ const ProfitLossPieChart = ({
         <CardHeader className="pb-2">
           <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
             <DollarSign className="h-4 w-4 sm:h-5 sm:w-5" />
-            Project Profit/Loss Overview
+            {title}
           </CardTitle>
         </CardHeader>
         <CardContent className="flex-1 flex items-center justify-center">
@@ -75,16 +75,14 @@ const ProfitLossPieChart = ({
         <CardHeader className="pb-2">
           <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
             <DollarSign className="h-4 w-4 sm:h-5 sm:w-5" />
-            Project Profit/Loss Overview
+            {title}
           </CardTitle>
         </CardHeader>
-        <CardContent className="flex-1 flex items-center justify-center text-glass-muted">
+        <CardContent className="flex-1 flex items-center justify-center text-muted-foreground">
           <div className="text-center">
             <DollarSign className="h-8 w-8 sm:h-12 sm:w-12 mx-auto mb-2 opacity-50" />
-            <p className="text-base sm:text-lg text-glass">
-              No financial data available
-            </p>
-            <p className="text-xs sm:text-sm text-glass-muted">
+            <p className="text-base sm:text-lg">No financial data available</p>
+            <p className="text-xs sm:text-sm text-muted-foreground">
               Add projects and expenses to see profit/loss analysis
             </p>
           </div>
@@ -100,7 +98,7 @@ const ProfitLossPieChart = ({
           <DollarSign className="h-4 w-4 sm:h-5 sm:w-5" />
           Project Profit/Loss Overview
         </CardTitle>
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 text-xs sm:text-sm text-glass-muted">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 text-xs sm:text-sm text-muted-foreground">
           <div className="flex items-center gap-2">
             <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 text-green-500" />
             <span>Profit: {profitPercentage.toFixed(1)}%</span>
@@ -148,13 +146,17 @@ const ProfitLossPieChart = ({
             <p className="text-lg sm:text-2xl font-bold text-green-600 dark:text-green-400">
               ${profitData?.value.toLocaleString() || 0}
             </p>
-            <p className="text-xs sm:text-sm text-glass-muted">Total Profit</p>
+            <p className="text-xs sm:text-sm text-muted-foreground">
+              Total Profit
+            </p>
           </div>
           <div className="text-center">
             <p className="text-lg sm:text-2xl font-bold text-red-600 dark:text-red-400">
               ${lossData?.value.toLocaleString() || 0}
             </p>
-            <p className="text-xs sm:text-sm text-glass-muted">Total Loss</p>
+            <p className="text-xs sm:text-sm text-muted-foreground">
+              Total Loss
+            </p>
           </div>
         </div>
       </CardContent>

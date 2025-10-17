@@ -16,14 +16,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+  LeftDrawer,
+  LeftDrawerContent,
+  LeftDrawerDescription,
+  LeftDrawerFooter,
+  LeftDrawerHeader,
+  LeftDrawerTitle,
+  LeftDrawerTrigger,
+} from "@/components/ui/left-drawer";
 import {
   Select,
   SelectContent,
@@ -52,6 +52,7 @@ import { ProjectAssignmentDialog } from "@/components/dialogs/ProjectAssignmentD
 import { UserImportExportService } from "@/services/userImportExportService";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useNavigate } from "react-router-dom";
+import { BackButton } from "@/components/ui/back-button";
 
 interface User {
   id: string;
@@ -382,6 +383,9 @@ export default function UserManagement() {
 
   return (
     <div className="space-y-6">
+      {/* Back Button */}
+      <BackButton to="/dashboard" label="Back to Dashboard" />
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
@@ -421,22 +425,25 @@ export default function UserManagement() {
               <span className="hidden sm:inline">Import</span>
             </Button>
           </div>
-          <Dialog open={showAddUserDialog} onOpenChange={setShowAddUserDialog}>
-            <DialogTrigger asChild>
+          <LeftDrawer
+            open={showAddUserDialog}
+            onOpenChange={setShowAddUserDialog}
+          >
+            <LeftDrawerTrigger asChild>
               <Button className="flex-1 sm:flex-none">
                 <UserPlus className="h-4 w-4 mr-2" />
                 <span className="hidden sm:inline">Add User</span>
                 <span className="sm:hidden">Add</span>
               </Button>
-            </DialogTrigger>
-            <DialogContent>
+            </LeftDrawerTrigger>
+            <LeftDrawerContent side="right" className="overflow-y-auto">
               <form onSubmit={handleAddUser}>
-                <DialogHeader>
-                  <DialogTitle>Add New User</DialogTitle>
-                  <DialogDescription>
+                <LeftDrawerHeader>
+                  <LeftDrawerTitle>Add New User</LeftDrawerTitle>
+                  <LeftDrawerDescription>
                     Create a new user account with basic information.
-                  </DialogDescription>
-                </DialogHeader>
+                  </LeftDrawerDescription>
+                </LeftDrawerHeader>
                 <div className="space-y-4 py-4">
                   <div className="space-y-2">
                     <Label htmlFor="full_name">Full Name</Label>
@@ -498,7 +505,7 @@ export default function UserManagement() {
                     </Select>
                   </div>
                 </div>
-                <DialogFooter>
+                <LeftDrawerFooter>
                   <Button
                     type="button"
                     variant="outline"
@@ -509,10 +516,10 @@ export default function UserManagement() {
                   <Button type="submit" disabled={loading}>
                     {loading ? "Creating..." : "Create User"}
                   </Button>
-                </DialogFooter>
+                </LeftDrawerFooter>
               </form>
-            </DialogContent>
-          </Dialog>
+            </LeftDrawerContent>
+          </LeftDrawer>
         </div>
       </div>
 

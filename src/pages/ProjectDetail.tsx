@@ -40,6 +40,7 @@ import {
 } from "@/services/financialService";
 import { Loader } from "@/components/ui/loader";
 import { formatCurrency } from "@/lib/utils";
+import { BackButton } from "@/components/ui/back-button";
 
 export default function ProjectDetail() {
   const { projectId } = useParams<{ projectId: string }>();
@@ -280,14 +281,7 @@ export default function ProjectDetail() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col gap-4">
-        <Button
-          variant="ghost"
-          className="w-fit"
-          onClick={() => navigate("/projects")}
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Projects
-        </Button>
+        <BackButton to="/projects" label="Back to Projects" />
 
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex-1">
@@ -320,7 +314,7 @@ export default function ProjectDetail() {
             <Card>
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-primary/10 rounded-lg">
+                  <div className="p-2 bg-primary/10">
                     <MapPin className="h-5 w-5 text-primary" />
                   </div>
                   <div>
@@ -336,7 +330,7 @@ export default function ProjectDetail() {
             <Card>
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-primary/10 rounded-lg">
+                  <div className="p-2 bg-primary/10">
                     <Calendar className="h-5 w-5 text-primary" />
                   </div>
                   <div>
@@ -359,7 +353,7 @@ export default function ProjectDetail() {
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-success/10 rounded-lg">
+                <div className="p-2 bg-success/10">
                   <DollarSign className="h-5 w-5 text-success" />
                 </div>
                 <div>
@@ -378,7 +372,7 @@ export default function ProjectDetail() {
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-success/10 rounded-lg">
+                <div className="p-2 bg-success/10">
                   <TrendingUp className="h-5 w-5 text-success" />
                 </div>
                 <div>
@@ -397,7 +391,7 @@ export default function ProjectDetail() {
       </div>
 
       {/* Financial Summary */}
-      <Card className="border-primary/20 glassmorphism-subtle">
+      <Card className="border-primary/20">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <DollarSign className="h-5 w-5" />
@@ -592,10 +586,10 @@ export default function ProjectDetail() {
                   {projectMembers.map((member) => (
                     <div
                       key={member.userId}
-                      className="p-4 border rounded-lg hover:shadow-md transition-shadow"
+                      className="p-4 border hover:shadow-md transition-shadow"
                     >
                       <div className="flex items-start gap-3">
-                        <div className="p-2 bg-primary/10 rounded-full">
+                        <div className="p-2 bg-primary/10">
                           <Users className="h-4 w-4 text-primary" />
                         </div>
                         <div className="flex-1 min-w-0">

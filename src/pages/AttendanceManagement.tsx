@@ -38,6 +38,7 @@ import { PermissionService } from "@/services/permissionService";
 import { AttendanceService } from "@/services/attendanceService";
 import { cn } from "@/lib/utils";
 import { Loader } from "@/components/ui/loader";
+import { BackButton } from "@/components/ui/back-button";
 
 interface Employee {
   id: string;
@@ -224,6 +225,9 @@ export default function AttendanceManagement() {
 
   return (
     <div className="space-y-6">
+      {/* Back Button */}
+      <BackButton to="/dashboard" label="Back to Dashboard" />
+
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold">Attendance Management</h1>

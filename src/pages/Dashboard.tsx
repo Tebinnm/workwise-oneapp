@@ -34,6 +34,11 @@ import {
   MapPin,
   Users,
   FolderOpen,
+  TrendingUp,
+  TrendingDown,
+  CheckSquare,
+  Square,
+  Timer,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -54,6 +59,12 @@ import {
   ProjectFinancialDetails,
 } from "@/services/financialService";
 import ProfitLossPieChart from "@/components/ProfitLossPieChart";
+import {
+  WorkerDashboardService,
+  WorkerTaskStats,
+  WorkerProjectData,
+  WorkerMilestoneData,
+} from "@/services/workerDashboardService";
 
 interface Task {
   id: string;
@@ -101,7 +112,11 @@ interface Milestone {
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const { canEditMilestones } = usePermissions();
+  const {
+    canEditMilestones,
+    isWorker,
+    profile: userProfile,
+  } = usePermissions();
   const [profile, setProfile] = useState<any>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [activeTask, setActiveTask] = useState<Task | null>(null);
@@ -113,6 +128,19 @@ export default function Dashboard() {
   });
   const [checkedIn, setCheckedIn] = useState(false);
   const [checkInTime, setCheckInTime] = useState<Date | null>(null);
+
+  // Worker-specific state
+  const [workerTaskStats, setWorkerTaskStats] = useState<WorkerTaskStats>({
+    assignedTasks: 0,
+    pendingTasks: 0,
+    completedTasks: 0,
+    overdueTasks: 0,
+  });
+  const [workerProjects, setWorkerProjects] = useState<WorkerProjectData[]>([]);
+  const [workerMilestones, setWorkerMilestones] = useState<
+    WorkerMilestoneData[]
+  >([]);
+  const [workerLoading, setWorkerLoading] = useState(false);
 
   // Edit milestone dialog state
   const [editMilestoneDialogOpen, setEditMilestoneDialogOpen] = useState(false);
@@ -145,9 +173,15 @@ export default function Dashboard() {
   useEffect(() => {
     fetchDashboardData();
     fetchFinancialData();
+
+    // Fetch worker-specific data if user is a worker
+    if (userProfile?.role === "worker") {
+      fetchWorkerData();
+    }
+
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
-  }, []);
+  }, [userProfile]);
 
   useEffect(() => {
     filterMilestonesByDate();
@@ -458,6 +492,28 @@ export default function Dashboard() {
     }
   };
 
+  const fetchWorkerData = async () => {
+    if (!userProfile?.id) return;
+
+    setWorkerLoading(true);
+    try {
+      const [taskStats, projects, milestones] = await Promise.all([
+        WorkerDashboardService.getWorkerTaskStats(userProfile.id),
+        WorkerDashboardService.getWorkerProjects(userProfile.id),
+        WorkerDashboardService.getWorkerMilestones(userProfile.id),
+      ]);
+
+      setWorkerTaskStats(taskStats);
+      setWorkerProjects(projects);
+      setWorkerMilestones(milestones);
+    } catch (error) {
+      console.error("Error fetching worker data:", error);
+      toast.error("Failed to load worker dashboard data");
+    } finally {
+      setWorkerLoading(false);
+    }
+  };
+
   const getFilteredFinancialData = () => {
     if (!projectFinancials.length) return [];
 
@@ -545,8 +601,131 @@ export default function Dashboard() {
     return pieData;
   };
 
+  // Worker Dashboard
+  if (isWorker()) {
+    return (
+      <div className="flex flex-col lg:flex-row lg:justify-between gap-3 h-full">
+        <div className="space-y-1 lg:flex-1">
+          <h2 className="text-xlarge font-bold text-foreground">
+            {currentTime.toLocaleTimeString("en-US", {
+              hour: "2-digit",
+              minute: "2-digit",
+              hour12: true,
+            })}{" "}
+            - {getGreeting()}, {profile?.full_name || "User"}
+          </h2>
+          {checkedIn && checkInTime && (
+            <p className="text-muted-foreground text-lg">
+              Last checked in on {format(checkInTime, "dd MMM yyyy h:mm:ss a")}
+            </p>
+          )}
+
+          {/* Worker Task Stats Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-3">
+            <Card className="hover:shadow-elevated transition-all">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-muted-foreground text-lg">
+                      Assigned Tasks
+                    </p>
+                    <p className="text-2xl font-bold text-foreground">
+                      {workerTaskStats.assignedTasks}
+                    </p>
+                  </div>
+                  <div className="h-12 w-12 bg-primary/10 rounded-lg flex items-center justify-center">
+                    <ListTodo className="h-6 w-6 text-primary" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="hover:shadow-elevated transition-all">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-muted-foreground text-lg">
+                      Pending Tasks
+                    </p>
+                    <p className="text-2xl font-bold text-foreground">
+                      {workerTaskStats.pendingTasks}
+                    </p>
+                  </div>
+                  <div className="h-12 w-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                    <Timer className="h-6 w-6 text-orange-600" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Additional Worker Stats */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <Card className="hover:shadow-elevated transition-all">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-muted-foreground text-lg">Completed</p>
+                    <p className="text-2xl font-bold text-green-600">
+                      {workerTaskStats.completedTasks}
+                    </p>
+                  </div>
+                  <div className="h-12 w-12 bg-green-100 rounded-lg flex items-center justify-center">
+                    <CheckSquare className="h-6 w-6 text-green-600" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="hover:shadow-elevated transition-all">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-muted-foreground text-lg">Overdue</p>
+                    <p className="text-2xl font-bold text-red-600">
+                      {workerTaskStats.overdueTasks}
+                    </p>
+                  </div>
+                  <div className="h-12 w-12 bg-red-100 rounded-lg flex items-center justify-center">
+                    <AlertCircle className="h-6 w-6 text-red-600" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
+        {/* Worker Milestones List */}
+        <div className="w-full lg:w-1/3 flex flex-col space-y-2">
+          <Card className="h-[500px] lg:h-[calc(100vh-6rem)] flex flex-col">
+            <CardHeader className="pb-3">
+              <CardTitle className="pb-2">My Assigned Milestones</CardTitle>
+            </CardHeader>
+            <CardContent className="pb-4 flex-1 flex flex-col min-h-0">
+              <div className="flex-1 overflow-y-auto space-y-3 pr-2">
+                {workerMilestones.map((milestone) => (
+                  <WorkerMilestoneCard
+                    key={milestone.milestone_id}
+                    milestone={milestone}
+                  />
+                ))}
+                {workerMilestones.length === 0 && (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <ListTodo className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-2 opacity-50" />
+                    <p className="text-lg">No assigned milestones found</p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  // Admin/Supervisor Dashboard (existing)
   return (
-    <div className="flex flex-col lg:flex-row lg:justify-between gap-6 h-full">
+    <div className="flex flex-col lg:flex-row lg:justify-between gap-3 h-full">
       <div className="space-y-1 lg:flex-1">
         <h2 className="text-xlarge font-bold text-foreground">
           {currentTime.toLocaleTimeString("en-US", {
@@ -563,7 +742,7 @@ export default function Dashboard() {
         )}
 
         {/* Active Users and Projects Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-3">
           <Card className="hover:shadow-elevated transition-all">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
@@ -607,13 +786,13 @@ export default function Dashboard() {
           />
         </div>
       </div>
-      <div className="w-full lg:w-1/3 flex flex-col space-y-4">
+      <div className="w-full lg:w-1/3 flex flex-col space-y-2">
         {/* Header Section */}
 
         {/* My Milestones Section */}
         <Card className="h-[500px] lg:h-[calc(100vh-6rem)] flex flex-col">
           <CardHeader className="pb-3">
-            <CardTitle>My Milestones</CardTitle>
+            <CardTitle className="pb-2"> Milestones</CardTitle>
 
             {/* Date Filter Tabs */}
             <div className="flex gap-2 mt-3 flex-wrap">
@@ -678,9 +857,9 @@ export default function Dashboard() {
                 />
               ))}
               {filteredMilestones.length === 0 && (
-                <div className="text-center py-8 text-glass-muted">
+                <div className="text-center py-8 text-muted-foreground">
                   <ListTodo className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-2 opacity-50" />
-                  <p className="text-medium text-glass">No milestones found</p>
+                  <p className="text-medium">No milestones found</p>
                 </div>
               )}
             </div>
@@ -778,10 +957,8 @@ function MilestoneCard({
           {/* Milestone Header */}
           <div className="flex items-start justify-between gap-2">
             <div className="flex-1 min-w-0">
-              <h4 className="text-medium truncate text-glass-strong">
-                {milestone.name}
-              </h4>
-              <p className="text-small text-glass-muted font-mono">
+              <h4 className="text-medium truncate">{milestone.name}</h4>
+              <p className="text-small text-muted-foreground font-mono">
                 {getMilestoneId(milestone)}
               </p>
             </div>
@@ -820,10 +997,10 @@ function MilestoneCard({
 
           {/* Project Name */}
           <div className="flex items-center gap-1">
-            <span className="text-small text-glass-muted flex-shrink-0">
+            <span className="text-small text-muted-foreground flex-shrink-0">
               Project:
             </span>
-            <span className="text-small truncate text-glass">
+            <span className="text-small truncate">
               {milestone.projects?.name || "No project"}
             </span>
           </div>
@@ -832,7 +1009,7 @@ function MilestoneCard({
           {milestone.projects?.site_location && (
             <div className="flex items-center gap-1">
               <MapPin className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-              <span className="text-small text-glass-muted truncate">
+              <span className="text-small text-muted-foreground truncate">
                 {milestone.projects.site_location}
               </span>
             </div>
@@ -840,7 +1017,9 @@ function MilestoneCard({
 
           {/* Team Members */}
           <div className="m-0">
-            <span className="text-small text-glass-muted">Team Members:</span>
+            <span className="text-small text-muted-foreground">
+              Team Members:
+            </span>
             <div className="flex flex-wrap gap-1.5 sm:gap-2">
               {milestone.project_members &&
               milestone.project_members.length > 0 ? (
@@ -859,7 +1038,7 @@ function MilestoneCard({
                             .toUpperCase() || "U"}
                         </AvatarFallback>
                       </Avatar>
-                      <span className="text-medium truncate text-glass">
+                      <span className="text-medium truncate">
                         {member.profiles?.full_name ||
                           member.profiles?.email ||
                           "Unknown"}
@@ -882,7 +1061,7 @@ function MilestoneCard({
                   </div>
                 ))
               ) : (
-                <span className="text-small text-glass-muted">
+                <span className="text-small text-muted-foreground">
                   No members assigned
                 </span>
               )}
@@ -923,6 +1102,184 @@ function MilestoneCard({
               </Button>
             ))}
           </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// Worker Project Card Component
+function WorkerProjectCard({ project }: { project: WorkerProjectData }) {
+  const navigate = useNavigate();
+
+  return (
+    <Card
+      className="hover:shadow-elevated transition-all cursor-pointer border-l-4 border-l-primary"
+      onClick={() => navigate(`/projects/${project.project_id}`)}
+    >
+      <CardContent className="p-3 sm:p-4">
+        <div className="space-y-2 sm:space-y-3">
+          {/* Project Header */}
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex-1 min-w-0">
+              <h4 className="text-medium truncate">{project.project_name}</h4>
+              <p className="text-small text-muted-foreground font-mono">
+                {project.project_id.slice(-8).toUpperCase()}
+              </p>
+            </div>
+            <div className="flex items-center gap-1 flex-shrink-0">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 sm:h-8 sm:w-8"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <Star className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              </Button>
+            </div>
+          </div>
+
+          {/* Task Statistics */}
+          <div className="grid grid-cols-2 gap-2 text-sm">
+            <div className="flex items-center gap-2">
+              <div className="h-2 w-2 bg-blue-500 rounded-full"></div>
+              <span className="text-muted-foreground">Total:</span>
+              <span className="font-medium">{project.assigned_tasks}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="h-2 w-2 bg-orange-500 rounded-full"></div>
+              <span className="text-muted-foreground">Pending:</span>
+              <span className="font-medium">{project.pending_tasks}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="h-2 w-2 bg-green-500 rounded-full"></div>
+              <span className="text-muted-foreground">Completed:</span>
+              <span className="font-medium">{project.completed_tasks}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="h-2 w-2 bg-red-500 rounded-full"></div>
+              <span className="text-muted-foreground">Overdue:</span>
+              <span className="font-medium">{project.overdue_tasks}</span>
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// Worker Milestone Card Component
+function WorkerMilestoneCard({
+  milestone,
+}: {
+  milestone: WorkerMilestoneData;
+}) {
+  const navigate = useNavigate();
+
+  const getStatusColor = (status: string | null) => {
+    switch (status) {
+      case "planning":
+        return "bg-muted text-muted-foreground";
+      case "in_progress":
+        return "bg-primary/10 text-primary";
+      case "completed":
+        return "bg-success/10 text-success";
+      default:
+        return "bg-muted text-muted-foreground";
+    }
+  };
+
+  const getStatusIcon = (status: string | null) => {
+    switch (status) {
+      case "planning":
+        return ListTodo;
+      case "in_progress":
+        return PlayCircle;
+      case "completed":
+        return CheckCircle;
+      default:
+        return ListTodo;
+    }
+  };
+
+  const StatusIcon = getStatusIcon(milestone.status);
+
+  return (
+    <Card
+      className="hover:shadow-elevated transition-all cursor-pointer border-l-4 border-l-primary"
+      onClick={() => navigate(`/milestones/${milestone.milestone_id}`)}
+    >
+      <CardContent className="p-3 sm:p-4">
+        <div className="space-y-2 sm:space-y-3">
+          {/* Milestone Header */}
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex-1 min-w-0">
+              <h4 className="text-medium truncate">
+                {milestone.milestone_name}
+              </h4>
+              <p className="text-small text-muted-foreground">
+                Project: {milestone.project_name}
+              </p>
+              <p className="text-small text-muted-foreground font-mono">
+                {milestone.milestone_id.slice(-8).toUpperCase()}
+              </p>
+            </div>
+            <div className="flex items-center gap-1 flex-shrink-0">
+              <Badge
+                className={`${getStatusColor(
+                  milestone.status
+                )} flex items-center gap-1`}
+              >
+                <StatusIcon className="h-3 w-3" />
+                {(milestone.status || "unknown")
+                  .replace("_", " ")
+                  .toUpperCase()}
+              </Badge>
+            </div>
+          </div>
+
+          {/* Task Statistics */}
+          <div className="grid grid-cols-2 gap-2 text-sm">
+            <div className="flex items-center gap-2">
+              <div className="h-2 w-2 bg-blue-500 rounded-full"></div>
+              <span className="text-muted-foreground">Total:</span>
+              <span className="font-medium">{milestone.assigned_tasks}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="h-2 w-2 bg-orange-500 rounded-full"></div>
+              <span className="text-muted-foreground">Pending:</span>
+              <span className="font-medium">{milestone.pending_tasks}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="h-2 w-2 bg-green-500 rounded-full"></div>
+              <span className="text-muted-foreground">Completed:</span>
+              <span className="font-medium">{milestone.completed_tasks}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="h-2 w-2 bg-red-500 rounded-full"></div>
+              <span className="text-muted-foreground">Overdue:</span>
+              <span className="font-medium">{milestone.overdue_tasks}</span>
+            </div>
+          </div>
+
+          {/* Date Information */}
+          {(milestone.start_date || milestone.end_date) && (
+            <div className="pt-2 border-t">
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                {milestone.start_date && (
+                  <span>
+                    Start:{" "}
+                    {format(new Date(milestone.start_date), "MMM dd, yyyy")}
+                  </span>
+                )}
+                {milestone.end_date && (
+                  <span>
+                    End: {format(new Date(milestone.end_date), "MMM dd, yyyy")}
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>

@@ -1,13 +1,13 @@
 import { useState } from "react";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+  LeftDrawer,
+  LeftDrawerContent,
+  LeftDrawerDescription,
+  LeftDrawerFooter,
+  LeftDrawerHeader,
+  LeftDrawerTitle,
+  LeftDrawerTrigger,
+} from "@/components/ui/left-drawer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -162,23 +162,23 @@ export function RecurringTaskDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
+    <LeftDrawer open={open} onOpenChange={setOpen}>
+      <LeftDrawerTrigger asChild>
         {children || (
           <Button variant="outline">
             <Repeat className="h-4 w-4 mr-2" />
             Create Recurring Task
           </Button>
         )}
-      </DialogTrigger>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      </LeftDrawerTrigger>
+      <LeftDrawerContent side="right" className="overflow-y-auto">
         <form onSubmit={handleSubmit}>
-          <DialogHeader>
-            <DialogTitle>Create Recurring Task</DialogTitle>
-            <DialogDescription>
+          <LeftDrawerHeader>
+            <LeftDrawerTitle>Create Recurring Task</LeftDrawerTitle>
+            <LeftDrawerDescription>
               Create a task that repeats automatically on a schedule
-            </DialogDescription>
-          </DialogHeader>
+            </LeftDrawerDescription>
+          </LeftDrawerHeader>
 
           <div className="space-y-4 py-4">
             {/* Task Title */}
@@ -398,7 +398,7 @@ export function RecurringTaskDialog({
             </div>
           </div>
 
-          <DialogFooter>
+          <LeftDrawerFooter>
             <Button
               type="button"
               variant="outline"
@@ -410,9 +410,9 @@ export function RecurringTaskDialog({
             <Button type="submit" disabled={loading}>
               {loading ? "Creating..." : "Create Recurring Task"}
             </Button>
-          </DialogFooter>
+          </LeftDrawerFooter>
         </form>
-      </DialogContent>
-    </Dialog>
+      </LeftDrawerContent>
+    </LeftDrawer>
   );
 }

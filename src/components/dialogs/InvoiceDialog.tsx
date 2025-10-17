@@ -8,14 +8,14 @@ import {
 } from "@/services/invoiceService";
 import { usePermissions } from "@/hooks/usePermissions";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+  LeftDrawer,
+  LeftDrawerContent,
+  LeftDrawerDescription,
+  LeftDrawerFooter,
+  LeftDrawerHeader,
+  LeftDrawerTitle,
+  LeftDrawerTrigger,
+} from "@/components/ui/left-drawer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -361,20 +361,20 @@ export function InvoiceDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+    <LeftDrawer open={open} onOpenChange={setOpen}>
+      <LeftDrawerTrigger asChild>{children}</LeftDrawerTrigger>
+      <LeftDrawerContent side="right" className="overflow-y-auto">
+        <LeftDrawerHeader>
+          <LeftDrawerTitle className="flex items-center gap-2">
             <Receipt className="h-5 w-5" />
             {invoice ? "Edit Invoice" : "Create Invoice"}
-          </DialogTitle>
-          <DialogDescription>
+          </LeftDrawerTitle>
+          <LeftDrawerDescription>
             {invoice
               ? "Update invoice details and line items"
               : "Create a new invoice with custom line items"}
-          </DialogDescription>
-        </DialogHeader>
+          </LeftDrawerDescription>
+        </LeftDrawerHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Client Information */}
@@ -704,7 +704,7 @@ export function InvoiceDialog({
             </CardContent>
           </Card>
 
-          <DialogFooter>
+          <LeftDrawerFooter>
             <Button
               type="button"
               variant="outline"
@@ -716,9 +716,9 @@ export function InvoiceDialog({
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {invoice ? "Update Invoice" : "Create Invoice"}
             </Button>
-          </DialogFooter>
+          </LeftDrawerFooter>
         </form>
-      </DialogContent>
-    </Dialog>
+      </LeftDrawerContent>
+    </LeftDrawer>
   );
 }

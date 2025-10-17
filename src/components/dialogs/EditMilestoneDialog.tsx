@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  LeftDrawer,
+  LeftDrawerContent,
+  LeftDrawerDescription,
+  LeftDrawerHeader,
+  LeftDrawerTitle,
+} from "@/components/ui/left-drawer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -175,14 +175,14 @@ export function EditMilestoneDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>Edit Milestone</DialogTitle>
-          <DialogDescription>
+    <LeftDrawer open={open} onOpenChange={onOpenChange}>
+      <LeftDrawerContent side="right" className="overflow-y-auto">
+        <LeftDrawerHeader>
+          <LeftDrawerTitle>Edit Milestone</LeftDrawerTitle>
+          <LeftDrawerDescription>
             Update the milestone details below.
-          </DialogDescription>
-        </DialogHeader>
+          </LeftDrawerDescription>
+        </LeftDrawerHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="name">Name *</Label>
@@ -367,7 +367,7 @@ export function EditMilestoneDialog({
             </Button>
           </div>
         </form>
-      </DialogContent>
-    </Dialog>
+      </LeftDrawerContent>
+    </LeftDrawer>
   );
 }

@@ -350,5 +350,3 @@ export class InvoiceExportService {
     URL.revokeObjectURL(url);
   }
 }
-
-
