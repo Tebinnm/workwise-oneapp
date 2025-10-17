@@ -65,7 +65,7 @@ interface User {
   created_at: string;
   projects?: Array<{
     milestone_id: string;
-    milestone_name: string;
+    project_name: string;
     role: string;
     start_date: string;
     end_date: string;
@@ -186,7 +186,7 @@ export default function UserManagement() {
         projects:
           user.project_members?.map((pm: any) => ({
             milestone_id: pm.milestone_id,
-            milestone_name: pm.milestones?.name || "Unknown",
+            project_name: pm.milestones?.name || "Unknown",
             role: pm.role,
             start_date: pm.start_date || null,
             end_date: pm.end_date || null,
@@ -225,10 +225,9 @@ export default function UserManagement() {
       const { data, error } = await supabase
         .from("profiles")
         .insert({
+          id: crypto.randomUUID(),
           full_name: newUser.full_name,
-          email: newUser.email,
-          role: newUser.role,
-          status: newUser.status,
+          role: newUser.role as "admin" | "supervisor" | "worker" | "client",
           wage_type: newUser.wage_type || "daily",
           daily_rate: newUser.daily_rate || 0,
           monthly_salary: newUser.monthly_salary || 0,
@@ -312,10 +311,9 @@ export default function UserManagement() {
           try {
             // Create profile directly with all wage configuration
             const { error } = await supabase.from("profiles").insert({
+              id: crypto.randomUUID(),
               full_name: user.full_name,
-              email: user.email,
-              role: user.role,
-              status: user.status,
+              role: user.role as "admin" | "supervisor" | "worker" | "client",
               wage_type: user.wage_type,
               daily_rate: user.daily_rate,
               monthly_salary: user.monthly_salary,
@@ -915,7 +913,7 @@ export default function UserManagement() {
                               key={project.milestone_id}
                               variant="secondary"
                             >
-                              {project.milestone_name} ({project.role})
+                              {project.project_name} ({project.role})
                             </Badge>
                           ))}
                         </div>
